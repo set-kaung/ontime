@@ -40,7 +40,15 @@ func (us *UserService) InsertUser(email domain.Email, username, password string)
 func (us *UserService) GetUserByEmail(email domain.Email) (*domain.User, error) {
 	user, err := us.Repo.GetUserByEmail(email.Address)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by emai(service): %v", err)
+		return nil, fmt.Errorf("failed to get user by email(service): %v", err)
+	}
+	return user, nil
+}
+
+func (us *UserService) GetUserProfile(id int) (*domain.User, error) {
+	user, err := us.Repo.GetUserProfile(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id(service) to view: %v", err)
 	}
 	return user, nil
 }

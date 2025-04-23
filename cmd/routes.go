@@ -24,15 +24,15 @@ func (r *RouteChainer) Chain(next http.HandlerFunc) http.Handler {
 }
 
 func (r *RouteChainer) Append(appendingRoutes ...func(http.Handler) http.Handler) *RouteChainer {
-	newRoutes := make([]func(http.Handler) http.Handler, len(r.routes)+len(appendingRoutes))
-	copy(newRoutes, r.routes)
+	newRoutes := make([]func(http.Handler) http.Handler, 0, len(r.routes)+len(appendingRoutes))
+	newRoutes = append(newRoutes, r.routes...)
 	newRoutes = append(newRoutes, appendingRoutes...)
 	return &RouteChainer{newRoutes}
 }
 
 func (a *application) routes() http.Handler {
 	mux := http.NewServeMux()
-	chain := NewRouteChainer(a.userHandler.SessionManager.LoadAndSave, a.userHandler.Authenticate)
+	chain := NewRouteChainer(LogMiddleWare, a.userHandler.SessionManager.LoadAndSave, a.userHandler.Authenticate)
 
 	mux.Handle("GET /health", chain.Chain(handlers.HealthCheck))
 	mux.Handle("POST /user/signup", chain.Chain(a.userHandler.HandleSignUp))
@@ -41,7 +41,7 @@ func (a *application) routes() http.Handler {
 	protected := chain.Append(a.userHandler.RequireAuthentication)
 
 	// not complete yet
-	mux.Handle("GET /user/profile/self", protected.Chain(a.userHandler.ViewOwnProfile))
+	mux.Handle("/user/profile/self", protected.Chain(a.userHandler.ViewOwnProfile))
 	// mux.Handle("GET")
 	return CORS(mux)
 }

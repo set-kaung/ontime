@@ -14,5 +14,6 @@ type UserRepository interface {
 	GetUserByEmail(email string) (*domain.User, error)
 	InsertUser(user *domain.User) error
 
+	GetUserProfile(id int) (*domain.User, error)
 	Exists(int) (bool, error)
 }

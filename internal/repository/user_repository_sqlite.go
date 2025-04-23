@@ -51,7 +51,7 @@ func (s *SQLiteUserRepository) GetUserByEmail(email string) (*domain.User, error
 	stmt := "SELECT * FROM users WHERE email = ?"
 	row := s.db.QueryRow(stmt, email)
 	u := &domain.User{}
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Email.Address)
+	err := row.Scan(&u.ID, &u.PasswordHash, &u.Email.Address)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
@@ -82,7 +82,7 @@ func (s *SQLiteUserRepository) InsertUser(user *domain.User) error {
 		return err
 	}
 
-	profileInsertStmt := `INSERT INTO profiles (user_id,username,tokens,joined) VALUES(?,?,?,CURRENT_DATE)`
+	profileInsertStmt := `INSERT INTO profiles (user_id,username,tokens,date_joined) VALUES(?,?,?,CURRENT_DATE)`
 	_, err = tx.Exec(profileInsertStmt, userID, user.Username, 0, time.Now())
 	if err != nil {
 		tx.Rollback()
@@ -90,6 +90,25 @@ func (s *SQLiteUserRepository) InsertUser(user *domain.User) error {
 	}
 
 	return tx.Commit()
+}
+
+func (s *SQLiteUserRepository) GetUserProfile(id int) (*domain.User, error) {
+	stmt := `
+					SELECT u.email, p.username, p.tokens, p.date_joined
+					FROM users u
+					JOIN profiles p ON u.id = p.user_id
+					WHERE u.id = ?`
+	row := s.db.QueryRow(stmt, id)
+	u := &domain.User{}
+	err := row.Scan(&u.Email.Address, &u.Username, &u.Tokens, &u.Joined)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	return u, nil
 }
 
 func (s *SQLiteUserRepository) Exists(id int) (bool, error) {

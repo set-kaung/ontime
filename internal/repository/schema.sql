@@ -11,6 +11,14 @@ CREATE TABLE IF NOT EXISTS profiles(
     user_id INTEGER NOT NULL UNIQUE,
     username VARCHAR(50) NOT NULL,
     tokens INTEGER NOT NULL,
-    joined DATE NOT NULL,
+    date_joined DATE NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS sessions (
+	token TEXT PRIMARY KEY,
+	data BLOB NOT NULL,
+	expiry REAL NOT NULL
+);
+
+CREATE INDEX sessions_expiry_idx ON sessions(expiry);

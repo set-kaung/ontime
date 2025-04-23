@@ -44,6 +44,7 @@ func main() {
 	sessionM := scs.New()
 	sessionM.Store = sqlite3store.New(db)
 	sessionM.Lifetime = 12 * time.Hour
+	sessionM.Cookie.SameSite = http.SameSiteNoneMode
 	sessionM.Cookie.Secure = true
 
 	a := &application{}

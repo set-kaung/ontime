@@ -79,6 +79,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.SessionManager.Put(r.Context(), "authenticatedUserID", id)
+	log.Println("Set authenticatedUserID =", id)
 
 	helpers.WriteSuccess(w, http.StatusOK, "", nil)
 }
@@ -86,6 +87,8 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := h.SessionManager.GetInt(r.Context(), "authenticatedUserID")
+		log.Println("Got authenticatedUserID =", id)
+		log.Println(id)
 		if id == 0 {
 			next.ServeHTTP(w, r)
 			return
@@ -105,6 +108,7 @@ func (h *UserHandler) Authenticate(next http.Handler) http.Handler {
 
 func isAuthenticated(r *http.Request) bool {
 	isAuthenticatedBoolean, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	log.Println(isAuthenticatedBoolean)
 	if !ok {
 		return false
 	}
