@@ -2,8 +2,6 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/set-kaung/senior_project_1/internal/handlers"
 )
 
 type RouteChainer struct {
@@ -34,14 +32,14 @@ func (a *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	chain := NewRouteChainer(LogMiddleWare, a.userHandler.SessionManager.LoadAndSave, a.userHandler.Authenticate)
 
-	mux.Handle("GET /health", chain.Chain(handlers.HealthCheck))
+	mux.Handle("GET /health", chain.Chain(HealthCheck))
 	mux.Handle("POST /user/signup", chain.Chain(a.userHandler.HandleSignUp))
 	mux.Handle("POST /user/login", chain.Chain(a.userHandler.HandleLogin))
 
 	protected := chain.Append(a.userHandler.RequireAuthentication)
 
 	// not complete yet
-	mux.Handle("/user/profile/self", protected.Chain(a.userHandler.ViewOwnProfile))
+	mux.Handle("GET /user/profile/self", protected.Chain(a.userHandler.ViewOwnProfile))
 	// mux.Handle("GET")
 	return CORS(mux)
 }

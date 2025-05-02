@@ -11,13 +11,11 @@ import (
 
 	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
-	"github.com/set-kaung/senior_project_1/internal/handlers"
-	"github.com/set-kaung/senior_project_1/internal/repository"
-	"github.com/set-kaung/senior_project_1/internal/service"
+	"github.com/set-kaung/senior_project_1/internal/domain/user"
 )
 
 type application struct {
-	userHandler handlers.UserHandler
+	userHandler user.UserHandler
 }
 
 func main() {
@@ -49,11 +47,11 @@ func main() {
 
 	a := &application{}
 
-	userRepo := repository.NewSQLiteUserRepository(db)
-	userService := service.UserService{Repo: userRepo}
-	authService := service.AuthenticationService{Repo: userRepo}
+	userRepo := user.NewSQLiteUserRepository(db)
+	userService := user.UserService{Repo: userRepo}
+	authService := user.AuthenticationService{Repo: userRepo}
 
-	a.userHandler = handlers.UserHandler{UserService: userService, AuthService: authService}
+	a.userHandler = user.UserHandler{UserService: userService, AuthService: authService}
 	a.userHandler.SessionManager = sessionM
 
 	mux := a.routes()
