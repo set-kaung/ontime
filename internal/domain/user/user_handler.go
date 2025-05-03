@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/set-kaung/senior_project_1/internal/helpers"
+	"github.com/set-kaung/senior_project_1/internal/util"
 	"modernc.org/sqlite"
 )
 
@@ -18,7 +19,6 @@ const isAuthenticatedContextKey = contextKey("isAuthenticated")
 
 type UserHandler struct {
 	UserService    UserService
-	AuthService    AuthenticationService
 	SessionManager *scs.SessionManager
 }
 
@@ -40,7 +40,7 @@ func (h *UserHandler) HandleSignUp(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteError(w, http.StatusBadRequest, "invalid email address", nil)
 		return
 	}
-	err = h.UserService.InsertUser(em, user.Username, user.Password)
+	err = h.UserService.InsertUser(r.Context(), em, user.Username, user.Password)
 	if err != nil {
 		if errors.Is(err, &sqlite.Error{}) {
 			log.Println(err)
@@ -65,7 +65,7 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteError(w, http.StatusBadRequest, "Invalid JSON request", nil)
 		return
 	}
-	id, result := h.AuthService.Authenticate(user.Email, user.Password)
+	id, result := h.UserService.AuthenticateWithDB(r.Context(), user.Email, user.Password)
 	if !result {
 		helpers.WriteError(w, http.StatusNotFound, "User Not Found", nil)
 		return
@@ -76,22 +76,27 @@ func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteError(w, http.StatusInternalServerError, "Server is having problems", nil)
 		return
 	}
-	h.SessionManager.Put(r.Context(), "authenticatedUserID", id)
-	log.Println("Set authenticatedUserID =", id)
-
+	h.SessionManager.Put(r.Context(), "authenticatedUserID", int(id))
 	helpers.WriteSuccess(w, http.StatusOK, "", nil)
+}
+
+func (h *UserHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	err := h.SessionManager.RenewToken(r.Context())
+	if err != nil {
+		helpers.WriteError(w, http.StatusInternalServerError, "server is having problems", nil)
+		return
+	}
+	h.SessionManager.Remove(r.Context(), "authenticatedUserID")
 }
 
 func (h *UserHandler) Authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := h.SessionManager.GetInt(r.Context(), "authenticatedUserID")
-		log.Println("Got authenticatedUserID =", id)
-		log.Println(id)
 		if id == 0 {
 			next.ServeHTTP(w, r)
 			return
 		}
-		exists, err := h.UserService.Exists(id)
+		exists, err := h.UserService.Exists(r.Context(), int32(id))
 		if err != nil {
 			helpers.WriteError(w, http.StatusInternalServerError, "Server is having problems", nil)
 			return
@@ -106,7 +111,6 @@ func (h *UserHandler) Authenticate(next http.Handler) http.Handler {
 
 func isAuthenticated(r *http.Request) bool {
 	isAuthenticatedBoolean, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
-	log.Println(isAuthenticatedBoolean)
 	if !ok {
 		return false
 	}
@@ -116,7 +120,7 @@ func isAuthenticated(r *http.Request) bool {
 func (h *UserHandler) RequireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !isAuthenticated(r) {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			helpers.WriteError(w, http.StatusForbidden, "You need to login", nil)
 			return
 		}
 
@@ -127,4 +131,13 @@ func (h *UserHandler) RequireAuthentication(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 
+}
+
+func (us *UserService) AuthenticateWithDB(ctx context.Context, email string, password string) (int32, bool) {
+	user, err := us.Repo.GetUserByEmail(ctx, email)
+	if err != nil {
+		log.Println(err)
+		return -1, false
+	}
+	return user.ID, util.CheckPasswordHash(password, user.Password)
 }

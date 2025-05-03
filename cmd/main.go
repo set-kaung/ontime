@@ -1,17 +1,21 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"flag"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq"
 
-	"github.com/alexedwards/scs/sqlite3store"
+	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
+	"github.com/set-kaung/senior_project_1/internal/repository"
 )
 
 type application struct {
@@ -24,34 +28,35 @@ func main() {
 
 	flag.Parse()
 
-	sqliteFile := "/Users/setkaung/sqlite_dbs/test_db.db"
-	db, err := sql.Open("sqlite", sqliteFile)
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DBURL"))
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer db.Close()
-	if err := db.Ping(); err != nil {
+	defer dbpool.Close()
+	if err := dbpool.Ping(context.Background()); err != nil {
 		log.Fatalln("Ping failed:", err)
 	}
 
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	sessionDB, err := sql.Open("postgres", os.Getenv("DBURL"))
 	if err != nil {
-		log.Fatalln("Failed to enable foreign keys:", err)
+		log.Fatalln(err)
 	}
-
+	defer sessionDB.Close()
 	sessionM := scs.New()
-	sessionM.Store = sqlite3store.New(db)
+	sessionM.Store = postgresstore.New(sessionDB)
 	sessionM.Lifetime = 12 * time.Hour
-	sessionM.Cookie.SameSite = http.SameSiteNoneMode
+	sessionM.Cookie.SameSite = http.SameSiteStrictMode
 	sessionM.Cookie.Secure = true
+	sessionM.Cookie.Persist = true  // Persist cookies across browser restarts
+	sessionM.Cookie.HttpOnly = true // Recommended for security
 
 	a := &application{}
 
-	userRepo := user.NewSQLiteUserRepository(db)
-	userService := user.UserService{Repo: userRepo}
-	authService := user.AuthenticationService{Repo: userRepo}
+	repo := repository.New(dbpool)
 
-	a.userHandler = user.UserHandler{UserService: userService, AuthService: authService}
+	userService := user.UserService{Repo: repo}
+
+	a.userHandler = user.UserHandler{UserService: userService}
 	a.userHandler.SessionManager = sessionM
 
 	mux := a.routes()

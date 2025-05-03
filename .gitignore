@@ -1,3 +1,6 @@
 users.json
 .vscode
 bin/
+sqlc.yaml
+*.sql
+query/

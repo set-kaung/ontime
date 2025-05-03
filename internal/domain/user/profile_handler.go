@@ -13,12 +13,13 @@ func (uh *UserHandler) ViewOwnProfile(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteError(w, http.StatusUnauthorized, "Unauthorized", nil)
 		return
 	}
-	user, err := uh.UserService.GetUserProfile(userID)
+	user, err := uh.UserService.GetUserProfile(r.Context(), int32(userID))
 	if err != nil {
-		log.Println(err)
 		helpers.WriteError(w, http.StatusInternalServerError, "server is having problems", nil)
 		return
 	}
 	err = helpers.WriteData(w, http.StatusOK, user, nil)
-	log.Println(err)
+	if err != nil {
+		log.Println("error writing data:", err)
+	}
 }
