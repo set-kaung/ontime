@@ -4,3 +4,9 @@ bin/
 sqlc.yaml
 *.sql
 query/
+*.env*
+*.crt
+*.json
+*doc*
+dump_cmd.txt
+.DS_Store

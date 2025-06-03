@@ -2,73 +2,57 @@ package user
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"time"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/repository"
-	"github.com/set-kaung/senior_project_1/internal/util"
 )
 
-type Profile struct {
-	Email           string
-	Username        string
-	Tokens          int32
-	Joined_At       time.Time
-	Rating          float64
-	ProfilePhotoURL string
+type userService struct {
+	db *pgxpool.Pool
 }
 
-type UserService struct {
-	Repo *repository.Queries
+func (us *userService) GetUserByID(ctx context.Context, id string) (repository.User, error) {
+	repo := repository.New(us.db)
+	result, err := repo.GetUserByID(ctx, id)
+	return result, err
 }
 
-func (us *UserService) GetUserByID(ctx context.Context, id int32) (*repository.User, error) {
-	if id <= 0 {
-		return nil, errors.New("invalid user ID")
-	}
-	result, err := us.Repo.GetUserByID(ctx, id)
-	return &result, err
-}
-
-func (us *UserService) InsertUser(ctx context.Context, email Email, username, password string) error {
-	hashedPass, err := util.HashPassword(password)
+func (us *userService) InsertUser(ctx context.Context, user repository.InsertUserParams) error {
+	tx, err := us.db.Begin(ctx)
 	if err != nil {
-		return err
+		log.Printf("failed to begin tx: %s\n", err)
+		return internal.ErrInternalServerError
 	}
-	insertParams := repository.InsertUserParams{Email: email.Address, Password: hashedPass}
-	id, err := us.Repo.InsertUser(ctx, insertParams)
+	defer tx.Rollback(ctx)
+
+	repo := repository.New(tx)
+	_, err = repo.InsertUser(ctx, user)
 	if err != nil {
+		log.Println(err)
 		if pgerr, ok := err.(*pgconn.PgError); ok {
 			if pgerr.Code == "23505" {
-				return ErrDuplicateEmail
+				return internal.ErrDuplicateID
 			}
 		}
-		return err
+		return internal.ErrInternalServerError
 	}
-	insertPorfileParams := repository.InsertProfileParams{UserID: id, Username: username, Tokens: 0, Rating: 0.0}
-	_, err = us.Repo.InsertProfile(ctx, insertPorfileParams)
-	return err
-}
-
-func (us *UserService) GetUserByEmail(ctx context.Context, email Email) (*repository.User, error) {
-	user, err := us.Repo.GetUserByEmail(ctx, email.Address)
+	err = tx.Commit(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by email(service): %v", err)
+		log.Printf("UserService -> InsertUser: error commiting transaction: %s\n", err)
+		return internal.ErrInternalServerError
 	}
-	return &user, nil
+	return nil
 }
 
-func (us *UserService) GetUserProfile(ctx context.Context, id int32) (*Profile, error) {
-	user, err := us.Repo.GetProfile(ctx, id)
+func (us *userService) GetUserProfile(ctx context.Context, id string) (repository.User, error) {
+	repo := repository.New(us.db)
+	user, err := repo.GetUserByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by id(service) to view: %v", err)
+		log.Printf("failed to get user by id(service) to view: %s", err)
+		return user, internal.ErrInternalServerError
 	}
-	prof := &Profile{Email: user.Email, Username: user.Username, Tokens: user.Tokens, Joined_At: user.JoinedAt, Rating: user.Rating, ProfilePhotoURL: user.ProfilePhotoUrl.String}
-	return prof, nil
-}
-
-func (us *UserService) Exists(ctx context.Context, id int32) (bool, error) {
-	return us.Repo.UserExists(ctx, id)
+	return user, nil
 }

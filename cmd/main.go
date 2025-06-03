@@ -2,27 +2,35 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
+	"github.com/clerk/clerk-sdk-go/v2"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
-	"github.com/alexedwards/scs/postgresstore"
-	"github.com/alexedwards/scs/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/set-kaung/senior_project_1/internal/domain/listing"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
-	"github.com/set-kaung/senior_project_1/internal/repository"
 )
 
 type application struct {
-	userHandler user.UserHandler
+	userHandler    *user.UserHandler
+	listingHandler *listing.ListingHandler
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	clerk.SetKey(os.Getenv("CLARKE_SECRET_KEY"))
+
+	fmt.Printf("accepting request from %s \n", os.Getenv("REMOTE_ORIGIN"))
 
 	port := flag.String("port", ":4096", "port to run the server. default is 4096. format - \":8080\"")
 
@@ -37,27 +45,23 @@ func main() {
 		log.Fatalln("Ping failed:", err)
 	}
 
-	sessionDB, err := sql.Open("postgres", os.Getenv("DBURL"))
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer sessionDB.Close()
-	sessionM := scs.New()
-	sessionM.Store = postgresstore.New(sessionDB)
-	sessionM.Lifetime = 12 * time.Hour
-	sessionM.Cookie.SameSite = http.SameSiteStrictMode
-	sessionM.Cookie.Secure = true
-	sessionM.Cookie.Persist = true  // Persist cookies across browser restarts
-	sessionM.Cookie.HttpOnly = true // Recommended for security
+	// sessionDB, err := sql.Open("postgres", os.Getenv("DBURL"))
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+	// defer sessionDB.Close()
+	// sessionM := scs.New()
+	// // sessionM.Store = postgresstore.New(sessionDB)
+	// sessionM.Lifetime = 12 * time.Hour
+	// sessionM.Cookie.SameSite = http.SameSiteNoneMode
+	// sessionM.Cookie.Secure = true
+	// sessionM.Cookie.Persist = true  // Persist cookies across browser restarts
+	// sessionM.Cookie.HttpOnly = true // Recommended for security
 
 	a := &application{}
 
-	repo := repository.New(dbpool)
-
-	userService := user.UserService{Repo: repo}
-
-	a.userHandler = user.UserHandler{UserService: userService}
-	a.userHandler.SessionManager = sessionM
+	a.userHandler = user.NewUserHandler(dbpool)
+	a.listingHandler = listing.NewListingHandler(dbpool)
 
 	mux := a.routes()
 	log.Printf("starting server on port %s", *port)

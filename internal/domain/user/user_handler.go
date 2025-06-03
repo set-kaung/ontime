@@ -1,143 +1,92 @@
 package user
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
-	"github.com/alexedwards/scs/v2"
+	"github.com/clerk/clerk-sdk-go/v2"
+	"github.com/clerk/clerk-sdk-go/v2/user"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/helpers"
-	"github.com/set-kaung/senior_project_1/internal/util"
-	"modernc.org/sqlite"
+	"github.com/set-kaung/senior_project_1/internal/repository"
 )
 
-type contextKey string
-
-const isAuthenticatedContextKey = contextKey("isAuthenticated")
-
 type UserHandler struct {
-	UserService    UserService
-	SessionManager *scs.SessionManager
+	userService *userService
 }
 
-func (h *UserHandler) HandleSignUp(w http.ResponseWriter, r *http.Request) {
-	type RegisterUser struct {
-		Username string `json:"username"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
+func NewUserHandler(db *pgxpool.Pool) *UserHandler {
+	return &UserHandler{userService: &userService{db}}
+}
+
+func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
+	claims, ok := clerk.SessionClaimsFromContext(r.Context())
+	if !ok {
+		log.Println("failed to session claims")
+		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 	}
-	decoder := json.NewDecoder(r.Body)
-	user := RegisterUser{}
-	err := decoder.Decode(&user)
+	clerkUser, err := user.Get(r.Context(), claims.Subject)
 	if err != nil {
+		log.Println("authenticate -> GetClerkUserID: ", err)
+
+	}
+	id, err := GetClerkUserID(r.Context())
+	if err != nil {
+		helpers.WriteError(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	insertParams := repository.InsertUserParams{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&insertParams)
+	if err != nil {
+		log.Println("user_handler -> HandleInsertUser: ", err)
 		helpers.WriteError(w, http.StatusBadRequest, "invalid json request", nil)
 		return
 	}
-	em, err := NewEmail(user.Email)
+	insertParams.ID = id
+	insertParams.FirstName = *clerkUser.FirstName
+	insertParams.LastName = *clerkUser.LastName
+	insertParams.Status = "active"
+	err = h.userService.InsertUser(r.Context(), insertParams)
 	if err != nil {
-		helpers.WriteError(w, http.StatusBadRequest, "invalid email address", nil)
+		log.Println("user_handler -> HandleInsertUser: ", err)
+		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
-	err = h.UserService.InsertUser(r.Context(), em, user.Username, user.Password)
-	if err != nil {
-		if errors.Is(err, &sqlite.Error{}) {
-			log.Println(err)
-			helpers.WriteError(w, http.StatusInternalServerError, "Sorry. Something Happend on the server.", nil)
-			return
-		}
-		helpers.WriteError(w, http.StatusBadRequest, err.Error(), nil)
-		return
-	}
-}
-
-func (h *UserHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	type LoginUser struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+	// need to update clerk public metadata for profileCompletion
+	updateDate := map[string]interface{}{
+		"profileComplete": true,
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	user := LoginUser{}
-	err := decoder.Decode(&user)
+	payload, err := json.Marshal(updateDate)
 	if err != nil {
-		helpers.WriteError(w, http.StatusBadRequest, "Invalid JSON request", nil)
-		return
+		panic("user_handler -> HandleInsertUser: invalid json")
 	}
-	id, result := h.UserService.AuthenticateWithDB(r.Context(), user.Email, user.Password)
-	if !result {
-		helpers.WriteError(w, http.StatusNotFound, "User Not Found", nil)
-		return
-	}
-	err = h.SessionManager.RenewToken(r.Context())
-	if err != nil {
-		log.Println(err)
-		helpers.WriteError(w, http.StatusInternalServerError, "Server is having problems", nil)
-		return
-	}
-	h.SessionManager.Put(r.Context(), "authenticatedUserID", int(id))
-	helpers.WriteSuccess(w, http.StatusOK, "", nil)
-}
-
-func (h *UserHandler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	err := h.SessionManager.RenewToken(r.Context())
-	if err != nil {
-		helpers.WriteError(w, http.StatusInternalServerError, "server is having problems", nil)
-		return
-	}
-	h.SessionManager.Remove(r.Context(), "authenticatedUserID")
-}
-
-func (h *UserHandler) Authenticate(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := h.SessionManager.GetInt(r.Context(), "authenticatedUserID")
-		if id == 0 {
-			next.ServeHTTP(w, r)
-			return
-		}
-		exists, err := h.UserService.Exists(r.Context(), int32(id))
-		if err != nil {
-			helpers.WriteError(w, http.StatusInternalServerError, "Server is having problems", nil)
-			return
-		}
-		if exists {
-			ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
-			r = r.WithContext(ctx)
-		}
-		next.ServeHTTP(w, r)
+	_, err = user.Update(r.Context(), claims.Subject, &user.UpdateParams{
+		PublicMetadata: clerk.JSONRawMessage(payload),
 	})
-}
-
-func isAuthenticated(r *http.Request) bool {
-	isAuthenticatedBoolean, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
-	if !ok {
-		return false
-	}
-	return isAuthenticatedBoolean
-}
-
-func (h *UserHandler) RequireAuthentication(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !isAuthenticated(r) {
-			helpers.WriteError(w, http.StatusForbidden, "You need to login", nil)
-			return
-		}
-
-		//Set the "Cache-Control: no-store" header so that pages
-		// require authentication are not stored in the users browser cache (or
-		// other intermediary cache).
-		w.Header().Add("Cache-Control", "no-store")
-		next.ServeHTTP(w, r)
-	})
-
-}
-
-func (us *UserService) AuthenticateWithDB(ctx context.Context, email string, password string) (int32, bool) {
-	user, err := us.Repo.GetUserByEmail(ctx, email)
 	if err != nil {
-		log.Println(err)
-		return -1, false
+		log.Println("failed to update Clerk user metadata:", err)
 	}
-	return user.ID, util.CheckPasswordHash(password, user.Password)
+}
+
+func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Request) {
+
+	id, err := GetClerkUserID(r.Context())
+	if err != nil {
+		helpers.WriteError(w, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+	dbUser, err := h.userService.GetUserByID(r.Context(), id)
+	if err != nil {
+		log.Println("user_handler -> HandleViewOwnProfile: ", err)
+		helpers.WriteError(w, http.StatusInternalServerError, "no user data", nil)
+		return
+	}
+	err = helpers.WriteData(w, http.StatusOK, dbUser, nil)
+	if err != nil {
+		log.Println("user_handler -> HandleViewOwnProfile: ", err)
+	}
 }

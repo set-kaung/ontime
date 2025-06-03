@@ -2,6 +2,8 @@ package main
 
 import (
 	"net/http"
+
+	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
 )
 
 type RouteChainer struct {
@@ -11,13 +13,11 @@ type RouteChainer struct {
 func NewRouteChainer(initial ...func(http.Handler) http.Handler) *RouteChainer {
 	return &RouteChainer{routes: initial}
 }
-
 func (r *RouteChainer) Chain(next http.HandlerFunc) http.Handler {
 	h := http.Handler(next)
-	for i := range r.routes {
-		h = r.routes[len(r.routes)-1-i](h)
+	for i := len(r.routes) - 1; i >= 0; i-- {
+		h = r.routes[i](h)
 	}
-
 	return h
 }
 
@@ -31,16 +31,16 @@ func (r *RouteChainer) Append(appendingRoutes ...func(http.Handler) http.Handler
 func (a *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
-	chain := NewRouteChainer(a.userHandler.SessionManager.LoadAndSave, LogMiddleWare, a.userHandler.Authenticate)
+	chain := NewRouteChainer()
 
-	mux.Handle("GET /health", chain.Chain(HealthCheck))
-	mux.Handle("POST /user/signup", chain.Chain(a.userHandler.HandleSignUp))
-	mux.Handle("POST /user/login", chain.Chain(a.userHandler.HandleLogin))
+	// mux.Handle("GET /health", chain.Chain(HealthCheck))
 
-	protected := chain.Append(a.userHandler.RequireAuthentication)
+	protected := chain.Append(LogMiddleWare, clerkhttp.WithHeaderAuthorization())
 
-	// not complete yet
-	mux.Handle("GET /user/profile/self", protected.Chain(a.userHandler.ViewOwnProfile))
-	mux.Handle("POST /user/logout", protected.Chain(a.userHandler.HandleLogout))
+	mux.Handle("GET /users/me", protected.Chain(a.userHandler.HandleViewOwnProfile))
+	mux.Handle("POST /users/profile-setup", protected.Chain(a.userHandler.HandleInsertUser))
+	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
+	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))
+	mux.Handle("POST /services/create", protected.Chain(a.listingHandler.HandleCreateListing))
 	return CORS(mux)
 }

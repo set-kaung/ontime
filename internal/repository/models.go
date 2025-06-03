@@ -12,6 +12,182 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AccountStatus string
+
+const (
+	AccountStatusActive    AccountStatus = "active"
+	AccountStatusSuspended AccountStatus = "suspended"
+	AccountStatusBanned    AccountStatus = "banned"
+)
+
+func (e *AccountStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AccountStatus(s)
+	case string:
+		*e = AccountStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AccountStatus: %T", src)
+	}
+	return nil
+}
+
+type NullAccountStatus struct {
+	AccountStatus AccountStatus `json:"account_status"`
+	Valid         bool          `json:"valid"` // Valid is true if AccountStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAccountStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.AccountStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AccountStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAccountStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AccountStatus), nil
+}
+
+type ServiceActivity string
+
+const (
+	ServiceActivityActive   ServiceActivity = "active"
+	ServiceActivityInactive ServiceActivity = "inactive"
+)
+
+func (e *ServiceActivity) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ServiceActivity(s)
+	case string:
+		*e = ServiceActivity(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ServiceActivity: %T", src)
+	}
+	return nil
+}
+
+type NullServiceActivity struct {
+	ServiceActivity ServiceActivity `json:"service_activity"`
+	Valid           bool            `json:"valid"` // Valid is true if ServiceActivity is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullServiceActivity) Scan(value interface{}) error {
+	if value == nil {
+		ns.ServiceActivity, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ServiceActivity.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullServiceActivity) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ServiceActivity), nil
+}
+
+type ServiceRequestStatus string
+
+const (
+	ServiceRequestStatusPending    ServiceRequestStatus = "pending"
+	ServiceRequestStatusAccepted   ServiceRequestStatus = "accepted"
+	ServiceRequestStatusDeclined   ServiceRequestStatus = "declined"
+	ServiceRequestStatusInProgress ServiceRequestStatus = "in_progress"
+	ServiceRequestStatusCompleted  ServiceRequestStatus = "completed"
+	ServiceRequestStatusCancelled  ServiceRequestStatus = "cancelled"
+	ServiceRequestStatusExpired    ServiceRequestStatus = "expired"
+)
+
+func (e *ServiceRequestStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ServiceRequestStatus(s)
+	case string:
+		*e = ServiceRequestStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ServiceRequestStatus: %T", src)
+	}
+	return nil
+}
+
+type NullServiceRequestStatus struct {
+	ServiceRequestStatus ServiceRequestStatus `json:"service_request_status"`
+	Valid                bool                 `json:"valid"` // Valid is true if ServiceRequestStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullServiceRequestStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ServiceRequestStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ServiceRequestStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullServiceRequestStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ServiceRequestStatus), nil
+}
+
+type ServiceStatus string
+
+const (
+	ServiceStatusActive     ServiceStatus = "active"
+	ServiceStatusInProgress ServiceStatus = "in_progress"
+	ServiceStatusCompleted  ServiceStatus = "completed"
+	ServiceStatusCancelled  ServiceStatus = "cancelled"
+)
+
+func (e *ServiceStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ServiceStatus(s)
+	case string:
+		*e = ServiceStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ServiceStatus: %T", src)
+	}
+	return nil
+}
+
+type NullServiceStatus struct {
+	ServiceStatus ServiceStatus `json:"service_status"`
+	Valid         bool          `json:"valid"` // Valid is true if ServiceStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullServiceStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ServiceStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ServiceStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullServiceStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ServiceStatus), nil
+}
+
 type Status string
 
 const (
@@ -56,57 +232,48 @@ func (ns NullStatus) Value() (driver.Value, error) {
 	return string(ns.Status), nil
 }
 
-type ClientTransaction struct {
-	ClientID      int32 `json:"client_id"`
-	TransactionID int32 `json:"transaction_id"`
+type Review struct {
+	ID         int32       `json:"id"`
+	RequestID  int32       `json:"request_id"`
+	ReviewerID string      `json:"reviewer_id"`
+	RevieweeID string      `json:"reviewee_id"`
+	Rating     int32       `json:"rating"`
+	Comment    pgtype.Text `json:"comment"`
+	DateTime   time.Time   `json:"date_time"`
 }
 
-type Profile struct {
-	ID              int32       `json:"id"`
-	UserID          int32       `json:"user_id"`
-	Username        string      `json:"username"`
-	Tokens          int32       `json:"tokens"`
-	Rating          float64     `json:"rating"`
-	JoinedAt        time.Time   `json:"joined_at"`
-	ProfilePhotoUrl pgtype.Text `json:"profile_photo_url"`
-}
-
-type ProviderTransaction struct {
-	ProviderID    int32 `json:"provider_id"`
-	TransactionID int32 `json:"transaction_id"`
-}
-
-type Service struct {
+type ServiceListing struct {
 	ID          int32              `json:"id"`
-	UserID      int32              `json:"user_id"`
-	Cost        int32              `json:"cost"`
 	Title       string             `json:"title"`
 	Description string             `json:"description"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	TokenReward int32              `json:"token_reward"`
+	PostedBy    string             `json:"posted_by"`
+	PostedAt    pgtype.Timestamptz `json:"posted_at"`
+	Category    string             `json:"category"`
 }
 
-type Session struct {
-	Token  string             `json:"token"`
-	Data   []byte             `json:"data"`
-	Expiry pgtype.Timestamptz `json:"expiry"`
-}
-
-type Transaction struct {
-	ID         int32 `json:"id"`
-	ProviderID int32 `json:"provider_id"`
-	ClientID   int32 `json:"client_id"`
-	ServiceID  int32 `json:"service_id"`
-}
-
-type TransactionStatus struct {
-	ID                int32              `json:"id"`
-	TransactionID     int32              `json:"transaction_id"`
-	TransactionStatus Status             `json:"transaction_status"`
-	DateTime          pgtype.Timestamptz `json:"date_time"`
+type ServiceRequest struct {
+	ID           int32                `json:"id"`
+	ListingID    int32                `json:"listing_id"`
+	RequesterID  string               `json:"requester_id"`
+	ProviderID   string               `json:"provider_id"`
+	StatusDetail ServiceRequestStatus `json:"status_detail"`
+	DateTime     time.Time            `json:"date_time"`
+	Activity     ServiceActivity      `json:"activity"`
 }
 
 type User struct {
-	ID       int32  `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID            string        `json:"id"`
+	FirstName     string        `json:"first_name"`
+	LastName      string        `json:"last_name"`
+	Phone         string        `json:"phone"`
+	TokenBalance  int32         `json:"token_balance"`
+	Status        AccountStatus `json:"status"`
+	AddressLine1  string        `json:"address_line_1"`
+	AddressLine2  string        `json:"address_line_2"`
+	City          string        `json:"city"`
+	StateProvince string        `json:"state_province"`
+	ZipPostalCode string        `json:"zip_postal_code"`
+	Country       string        `json:"country"`
+	JoinedAt      time.Time     `json:"joined_at"`
 }
