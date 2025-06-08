@@ -243,13 +243,13 @@ type Review struct {
 }
 
 type ServiceListing struct {
-	ID          int32              `json:"id"`
-	Title       string             `json:"title"`
-	Description string             `json:"description"`
-	TokenReward int32              `json:"token_reward"`
-	PostedBy    string             `json:"posted_by"`
-	PostedAt    pgtype.Timestamptz `json:"posted_at"`
-	Category    string             `json:"category"`
+	ID          int32     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	TokenReward int32     `json:"token_reward"`
+	PostedBy    string    `json:"posted_by"`
+	PostedAt    time.Time `json:"posted_at"`
+	Category    string    `json:"category"`
 }
 
 type ServiceRequest struct {
@@ -258,8 +258,8 @@ type ServiceRequest struct {
 	RequesterID  string               `json:"requester_id"`
 	ProviderID   string               `json:"provider_id"`
 	StatusDetail ServiceRequestStatus `json:"status_detail"`
-	DateTime     time.Time            `json:"date_time"`
 	Activity     ServiceActivity      `json:"activity"`
+	DateTime     time.Time            `json:"date_time"`
 }
 
 type User struct {

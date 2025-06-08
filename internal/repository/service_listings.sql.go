@@ -7,6 +7,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -53,27 +54,43 @@ func (q *Queries) DeleteListing(ctx context.Context, arg DeleteListingParams) (p
 }
 
 const getAllListings = `-- name: GetAllListings :many
-SELECT id, title, description, token_reward, posted_by, posted_at, category FROM service_listings
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,u.id uid,u.first_name ,u.last_name FROM service_listings sl
+JOIN users u
+ON u.id = sl.posted_by
 WHERE posted_by != $1
 `
 
-func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]ServiceListing, error) {
+type GetAllListingsRow struct {
+	ID          int32     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	TokenReward int32     `json:"token_reward"`
+	PostedAt    time.Time `json:"posted_at"`
+	Category    string    `json:"category"`
+	Uid         string    `json:"uid"`
+	FirstName   string    `json:"first_name"`
+	LastName    string    `json:"last_name"`
+}
+
+func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAllListingsRow, error) {
 	rows, err := q.db.Query(ctx, getAllListings, postedBy)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ServiceListing
+	var items []GetAllListingsRow
 	for rows.Next() {
-		var i ServiceListing
+		var i GetAllListingsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
 			&i.Description,
 			&i.TokenReward,
-			&i.PostedBy,
 			&i.PostedAt,
 			&i.Category,
+			&i.Uid,
+			&i.FirstName,
+			&i.LastName,
 		); err != nil {
 			return nil, err
 		}
@@ -106,7 +123,7 @@ func (q *Queries) GetListingByID(ctx context.Context, id int32) (ServiceListing,
 }
 
 const getUserListings = `-- name: GetUserListings :many
-SELECT id, title, description, token_reward, posted_by, posted_at, category FROM service_listings 
+SELECT id, title, description, token_reward, posted_by, posted_at, category FROM service_listings
 WHERE posted_by = $1
 `
 

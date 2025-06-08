@@ -38,30 +38,22 @@ func main() {
 
 	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DBURL"))
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("error creating a pgxpool: ", err)
+		return
 	}
 	defer dbpool.Close()
 	if err := dbpool.Ping(context.Background()); err != nil {
-		log.Fatalln("Ping failed:", err)
+		log.Fatalln("ping failed:", err)
+		return
 	}
-
-	// sessionDB, err := sql.Open("postgres", os.Getenv("DBURL"))
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// defer sessionDB.Close()
-	// sessionM := scs.New()
-	// // sessionM.Store = postgresstore.New(sessionDB)
-	// sessionM.Lifetime = 12 * time.Hour
-	// sessionM.Cookie.SameSite = http.SameSiteNoneMode
-	// sessionM.Cookie.Secure = true
-	// sessionM.Cookie.Persist = true  // Persist cookies across browser restarts
-	// sessionM.Cookie.HttpOnly = true // Recommended for security
 
 	a := &application{}
 
-	a.userHandler = user.NewUserHandler(dbpool)
-	a.listingHandler = listing.NewListingHandler(dbpool)
+	psqlUserService := &user.PostgresUserService{DB: dbpool}
+	psqlListingService := &listing.PostgresListingService{DB: dbpool}
+
+	a.userHandler = &user.UserHandler{UserService: psqlUserService}
+	a.listingHandler = &listing.ListingHandler{ListingService: psqlListingService}
 
 	mux := a.routes()
 	log.Printf("starting server on port %s", *port)
