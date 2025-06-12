@@ -51,13 +51,13 @@ func (ls *PostgresListingService) CreateListing(ctx context.Context, listing Lis
 	}
 	defer tx.Rollback(ctx)
 	repo := repository.New(tx)
-	createListingParams := repository.CreateListingParams{}
+	createListingParams := repository.InsertListingParams{}
 	createListingParams.Title = listing.Title
 	createListingParams.Description = listing.Description
 	createListingParams.Category = listing.Category
 	createListingParams.TokenReward = listing.TokenReward
 	createListingParams.PostedBy = listing.User.ID
-	id, err := repo.CreateListing(ctx, createListingParams)
+	id, err := repo.InsertListing(ctx, createListingParams)
 	if err != nil {
 		log.Printf("ListingService -> CreateListing : error creating listing: %s\n", err)
 		return -1, internal.ErrInternalServerError

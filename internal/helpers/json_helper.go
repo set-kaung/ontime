@@ -45,3 +45,10 @@ func WriteSuccess(w http.ResponseWriter, status int, message string, headers htt
 	js.Status = "success"
 	return writeJSON(w, status, js, headers)
 }
+
+func WriteServerError(w http.ResponseWriter, headers http.Header) error {
+	js := jsonResponse{}
+	js.Status = "error"
+	js.Message = "internal server error"
+	return writeJSON(w, http.StatusInternalServerError, js, headers)
+}

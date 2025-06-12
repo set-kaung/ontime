@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,12 +13,14 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+	"github.com/set-kaung/senior_project_1/internal/domain/request"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 )
 
 type application struct {
 	userHandler    *user.UserHandler
 	listingHandler *listing.ListingHandler
+	requestHandler *request.RequestHandler
 }
 
 func main() {
@@ -32,10 +33,6 @@ func main() {
 
 	fmt.Printf("accepting request from %s \n", os.Getenv("REMOTE_ORIGIN"))
 
-	port := flag.String("port", ":4096", "port to run the server. default is 4096. format - \":8080\"")
-
-	flag.Parse()
-
 	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DBURL"))
 	if err != nil {
 		log.Fatalln("error creating a pgxpool: ", err)
@@ -46,18 +43,21 @@ func main() {
 		log.Fatalln("ping failed:", err)
 		return
 	}
+	port := os.Getenv("PORT")
 
 	a := &application{}
 
 	psqlUserService := &user.PostgresUserService{DB: dbpool}
 	psqlListingService := &listing.PostgresListingService{DB: dbpool}
+	psqlRequestService := &request.PostgresRequestService{DB: dbpool}
 
 	a.userHandler = &user.UserHandler{UserService: psqlUserService}
 	a.listingHandler = &listing.ListingHandler{ListingService: psqlListingService}
+	a.requestHandler = &request.RequestHandler{RequestService: psqlRequestService}
 
 	mux := a.routes()
-	log.Printf("starting server on port %s", *port)
-	if err := http.ListenAndServe(*port, mux); err != nil {
+	log.Printf("starting server on port %s", port)
+	if err := http.ListenAndServe(port, mux); err != nil {
 		log.Fatalln(err)
 	}
 }

@@ -12,33 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const createListing = `-- name: CreateListing :one
-INSERT INTO service_listings (title,"description",token_reward,posted_by,category,posted_at)
-VALUES ($1, $2, $3, $4,$5, NOW())
-RETURNING id
-`
-
-type CreateListingParams struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	TokenReward int32  `json:"token_reward"`
-	PostedBy    string `json:"posted_by"`
-	Category    string `json:"category"`
-}
-
-func (q *Queries) CreateListing(ctx context.Context, arg CreateListingParams) (int32, error) {
-	row := q.db.QueryRow(ctx, createListing,
-		arg.Title,
-		arg.Description,
-		arg.TokenReward,
-		arg.PostedBy,
-		arg.Category,
-	)
-	var id int32
-	err := row.Scan(&id)
-	return id, err
-}
-
 const deleteListing = `-- name: DeleteListing :execresult
 DELETE FROM service_listings
 WHERE id = $1 AND posted_by = $2
@@ -153,4 +126,31 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]Servi
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertListing = `-- name: InsertListing :one
+INSERT INTO service_listings (title,"description",token_reward,posted_by,category,posted_at)
+VALUES ($1, $2, $3, $4,$5, NOW())
+RETURNING id
+`
+
+type InsertListingParams struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	TokenReward int32  `json:"token_reward"`
+	PostedBy    string `json:"posted_by"`
+	Category    string `json:"category"`
+}
+
+func (q *Queries) InsertListing(ctx context.Context, arg InsertListingParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertListing,
+		arg.Title,
+		arg.Description,
+		arg.TokenReward,
+		arg.PostedBy,
+		arg.Category,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
