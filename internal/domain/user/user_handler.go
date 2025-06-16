@@ -2,6 +2,7 @@ package user
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -83,4 +84,30 @@ func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		log.Println("user_handler -> HandleViewOwnProfile: ", err)
 	}
+}
+
+func (h *UserHandler) HandleUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+	id, err := GetClerkUserID(r.Context())
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	u := User{}
+	err = decoder.Decode(&u)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	u.ID = id
+	err = h.UserService.UpdateUser(r.Context(), u)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "user data updated", nil)
 }

@@ -33,11 +33,12 @@ func (a *application) routes() http.Handler {
 
 	chain := NewRouteChainer()
 
-	// mux.Handle("GET /health", chain.Chain(HealthCheck))
+	mux.Handle("GET /health", chain.Chain(HealthCheck))
 
 	protected := chain.Append(LogMiddleWare, clerkhttp.WithHeaderAuthorization())
 
 	mux.Handle("GET /users/me", protected.Chain(a.userHandler.HandleViewOwnProfile))
+	mux.Handle("GET /users/me/update", protected.Chain(a.userHandler.HandleUpdateUserProfile))
 	mux.Handle("POST /update-profile-metadata", protected.Chain(a.userHandler.HandleInsertUser))
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))

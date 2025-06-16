@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/helpers"
@@ -34,6 +35,11 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 	serviceRequest := CreateClientServiceRequest(int32(listingID), userID)
 	id, err := rh.RequestService.CreateServiceRequest(r.Context(), serviceRequest)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			log.Println("request_handler -> HandleCreateRequest: err: ", err)
+			helpers.WriteError(w, http.StatusBadRequest, "invalid request", nil)
+			return
+		}
 		log.Println("request_handler -> HandleCreateRequest: err: ", err)
 		helpers.WriteServerError(w, nil)
 		return

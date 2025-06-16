@@ -29,9 +29,10 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		RequesterID: r.Requester.ID,
 	}
 	rid, err := repo.InsertServiceRequest(ctx, insertServiceRequestParams)
+
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to insert to db: ", err)
-		return -1, internal.ErrInternalServerError
+		return -1, err
 	}
 	err = tx.Commit(ctx)
 	if err != nil {

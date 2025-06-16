@@ -48,19 +48,26 @@ SELECT
     $1,
     $2,
     sl.posted_by,
-    'pending', 'active', NOW()
+    $3, $4, NOW()
 FROM service_listings sl
-WHERE sl.id = $1
+WHERE sl.id = $1 AND sl.posted_by != $2
 RETURNING id
 `
 
 type InsertServiceRequestParams struct {
-	ListingID   int32  `json:"listing_id"`
-	RequesterID string `json:"requester_id"`
+	ListingID    int32                `json:"listing_id"`
+	RequesterID  string               `json:"requester_id"`
+	StatusDetail ServiceRequestStatus `json:"status_detail"`
+	Activity     ServiceActivity      `json:"activity"`
 }
 
 func (q *Queries) InsertServiceRequest(ctx context.Context, arg InsertServiceRequestParams) (int32, error) {
-	row := q.db.QueryRow(ctx, insertServiceRequest, arg.ListingID, arg.RequesterID)
+	row := q.db.QueryRow(ctx, insertServiceRequest,
+		arg.ListingID,
+		arg.RequesterID,
+		arg.StatusDetail,
+		arg.Activity,
+	)
 	var id int32
 	err := row.Scan(&id)
 	return id, err

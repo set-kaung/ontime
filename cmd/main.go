@@ -44,7 +44,10 @@ func main() {
 		return
 	}
 	port := os.Getenv("PORT")
-
+	if port == "" {
+		log.Fatalln("invalid port: ", port)
+		return
+	}
 	a := &application{}
 
 	psqlUserService := &user.PostgresUserService{DB: dbpool}

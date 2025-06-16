@@ -7,6 +7,8 @@ package repository
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const getUserByID = `-- name: GetUserByID :one
@@ -74,6 +76,40 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string,
 	var id string
 	err := row.Scan(&id)
 	return id, err
+}
+
+const updateUser = `-- name: UpdateUser :execresult
+UPDATE users
+SET first_name = $1, last_name = $2, phone = $3, address_line_1 = $4, address_line_2 = $5, city = $6, state_province = $7, zip_postal_code = $8, country = $9
+WHERE id = $10
+`
+
+type UpdateUserParams struct {
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Phone         string `json:"phone"`
+	AddressLine1  string `json:"address_line_1"`
+	AddressLine2  string `json:"address_line_2"`
+	City          string `json:"city"`
+	StateProvince string `json:"state_province"`
+	ZipPostalCode string `json:"zip_postal_code"`
+	Country       string `json:"country"`
+	ID            string `json:"id"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, updateUser,
+		arg.FirstName,
+		arg.LastName,
+		arg.Phone,
+		arg.AddressLine1,
+		arg.AddressLine2,
+		arg.City,
+		arg.StateProvince,
+		arg.ZipPostalCode,
+		arg.Country,
+		arg.ID,
+	)
 }
 
 const userExists = `-- name: UserExists :one
