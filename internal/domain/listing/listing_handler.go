@@ -20,7 +20,8 @@ func (lh *ListingHandler) HandleCreateListing(w http.ResponseWriter, r *http.Req
 	listingRequest := Listing{}
 	err := decoder.Decode(&listingRequest)
 	if err != nil {
-		helpers.WriteError(w, http.StatusBadRequest, internal.ErrInternalServerError.Error(), nil)
+		log.Println(err)
+		helpers.WriteError(w, http.StatusBadRequest, "bad request", nil)
 		return
 	}
 	id, err := user.GetClerkUserID(r.Context())
