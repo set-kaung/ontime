@@ -46,8 +46,9 @@ func main() {
 	}
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatalln("invalid port: ", port)
-		return
+		log.Println("invalid port: ", port)
+		log.Println("Using default port 8080")
+		port = "8080"
 	}
 	a := &application{}
 
@@ -61,7 +62,7 @@ func main() {
 
 	mux := a.routes()
 	log.Printf("starting server on port %s", port)
-	if err := http.ListenAndServe(port, mux); err != nil {
+	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalln(err)
 	}
 }
