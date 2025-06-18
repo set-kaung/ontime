@@ -26,7 +26,8 @@ type application struct {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
+		log.Println("Using System Defaults:")
 	}
 
 	clerk.SetKey(os.Getenv("CLARKE_SECRET_KEY"))
