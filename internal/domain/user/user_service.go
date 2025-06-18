@@ -8,4 +8,5 @@ type UserService interface {
 	GetUserByID(context.Context, string) (User, error)
 	InsertUser(context.Context, User) error
 	UpdateUser(context.Context, User) error
+	DeleteUser(context.Context, string) error
 }

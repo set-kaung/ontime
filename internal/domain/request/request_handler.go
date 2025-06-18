@@ -49,10 +49,11 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 
 func (rh *RequestHandler) HandleGetAllIncomingRequest(w http.ResponseWriter, r *http.Request) {
 	userID, err := user.GetClerkUserID(r.Context())
-	if err != nil && errors.Is(err, internal.ErrUnauthorized) {
-		helpers.WriteError(w, http.StatusUnauthorized, err.Error(), nil)
-		return
-	} else if err != nil {
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
 		helpers.WriteServerError(w, nil)
 		return
 	}
@@ -64,4 +65,56 @@ func (rh *RequestHandler) HandleGetAllIncomingRequest(w http.ResponseWriter, r *
 	}
 	helpers.WriteData(w, http.StatusOK, requests, nil)
 
+}
+
+func (rh *RequestHandler) HandleAcceptServiceRequest(w http.ResponseWriter, r *http.Request) {
+	userID, err := user.GetClerkUserID(r.Context())
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	pathID := r.PathValue("id")
+	listingID, err := strconv.ParseInt(pathID, 10, 32)
+	if err != nil {
+		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
+		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
+		return
+	}
+	_, err = rh.RequestService.AcceptServiceRequest(r.Context(), int32(listingID), userID)
+	if err != nil {
+		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "accepted", nil)
+}
+
+func (rh *RequestHandler) HandleDeclineServiceRequest(w http.ResponseWriter, r *http.Request) {
+	userID, err := user.GetClerkUserID(r.Context())
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	pathID := r.PathValue("id")
+	listingID, err := strconv.ParseInt(pathID, 10, 32)
+	if err != nil {
+		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
+		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
+		return
+	}
+	_, err = rh.RequestService.DeclineServiceRequest(r.Context(), int32(listingID), userID)
+	if err != nil {
+		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "accepted", nil)
 }

@@ -11,6 +11,14 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const deleteUser = `-- name: DeleteUser :execresult
+DELETE FROM users where id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id string) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, deleteUser, id)
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, first_name, last_name, phone, token_balance, status, address_line_1, address_line_2, city, state_province, zip_postal_code, country, joined_at FROM users
 WHERE id = $1

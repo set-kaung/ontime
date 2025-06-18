@@ -39,11 +39,15 @@ func (a *application) routes() http.Handler {
 
 	mux.Handle("GET /users/me", protected.Chain(a.userHandler.HandleViewOwnProfile))
 	mux.Handle("GET /users/me/update", protected.Chain(a.userHandler.HandleUpdateUserProfile))
+	mux.Handle("DELETE /users/me/delete", protected.Chain(a.userHandler.HandleDeleteUser))
+
 	mux.Handle("POST /update-profile-metadata", protected.Chain(a.userHandler.HandleInsertUser))
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))
 	mux.Handle("POST /services/create", protected.Chain(a.listingHandler.HandleCreateListing))
 	mux.Handle("POST /requests/create/{id}", protected.Chain(a.requestHandler.HandleCreateRequest))
+	mux.Handle("POST /requests/accept/{id}", protected.Chain(a.requestHandler.HandleAcceptServiceRequest))
+	mux.Handle("POST /requests/decline/{id}", protected.Chain(a.requestHandler.HandleAcceptServiceRequest))
 	mux.Handle("GET /requests/incoming", protected.Chain(a.requestHandler.HandleGetAllIncomingRequest))
 	return CORS(mux)
 }

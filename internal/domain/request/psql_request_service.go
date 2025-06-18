@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
@@ -17,18 +16,18 @@ type PostgresRequestService struct {
 }
 
 func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r Request) (int32, error) {
-	tx, err := prs.DB.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := prs.DB.Begin(ctx)
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to create db transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
 	repo := repository.New(tx)
-	insertServiceRequestParams := repository.InsertServiceRequestParams{
+	insertServiceRequestParams := repository.InsertPendingServiceRequestParams{
 		ListingID:   r.Listing.ID,
 		RequesterID: r.Requester.ID,
 	}
-	rid, err := repo.InsertServiceRequest(ctx, insertServiceRequestParams)
+	rid, err := repo.InsertPendingServiceRequest(ctx, insertServiceRequestParams)
 
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to insert to db: ", err)
@@ -63,4 +62,77 @@ func (prs *PostgresRequestService) GetAllIncomingRequests(ctx context.Context, p
 		}
 	}
 	return requests, nil
+}
+
+// return unauthorized err if providerID is not equal to the one in DB
+// else internal server error
+func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, listingID int32, providerID string) (int32, error) {
+	repo := repository.New(prs.DB)
+
+	repoRequest, err := repo.GetRequestByID(ctx, listingID)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	if repoRequest.ProviderID != providerID && repoRequest.Activity != "active" {
+		return -1, internal.ErrUnauthorized
+	}
+
+	tx, err := prs.DB.Begin(ctx)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	acceptServiceParams := repository.InsertServiceRequestParams{
+		ListingID:    listingID,
+		RequesterID:  repoRequest.RequesterID,
+		ProviderID:   providerID,
+		StatusDetail: "accepted",
+		Activity:     "active",
+	}
+	repo = repository.New(tx)
+	id, err := repo.InsertServiceRequest(ctx, acceptServiceParams)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	return id, nil
+}
+
+func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, listingID int32, providerID string) (int32, error) {
+	repo := repository.New(prs.DB)
+
+	repoRequest, err := repo.GetRequestByID(ctx, listingID)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	if repoRequest.ProviderID != providerID && repoRequest.Activity != "active" {
+		return -1, internal.ErrUnauthorized
+	}
+
+	tx, err := prs.DB.Begin(ctx)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	acceptServiceParams := repository.InsertServiceRequestParams{
+		ListingID:    listingID,
+		RequesterID:  repoRequest.RequesterID,
+		ProviderID:   providerID,
+		StatusDetail: "declined",
+		Activity:     "inactive",
+	}
+	repo = repository.New(tx)
+	id, err := repo.InsertServiceRequest(ctx, acceptServiceParams)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	return id, nil
+
 }

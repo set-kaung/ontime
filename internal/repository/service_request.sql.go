@@ -42,21 +42,60 @@ func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID 
 	return items, nil
 }
 
-const insertServiceRequest = `-- name: InsertServiceRequest :one
+const getRequestByID = `-- name: GetRequestByID :one
+SELECT id, listing_id, requester_id, provider_id, status_detail, activity, date_time FROM service_requests
+WHERE id = $1
+`
+
+func (q *Queries) GetRequestByID(ctx context.Context, id int32) (ServiceRequest, error) {
+	row := q.db.QueryRow(ctx, getRequestByID, id)
+	var i ServiceRequest
+	err := row.Scan(
+		&i.ID,
+		&i.ListingID,
+		&i.RequesterID,
+		&i.ProviderID,
+		&i.StatusDetail,
+		&i.Activity,
+		&i.DateTime,
+	)
+	return i, err
+}
+
+const insertPendingServiceRequest = `-- name: InsertPendingServiceRequest :one
 INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,date_time)
 SELECT
     $1,
     $2,
     sl.posted_by,
-    $3, $4, NOW()
+    'pending', 'active', NOW()
 FROM service_listings sl
 WHERE sl.id = $1 AND sl.posted_by != $2
+RETURNING id
+`
+
+type InsertPendingServiceRequestParams struct {
+	ListingID   int32  `json:"listing_id"`
+	RequesterID string `json:"requester_id"`
+}
+
+func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPendingServiceRequestParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertPendingServiceRequest, arg.ListingID, arg.RequesterID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertServiceRequest = `-- name: InsertServiceRequest :one
+INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,date_time)
+VALUES ($1,$2,$3,$4,$5,NOW())
 RETURNING id
 `
 
 type InsertServiceRequestParams struct {
 	ListingID    int32                `json:"listing_id"`
 	RequesterID  string               `json:"requester_id"`
+	ProviderID   string               `json:"provider_id"`
 	StatusDetail ServiceRequestStatus `json:"status_detail"`
 	Activity     ServiceActivity      `json:"activity"`
 }
@@ -65,6 +104,7 @@ func (q *Queries) InsertServiceRequest(ctx context.Context, arg InsertServiceReq
 	row := q.db.QueryRow(ctx, insertServiceRequest,
 		arg.ListingID,
 		arg.RequesterID,
+		arg.ProviderID,
 		arg.StatusDetail,
 		arg.Activity,
 	)

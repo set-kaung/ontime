@@ -3,6 +3,7 @@ package user
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -46,7 +47,6 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 	dbUser.Status = "active"
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {
-		log.Println("user_handler -> HandleInsertUser: ", err)
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
@@ -110,4 +110,29 @@ func (h *UserHandler) HandleUpdateUserProfile(w http.ResponseWriter, r *http.Req
 		return
 	}
 	helpers.WriteSuccess(w, http.StatusOK, "user data updated", nil)
+}
+
+func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	id, err := GetClerkUserID(r.Context())
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	deletedResource, err := user.Delete(r.Context(), id)
+	if err != nil {
+		log.Printf("UserHandler -> HandleDeleteUser: error deleting clerk user: %v", err)
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	fmt.Printf("User with ID %s deleted successfully. Deleted resource ID: %s\n", id, deletedResource.ID)
+	err = uh.UserService.DeleteUser(r.Context(), id)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
@@ -15,8 +16,8 @@ type PostgresUserService struct {
 	DB *pgxpool.Pool
 }
 
-func (us *PostgresUserService) GetUserByID(ctx context.Context, id string) (User, error) {
-	repo := repository.New(us.DB)
+func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (User, error) {
+	repo := repository.New(pus.DB)
 	repoUser, err := repo.GetUserByID(ctx, id)
 
 	user := User{}
@@ -37,8 +38,8 @@ func (us *PostgresUserService) GetUserByID(ctx context.Context, id string) (User
 	return user, err
 }
 
-func (us *PostgresUserService) InsertUser(ctx context.Context, user User) error {
-	tx, err := us.DB.Begin(ctx)
+func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error {
+	tx, err := pus.DB.Begin(ctx)
 	if err != nil {
 		log.Printf("failed to begin tx: %s\n", err)
 		return internal.ErrInternalServerError
@@ -89,8 +90,8 @@ func (us *PostgresUserService) InsertUser(ctx context.Context, user User) error 
 	return nil
 }
 
-func (us *PostgresUserService) UpdateUser(ctx context.Context, user User) error {
-	tx, err := us.DB.Begin(ctx)
+func (pus *PostgresUserService) UpdateUser(ctx context.Context, user User) error {
+	tx, err := pus.DB.Begin(ctx)
 	if err != nil {
 		log.Printf("failed to begin tx: %s\n", err)
 		return internal.ErrInternalServerError
@@ -118,6 +119,32 @@ func (us *PostgresUserService) UpdateUser(ctx context.Context, user User) error 
 	err = tx.Commit(ctx)
 	if err != nil {
 		log.Printf("UserService -> InsertUser: error commiting transaction: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
+}
+
+func (us *PostgresUserService) DeleteUser(ctx context.Context, id string) error {
+	tx, err := us.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("failed to begin tx: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+			log.Printf("failed to rollback tx: %s\n", err)
+		}
+	}()
+
+	repo := repository.New(tx)
+	_, err = repo.DeleteUser(ctx, id)
+	if err != nil {
+		log.Printf("UserService -> DeleteUser: error: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		log.Printf("UserService -> DeleteUser: error commiting transaction: %s\n", err)
 		return internal.ErrInternalServerError
 	}
 	return nil

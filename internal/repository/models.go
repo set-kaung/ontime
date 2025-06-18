@@ -100,13 +100,9 @@ func (ns NullServiceActivity) Value() (driver.Value, error) {
 type ServiceRequestStatus string
 
 const (
-	ServiceRequestStatusPending    ServiceRequestStatus = "pending"
-	ServiceRequestStatusAccepted   ServiceRequestStatus = "accepted"
-	ServiceRequestStatusDeclined   ServiceRequestStatus = "declined"
-	ServiceRequestStatusInProgress ServiceRequestStatus = "in_progress"
-	ServiceRequestStatusCompleted  ServiceRequestStatus = "completed"
-	ServiceRequestStatusCancelled  ServiceRequestStatus = "cancelled"
-	ServiceRequestStatusExpired    ServiceRequestStatus = "expired"
+	ServiceRequestStatusPending  ServiceRequestStatus = "pending"
+	ServiceRequestStatusDeclined ServiceRequestStatus = "declined"
+	ServiceRequestStatusAccepted ServiceRequestStatus = "accepted"
 )
 
 func (e *ServiceRequestStatus) Scan(src interface{}) error {
