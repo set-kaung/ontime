@@ -10,3 +10,4 @@ query/
 *doc*
 dump_cmd.txt
 .DS_Store
+jwts.*
