@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -61,6 +62,7 @@ func main() {
 	a.requestHandler = &request.RequestHandler{RequestService: psqlRequestService}
 
 	mux := a.routes()
+
 	log.Printf("starting server on port %s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalln(err)

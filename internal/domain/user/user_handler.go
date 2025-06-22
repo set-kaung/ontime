@@ -71,6 +71,7 @@ func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Reques
 
 	id, err := GetClerkUserID(r.Context())
 	if err != nil {
+		log.Println(err)
 		helpers.WriteError(w, http.StatusUnauthorized, err.Error(), nil)
 		return
 	}
