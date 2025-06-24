@@ -27,7 +27,7 @@ func (q *Queries) DeleteListing(ctx context.Context, arg DeleteListingParams) (p
 }
 
 const getAllListings = `-- name: GetAllListings :many
-SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,u.id uid,u.first_name ,u.last_name FROM service_listings sl
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,u.id uid,u.full_name FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
 WHERE posted_by != $1
@@ -41,8 +41,7 @@ type GetAllListingsRow struct {
 	PostedAt    time.Time `json:"posted_at"`
 	Category    string    `json:"category"`
 	Uid         string    `json:"uid"`
-	FirstName   string    `json:"first_name"`
-	LastName    string    `json:"last_name"`
+	FullName    string    `json:"full_name"`
 }
 
 func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAllListingsRow, error) {
@@ -62,8 +61,7 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 			&i.PostedAt,
 			&i.Category,
 			&i.Uid,
-			&i.FirstName,
-			&i.LastName,
+			&i.FullName,
 		); err != nil {
 			return nil, err
 		}

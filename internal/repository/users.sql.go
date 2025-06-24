@@ -7,6 +7,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -35,7 +36,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) (pgconn.CommandTag,
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, first_name, last_name, phone, token_balance, status, address_line_1, address_line_2, city, state_province, zip_postal_code, country, joined_at FROM users
+SELECT id, phone, token_balance, status, address_line_1, address_line_2, city, state_province, zip_postal_code, country, joined_at, email, full_name FROM users
 WHERE id = $1
 `
 
@@ -44,8 +45,6 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.FirstName,
-		&i.LastName,
 		&i.Phone,
 		&i.TokenBalance,
 		&i.Status,
@@ -56,6 +55,8 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.ZipPostalCode,
 		&i.Country,
 		&i.JoinedAt,
+		&i.Email,
+		&i.FullName,
 	)
 	return i, err
 }
@@ -73,15 +74,14 @@ func (q *Queries) GetUserTokenBalance(ctx context.Context, id string) (int32, er
 }
 
 const insertUser = `-- name: InsertUser :one
-INSERT INTO users (id,first_name,last_name,phone,token_balance,status,address_line_1,address_line_2,city,state_province,zip_postal_code,country,joined_at)
+INSERT INTO users (id,full_name,phone,token_balance,status,address_line_1,address_line_2,city,state_province,zip_postal_code,country,joined_at,email)
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
 RETURNING id
 `
 
 type InsertUserParams struct {
 	ID            string        `json:"id"`
-	FirstName     string        `json:"first_name"`
-	LastName      string        `json:"last_name"`
+	FullName      string        `json:"full_name"`
 	Phone         string        `json:"phone"`
 	TokenBalance  int32         `json:"token_balance"`
 	Status        AccountStatus `json:"status"`
@@ -91,13 +91,13 @@ type InsertUserParams struct {
 	StateProvince string        `json:"state_province"`
 	ZipPostalCode string        `json:"zip_postal_code"`
 	Country       string        `json:"country"`
+	JoinedAt      time.Time     `json:"joined_at"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string, error) {
 	row := q.db.QueryRow(ctx, insertUser,
 		arg.ID,
-		arg.FirstName,
-		arg.LastName,
+		arg.FullName,
 		arg.Phone,
 		arg.TokenBalance,
 		arg.Status,
@@ -107,6 +107,7 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string,
 		arg.StateProvince,
 		arg.ZipPostalCode,
 		arg.Country,
+		arg.JoinedAt,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -115,13 +116,12 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string,
 
 const updateUser = `-- name: UpdateUser :execresult
 UPDATE users
-SET first_name = $1, last_name = $2, phone = $3, address_line_1 = $4, address_line_2 = $5, city = $6, state_province = $7, zip_postal_code = $8, country = $9
-WHERE id = $10
+SET full_name = $1, phone = $2, address_line_1 = $3, address_line_2 = $4, city = $5, state_province = $6, zip_postal_code = $7, country = $8
+WHERE id = $9
 `
 
 type UpdateUserParams struct {
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
+	FullName      string `json:"full_name"`
 	Phone         string `json:"phone"`
 	AddressLine1  string `json:"address_line_1"`
 	AddressLine2  string `json:"address_line_2"`
@@ -134,8 +134,7 @@ type UpdateUserParams struct {
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (pgconn.CommandTag, error) {
 	return q.db.Exec(ctx, updateUser,
-		arg.FirstName,
-		arg.LastName,
+		arg.FullName,
 		arg.Phone,
 		arg.AddressLine1,
 		arg.AddressLine2,

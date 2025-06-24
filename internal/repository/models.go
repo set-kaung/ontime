@@ -100,9 +100,13 @@ func (ns NullServiceActivity) Value() (driver.Value, error) {
 type ServiceRequestStatus string
 
 const (
-	ServiceRequestStatusPending  ServiceRequestStatus = "pending"
-	ServiceRequestStatusDeclined ServiceRequestStatus = "declined"
-	ServiceRequestStatusAccepted ServiceRequestStatus = "accepted"
+	ServiceRequestStatusPending    ServiceRequestStatus = "pending"
+	ServiceRequestStatusAccepted   ServiceRequestStatus = "accepted"
+	ServiceRequestStatusDeclined   ServiceRequestStatus = "declined"
+	ServiceRequestStatusInProgress ServiceRequestStatus = "in_progress"
+	ServiceRequestStatusCompleted  ServiceRequestStatus = "completed"
+	ServiceRequestStatusCancelled  ServiceRequestStatus = "cancelled"
+	ServiceRequestStatusExpired    ServiceRequestStatus = "expired"
 )
 
 func (e *ServiceRequestStatus) Scan(src interface{}) error {
@@ -228,6 +232,12 @@ func (ns NullStatus) Value() (driver.Value, error) {
 	return string(ns.Status), nil
 }
 
+type AdsWatchingHistory struct {
+	ID       int32     `json:"id"`
+	UserID   string    `json:"user_id"`
+	DateTime time.Time `json:"date_time"`
+}
+
 type Review struct {
 	ID         int32       `json:"id"`
 	RequestID  int32       `json:"request_id"`
@@ -236,6 +246,14 @@ type Review struct {
 	Rating     int32       `json:"rating"`
 	Comment    pgtype.Text `json:"comment"`
 	DateTime   time.Time   `json:"date_time"`
+}
+
+type Reward struct {
+	ID              int32  `json:"id"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	Cost            int32  `json:"cost"`
+	AvailableAmount int32  `json:"available_amount"`
 }
 
 type ServiceListing struct {
@@ -260,8 +278,6 @@ type ServiceRequest struct {
 
 type User struct {
 	ID            string        `json:"id"`
-	FirstName     string        `json:"first_name"`
-	LastName      string        `json:"last_name"`
 	Phone         string        `json:"phone"`
 	TokenBalance  int32         `json:"token_balance"`
 	Status        AccountStatus `json:"status"`
@@ -272,4 +288,6 @@ type User struct {
 	ZipPostalCode string        `json:"zip_postal_code"`
 	Country       string        `json:"country"`
 	JoinedAt      time.Time     `json:"joined_at"`
+	Email         bool          `json:"email"`
+	FullName      string        `json:"full_name"`
 }

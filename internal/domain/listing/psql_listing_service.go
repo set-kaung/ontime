@@ -34,9 +34,8 @@ func (ls *PostgresListingService) GetAllListings(ctx context.Context, postedBy s
 			PostedAt:    dbListing.PostedAt,
 			Category:    dbListing.Category,
 			User: user.User{
-				ID:        dbListing.Uid,
-				FirstName: dbListing.FirstName,
-				LastName:  dbListing.LastName,
+				ID:       dbListing.Uid,
+				FullName: dbListing.FullName,
 			},
 		}
 	}

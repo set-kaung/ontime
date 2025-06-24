@@ -23,11 +23,11 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 		log.Println("failed to session claims")
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 	}
-	clerkUser, err := user.Get(r.Context(), claims.Subject)
-	if err != nil {
-		log.Println("authenticate -> GetClerkUserID: ", err)
+	// clerkUser, err := user.Get(r.Context(), claims.Subject)
+	// if err != nil {
+	// 	log.Println("authenticate -> GetClerkUserID: ", err)
 
-	}
+	// }
 	id, err := GetClerkUserID(r.Context())
 	if err != nil {
 		helpers.WriteError(w, http.StatusInternalServerError, err.Error(), nil)
@@ -42,8 +42,6 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	dbUser.ID = id
-	dbUser.FirstName = *clerkUser.FirstName
-	dbUser.LastName = *clerkUser.LastName
 	dbUser.Status = "active"
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {

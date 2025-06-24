@@ -22,9 +22,7 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 
 	user := User{}
 	user.ID = repoUser.ID
-	user.FirstName = repoUser.FirstName
-	user.LastName = repoUser.LastName
-	user.Phone = repoUser.Phone
+	user.FullName = repoUser.FullName
 	user.TokenBalance = repoUser.TokenBalance
 	user.Status = string(repoUser.Status)
 	user.AddressLine1 = repoUser.AddressLine1
@@ -34,6 +32,7 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.ZipPostalCode = repoUser.ZipPostalCode
 	user.Country = repoUser.Country
 	user.JoinedAt = repoUser.JoinedAt
+	user.Email = repoUser.Email
 
 	return user, err
 }
@@ -48,8 +47,7 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 
 	insertUserParams := repository.InsertUserParams{
 		ID:            user.ID,
-		FirstName:     user.FirstName,
-		LastName:      user.LastName,
+		FullName:      user.FullName,
 		Phone:         user.Phone,
 		TokenBalance:  user.TokenBalance,
 		AddressLine1:  user.AddressLine1,
@@ -99,8 +97,7 @@ func (pus *PostgresUserService) UpdateUser(ctx context.Context, user User) error
 	defer tx.Rollback(ctx)
 
 	updateUserParams := repository.UpdateUserParams{
-		FirstName:     user.FirstName,
-		LastName:      user.LastName,
+		FullName:      user.FullName,
 		Phone:         user.Phone,
 		AddressLine1:  user.AddressLine1,
 		AddressLine2:  user.AddressLine2,

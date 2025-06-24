@@ -4,8 +4,7 @@ import "time"
 
 type User struct {
 	ID            string    `json:"id"`
-	FirstName     string    `json:"first_name,omitempty"`
-	LastName      string    `json:"last_name,omitempty"`
+	FullName      string    `json:"full_name,omitempty"`
 	Phone         string    `json:"phone,omitempty"`
 	TokenBalance  int32     `json:"token_balance,omitempty"`
 	Status        string    `json:"status,omitempty"`
@@ -16,4 +15,5 @@ type User struct {
 	ZipPostalCode string    `json:"zip_postal_code,omitempty"`
 	Country       string    `json:"country,omitempty"`
 	JoinedAt      time.Time `json:"joined_at,omitzero"`
+	Email         bool      `json:"email"`
 }
