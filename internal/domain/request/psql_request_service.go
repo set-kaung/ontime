@@ -22,7 +22,13 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		return -1, internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
+
 	repo := repository.New(tx)
+	userTokens, err := repo.GetUserTokenBalance(ctx, r.Requester.ID)
+	if userTokens < r.Listing.TokenReward {
+		return -1, internal.ErrInsufficientBalance
+	}
+
 	insertServiceRequestParams := repository.InsertPendingServiceRequestParams{
 		ListingID:   r.Listing.ID,
 		RequesterID: r.Requester.ID,

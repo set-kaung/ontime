@@ -11,6 +11,21 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const deductToken = `-- name: DeductToken :execresult
+UPDATE users
+SET token_balance = $1
+WHERE id = $2
+`
+
+type DeductTokenParams struct {
+	TokenBalance int32  `json:"token_balance"`
+	ID           string `json:"id"`
+}
+
+func (q *Queries) DeductToken(ctx context.Context, arg DeductTokenParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, deductToken, arg.TokenBalance, arg.ID)
+}
+
 const deleteUser = `-- name: DeleteUser :execresult
 DELETE FROM users where id = $1
 `
@@ -43,6 +58,18 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.JoinedAt,
 	)
 	return i, err
+}
+
+const getUserTokenBalance = `-- name: GetUserTokenBalance :one
+SELECT token_balance FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserTokenBalance(ctx context.Context, id string) (int32, error) {
+	row := q.db.QueryRow(ctx, getUserTokenBalance, id)
+	var token_balance int32
+	err := row.Scan(&token_balance)
+	return token_balance, err
 }
 
 const insertUser = `-- name: InsertUser :one
@@ -118,17 +145,4 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (pgconn.
 		arg.Country,
 		arg.ID,
 	)
-}
-
-const userExists = `-- name: UserExists :one
-SELECT EXISTS (
-  SELECT 1 FROM users WHERE id = $1
-)
-`
-
-func (q *Queries) UserExists(ctx context.Context, id string) (bool, error) {
-	row := q.db.QueryRow(ctx, userExists, id)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
 }

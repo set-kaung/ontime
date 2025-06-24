@@ -40,6 +40,9 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 			helpers.WriteError(w, http.StatusBadRequest, "invalid request", nil)
 			return
 		}
+		if errors.Is(err, internal.ErrInsufficientBalance) {
+			helpers.WriteError(w, http.StatusBadRequest, "insufficient balance", nil)
+		}
 		log.Println("request_handler -> HandleCreateRequest: err: ", err)
 		helpers.WriteServerError(w, nil)
 		return

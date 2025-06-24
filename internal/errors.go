@@ -9,6 +9,6 @@ var (
 	ErrNoRecord            = errors.New("no matching record found")
 	ErrDuplicateID         = errors.New("user with ID already exist")
 	ErrInternalServerError = errors.New("internal server error")
-
-	ErrUnauthorized = errors.New("unauthorized")
+	ErrInsufficientBalance = errors.New("not enough tokens")
+	ErrUnauthorized        = errors.New("unauthorized")
 )
