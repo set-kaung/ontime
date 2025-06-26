@@ -23,11 +23,7 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 		log.Println("failed to session claims")
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 	}
-	// clerkUser, err := user.Get(r.Context(), claims.Subject)
-	// if err != nil {
-	// 	log.Println("authenticate -> GetClerkUserID: ", err)
 
-	// }
 	id, err := GetClerkUserID(r.Context())
 	if err != nil {
 		helpers.WriteError(w, http.StatusInternalServerError, err.Error(), nil)

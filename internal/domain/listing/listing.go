@@ -13,5 +13,6 @@ type Listing struct {
 	TokenReward int32     `json:"token_reward"`
 	PostedAt    time.Time `json:"posted_at"`
 	Category    string    `json:"category"`
-	user.User
+	ImageURL    string    `json:"image_url"`
+	Provider    user.User `json:"provider"`
 }

@@ -30,7 +30,7 @@ func (lh *ListingHandler) HandleCreateListing(w http.ResponseWriter, r *http.Req
 		helpers.WriteError(w, http.StatusInternalServerError, "user not found", nil)
 		return
 	}
-	listingRequest.User.ID = id
+	listingRequest.Provider = user.User{ID: id}
 	_, err = lh.ListingService.CreateListing(r.Context(), listingRequest)
 	if err != nil {
 		log.Println("user_handler -> HandleViewOwnProfile: ", err)

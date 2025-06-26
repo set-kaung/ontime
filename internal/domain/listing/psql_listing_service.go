@@ -33,7 +33,7 @@ func (ls *PostgresListingService) GetAllListings(ctx context.Context, postedBy s
 			TokenReward: dbListing.TokenReward,
 			PostedAt:    dbListing.PostedAt,
 			Category:    dbListing.Category,
-			User: user.User{
+			Provider: user.User{
 				ID:       dbListing.Uid,
 				FullName: dbListing.FullName,
 			},
@@ -55,7 +55,7 @@ func (ls *PostgresListingService) CreateListing(ctx context.Context, listing Lis
 	createListingParams.Description = listing.Description
 	createListingParams.Category = listing.Category
 	createListingParams.TokenReward = listing.TokenReward
-	createListingParams.PostedBy = listing.User.ID
+	createListingParams.PostedBy = listing.Provider.ID
 	id, err := repo.InsertListing(ctx, createListingParams)
 	if err != nil {
 		log.Printf("ListingService -> CreateListing : error creating listing: %s\n", err)
