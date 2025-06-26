@@ -74,21 +74,35 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 }
 
 const getListingByID = `-- name: GetListingByID :one
-SELECT id, title, description, token_reward, posted_by, posted_at, category FROM service_listings
-WHERE id = $1
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,u.id uid,u.full_name FROM service_listings sl
+JOIN users u
+on u.id = sl.posted_by
+WHERE sl.id = $1
 `
 
-func (q *Queries) GetListingByID(ctx context.Context, id int32) (ServiceListing, error) {
+type GetListingByIDRow struct {
+	ID          int32     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	TokenReward int32     `json:"token_reward"`
+	PostedAt    time.Time `json:"posted_at"`
+	Category    string    `json:"category"`
+	Uid         string    `json:"uid"`
+	FullName    string    `json:"full_name"`
+}
+
+func (q *Queries) GetListingByID(ctx context.Context, id int32) (GetListingByIDRow, error) {
 	row := q.db.QueryRow(ctx, getListingByID, id)
-	var i ServiceListing
+	var i GetListingByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Title,
 		&i.Description,
 		&i.TokenReward,
-		&i.PostedBy,
 		&i.PostedAt,
 		&i.Category,
+		&i.Uid,
+		&i.FullName,
 	)
 	return i, err
 }

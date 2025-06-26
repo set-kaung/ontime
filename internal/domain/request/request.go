@@ -8,13 +8,13 @@ import (
 )
 
 type Request struct {
-	ID              int32
-	listing.Listing `json:"listing"`
-	Requester       user.User `json:"requester"`
-	Provider        user.User `json:"provider"`
-	Activity        string    `json:"activity"`
-	StatusDetail    string    `json:"status_detail"`
-	DateTime        time.Time `json:"date_time"`
+	ID           int32
+	Listing      listing.Listing `json:"listing"`
+	Requester    user.User       `json:"requester"`
+	Provider     user.User       `json:"provider"`
+	Activity     string          `json:"activity"`
+	StatusDetail string          `json:"status_detail"`
+	DateTime     time.Time       `json:"date_time"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {

@@ -106,6 +106,7 @@ func (ls *PostgresListingService) GetListingByID(ctx context.Context, id int32) 
 	listing.Category = dbListing.Category
 	listing.TokenReward = dbListing.TokenReward
 	listing.PostedAt = dbListing.PostedAt
+	listing.Provider = user.User{ID: dbListing.Uid, FullName: dbListing.FullName}
 	return listing, nil
 }
 
