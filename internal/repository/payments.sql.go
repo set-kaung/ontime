@@ -54,14 +54,14 @@ func (q *Queries) InsertPaymentHolding(ctx context.Context, arg InsertPaymentHol
 const updatePaymentHolding = `-- name: UpdatePaymentHolding :execresult
 UPDATE payments
 SET status = $1 AND updated_at = NOW()
-WHERE id = $2
+WHERE service_request_id = $2
 `
 
 type UpdatePaymentHoldingParams struct {
-	Status PaymentStatus `json:"status"`
-	ID     int32         `json:"id"`
+	Status           PaymentStatus `json:"status"`
+	ServiceRequestID int32         `json:"service_request_id"`
 }
 
 func (q *Queries) UpdatePaymentHolding(ctx context.Context, arg UpdatePaymentHoldingParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, updatePaymentHolding, arg.Status, arg.ID)
+	return q.db.Exec(ctx, updatePaymentHolding, arg.Status, arg.ServiceRequestID)
 }

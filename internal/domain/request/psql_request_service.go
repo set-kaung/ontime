@@ -36,6 +36,11 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		return -1, err
 	}
 
+	err = repo.InsertServiceRequestCompletion(ctx, rid)
+	if err != nil {
+		log.Println("CreateServiceRequest: failed to insert service request completion to db: ", err)
+		return -1, err
+	}
 	result, err := repo.DeductTokens(ctx, repository.DeductTokensParams{
 		TokenBalance: r.Listing.TokenReward,
 		ID:           r.Requester.ID,
@@ -58,9 +63,8 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to insert payment holding to db: ", err)
 		return -1, err
 	}
-	err = tx.Commit(ctx)
-	if err != nil {
-		log.Println("CreateServiceRequest: failed to commit to db: ", err)
+	if err := tx.Commit(ctx); err != nil {
+		log.Println("CreateServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
 	return rid, nil
@@ -122,14 +126,17 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		log.Println("AcceptServiceRequest: failed to commit transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
 	return id, nil
 }
 
 func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, requestID int32, providerID string) (int32, error) {
 	repo := repository.New(prs.DB)
 
-	// make sure the declien request came from the provider and that the request is active
+	// make sure the declien came from the provider and that the request is active
 	repoRequest, err := repo.GetRequestByID(ctx, requestID)
 	if err != nil {
 		log.Println("DeclineServiceRequest: failed to get request from db: ", err)
@@ -146,7 +153,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 	}
 	defer tx.Rollback(ctx)
 	repo = repository.New(tx)
-	id, err := repo.UpdateServiceRequest(ctx, repository.UpdateServiceRequestParams{
+	rID, err := repo.UpdateServiceRequest(ctx, repository.UpdateServiceRequestParams{
 		ID:           requestID,
 		StatusDetail: "declined",
 		Activity:     "inactive",
@@ -155,7 +162,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		log.Println("DeclineServiceRequest: failed to update service request: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	paymenetHolding, err := repo.GetPaymentHolding(ctx, repository.GetPaymentHoldingParams{
+	paymentHolding, err := repo.GetPaymentHolding(ctx, repository.GetPaymentHoldingParams{
 		ServiceRequestID: repoRequest.ID,
 		PayerID:          repoRequest.RequesterID,
 	})
@@ -165,7 +172,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 	}
 
 	err = repo.AddTokens(ctx, repository.AddTokensParams{
-		TokenBalance: paymenetHolding.AmountTokens,
+		TokenBalance: paymentHolding.AmountTokens,
 		ID:           repoRequest.RequesterID,
 	})
 
@@ -173,15 +180,94 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		log.Println("DeclineServiceRequest: failed to add user tokens: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+	_, err = repo.UpdatePaymentHolding(ctx, repository.UpdatePaymentHoldingParams{
+		Status:           "refunded",
+		ServiceRequestID: rID,
+	})
+
+	if err != nil {
+		log.Println("DeclineServiceRequest: failed to update payment holding: ", err)
+		return -1, internal.ErrInternalServerError
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("DeclineServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	return id, nil
+
+	return rID, nil
 
 }
 
-func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, requestID int32) (int32, error) {
-	return -1, nil
+func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, requestID int32, userID string) (int32, error) {
+	rid := int32(-1)
+	repo := repository.New(prs.DB)
+	tx, err := prs.DB.Begin(ctx)
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to create db transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	request, err := repo.GetRequestByID(ctx, requestID)
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to get request from db: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	if request.ProviderID != userID && request.RequesterID == userID {
+		return -1, internal.ErrUnauthorized
+	}
+
+	requestCompletion, err := repo.GetServiceRequestCompletion(ctx, requestID)
+	if !requestCompletion.IsActive {
+		return -1, internal.ErrUnauthorized
+	}
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	requesterComplete := requestCompletion.RequesterCompletion || (userID == request.RequesterID)
+	providerComplete := requestCompletion.ProviderCompletion || (userID == request.ProviderID)
+	err = repo.UpdateServiceRequestCompletion(ctx, repository.UpdateServiceRequestCompletionParams{
+		RequesterCompletion: requesterComplete,
+		ProviderCompletion:  providerComplete,
+		IsActive:            !(requesterComplete && providerComplete),
+	})
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	if requesterComplete && providerComplete {
+		paymentHolding, err := repo.GetPaymentHolding(ctx, repository.GetPaymentHoldingParams{
+			ServiceRequestID: request.ID,
+			PayerID:          request.RequesterID,
+		})
+		if err != nil {
+			log.Println("CompleteServiceRequest: failed to get payment holding: ", err)
+			return -1, internal.ErrInternalServerError
+		}
+		err = repo.AddTokens(ctx, repository.AddTokensParams{
+			TokenBalance: paymentHolding.AmountTokens,
+			ID:           request.RequesterID,
+		})
+		if err != nil {
+			log.Println("CompleteServiceRequest: failed to get add user tokens: ", err)
+			return -1, internal.ErrInternalServerError
+		}
+
+		_, err = repo.UpdatePaymentHolding(ctx, repository.UpdatePaymentHoldingParams{
+			Status:           "released",
+			ServiceRequestID: requestID,
+		})
+
+		rid, err = repo.UpdateServiceRequest(ctx, repository.UpdateServiceRequestParams{
+			StatusDetail: "completed",
+			Activity:     "inactive",
+			ID:           requestID,
+		})
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Println("CompleteServiceRequest: failed to commit transaction: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	return rid, nil
 }

@@ -49,6 +49,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /requests/create/{id}", protected.Chain(a.requestHandler.HandleCreateRequest))
 	mux.Handle("POST /requests/accept/{id}", protected.Chain(a.requestHandler.HandleAcceptServiceRequest))
 	mux.Handle("POST /requests/decline/{id}", protected.Chain(a.requestHandler.HandleAcceptServiceRequest))
+	mux.Handle("POST /requests/complete/{id}", protected.Chain(a.requestHandler.HandleCompleteServiceRequest))
 	mux.Handle("GET /requests/incoming", protected.Chain(a.requestHandler.HandleGetAllIncomingRequest))
 
 	return CORS(mux)

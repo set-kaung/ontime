@@ -7,6 +7,7 @@ package repository
 
 import (
 	"context"
+	"time"
 )
 
 const getAllIncomingServiceRequests = `-- name: GetAllIncomingServiceRequests :many
@@ -44,13 +45,32 @@ func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID 
 }
 
 const getRequestByID = `-- name: GetRequestByID :one
-SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at FROM service_requests
-WHERE id = $1
+SELECT sr.id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at, sl.id, title, description, token_reward, posted_by, posted_at, category FROM service_requests sr
+JOIN service_listings sl ON sr.listing_id = sl.id
+WHERE sr.id = $1
 `
 
-func (q *Queries) GetRequestByID(ctx context.Context, id int32) (ServiceRequest, error) {
+type GetRequestByIDRow struct {
+	ID           int32                `json:"id"`
+	ListingID    int32                `json:"listing_id"`
+	RequesterID  string               `json:"requester_id"`
+	ProviderID   string               `json:"provider_id"`
+	StatusDetail ServiceRequestStatus `json:"status_detail"`
+	Activity     ServiceActivity      `json:"activity"`
+	CreatedAt    time.Time            `json:"created_at"`
+	UpdatedAt    time.Time            `json:"updated_at"`
+	ID_2         int32                `json:"id_2"`
+	Title        string               `json:"title"`
+	Description  string               `json:"description"`
+	TokenReward  int32                `json:"token_reward"`
+	PostedBy     string               `json:"posted_by"`
+	PostedAt     time.Time            `json:"posted_at"`
+	Category     string               `json:"category"`
+}
+
+func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDRow, error) {
 	row := q.db.QueryRow(ctx, getRequestByID, id)
-	var i ServiceRequest
+	var i GetRequestByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.ListingID,
@@ -60,6 +80,31 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (ServiceRequest,
 		&i.Activity,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ID_2,
+		&i.Title,
+		&i.Description,
+		&i.TokenReward,
+		&i.PostedBy,
+		&i.PostedAt,
+		&i.Category,
+	)
+	return i, err
+}
+
+const getServiceRequestCompletion = `-- name: GetServiceRequestCompletion :one
+SELECT id, request_id, requester_completion, provider_completion, is_active FROM service_request_completion
+WHERE request_id = $1
+`
+
+func (q *Queries) GetServiceRequestCompletion(ctx context.Context, requestID int32) (ServiceRequestCompletion, error) {
+	row := q.db.QueryRow(ctx, getServiceRequestCompletion, requestID)
+	var i ServiceRequestCompletion
+	err := row.Scan(
+		&i.ID,
+		&i.RequestID,
+		&i.RequesterCompletion,
+		&i.ProviderCompletion,
+		&i.IsActive,
 	)
 	return i, err
 }
@@ -88,6 +133,16 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 	return id, err
 }
 
+const insertServiceRequestCompletion = `-- name: InsertServiceRequestCompletion :exec
+INSERT INTO service_request_completion (request_id,requester_completion,provider_completion,is_active)
+VALUES ($1,false,false,true)
+`
+
+func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID int32) error {
+	_, err := q.db.Exec(ctx, insertServiceRequestCompletion, requestID)
+	return err
+}
+
 const updateServiceRequest = `-- name: UpdateServiceRequest :one
 UPDATE service_requests
 SET status_detail = $1, activity = $2, updated_at = NOW()
@@ -106,4 +161,20 @@ func (q *Queries) UpdateServiceRequest(ctx context.Context, arg UpdateServiceReq
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const updateServiceRequestCompletion = `-- name: UpdateServiceRequestCompletion :exec
+UPDATE service_request_completion
+SET requester_completion = $1, provider_completion = $2, is_active = $3
+`
+
+type UpdateServiceRequestCompletionParams struct {
+	RequesterCompletion bool `json:"requester_completion"`
+	ProviderCompletion  bool `json:"provider_completion"`
+	IsActive            bool `json:"is_active"`
+}
+
+func (q *Queries) UpdateServiceRequestCompletion(ctx context.Context, arg UpdateServiceRequestCompletionParams) error {
+	_, err := q.db.Exec(ctx, updateServiceRequestCompletion, arg.RequesterCompletion, arg.ProviderCompletion, arg.IsActive)
+	return err
 }

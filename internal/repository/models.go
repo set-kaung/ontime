@@ -374,11 +374,12 @@ type ServiceRequest struct {
 	UpdatedAt    time.Time            `json:"updated_at"`
 }
 
-type ServicesRequestCompletion struct {
+type ServiceRequestCompletion struct {
 	ID                  int32 `json:"id"`
 	RequestID           int32 `json:"request_id"`
 	RequesterCompletion bool  `json:"requester_completion"`
 	ProviderCompletion  bool  `json:"provider_completion"`
+	IsActive            bool  `json:"is_active"`
 }
 
 type Transaction struct {

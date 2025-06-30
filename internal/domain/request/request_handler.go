@@ -87,13 +87,13 @@ func (rh *RequestHandler) HandleAcceptServiceRequest(w http.ResponseWriter, r *h
 		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
 		return
 	}
-	_, err = rh.RequestService.AcceptServiceRequest(r.Context(), int32(listingID), userID)
+	rid, err := rh.RequestService.AcceptServiceRequest(r.Context(), int32(listingID), userID)
 	if err != nil {
 		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "accepted", nil)
+	helpers.WriteData(w, http.StatusOK, map[string]int32{"request_id": rid}, nil)
 }
 
 func (rh *RequestHandler) HandleDeclineServiceRequest(w http.ResponseWriter, r *http.Request) {
@@ -113,11 +113,41 @@ func (rh *RequestHandler) HandleDeclineServiceRequest(w http.ResponseWriter, r *
 		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
 		return
 	}
-	_, err = rh.RequestService.DeclineServiceRequest(r.Context(), int32(listingID), userID)
+	rid, err := rh.RequestService.DeclineServiceRequest(r.Context(), int32(listingID), userID)
 	if err != nil {
 		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "accepted", nil)
+	helpers.WriteData(w, http.StatusOK, map[string]int32{"request_id": rid}, nil)
+}
+
+func (rh *RequestHandler) HandleCompleteServiceRequest(w http.ResponseWriter, r *http.Request) {
+	userID, err := user.GetClerkUserID(r.Context())
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+			return
+		}
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	pathID := r.PathValue("id")
+	requestID, err := strconv.ParseInt(pathID, 10, 32)
+	if err != nil {
+		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
+		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
+		return
+	}
+	rid, err := rh.RequestService.CompleteServiceRequest(r.Context(), int32(requestID), userID)
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
+
+		} else {
+			helpers.WriteServerError(w, nil)
+		}
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, map[string]int32{"request_id": rid}, nil)
 }
