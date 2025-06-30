@@ -7,4 +7,5 @@ type RequestService interface {
 	GetAllIncomingRequests(context.Context, string) ([]Request, error)
 	AcceptServiceRequest(context.Context, int32, string) (int32, error)
 	DeclineServiceRequest(context.Context, int32, string) (int32, error)
+	CompleteServiceRequest(context.Context, int32) (int32, error)
 }

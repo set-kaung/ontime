@@ -12,19 +12,40 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-const deductToken = `-- name: DeductToken :execresult
+const addTokens = `-- name: AddTokens :exec
 UPDATE users
-SET token_balance = $1
+SET token_balance = token_balance + $1
 WHERE id = $2
 `
 
-type DeductTokenParams struct {
+type AddTokensParams struct {
 	TokenBalance int32  `json:"token_balance"`
 	ID           string `json:"id"`
 }
 
-func (q *Queries) DeductToken(ctx context.Context, arg DeductTokenParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, deductToken, arg.TokenBalance, arg.ID)
+func (q *Queries) AddTokens(ctx context.Context, arg AddTokensParams) error {
+	_, err := q.db.Exec(ctx, addTokens, arg.TokenBalance, arg.ID)
+	return err
+}
+
+const deductTokens = `-- name: DeductTokens :execrows
+UPDATE users
+SET token_balance = token_balance - $1
+WHERE id = $2
+AND token_balance >= $1
+`
+
+type DeductTokensParams struct {
+	TokenBalance int32  `json:"token_balance"`
+	ID           string `json:"id"`
+}
+
+func (q *Queries) DeductTokens(ctx context.Context, arg DeductTokensParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deductTokens, arg.TokenBalance, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const deleteUser = `-- name: DeleteUser :execresult

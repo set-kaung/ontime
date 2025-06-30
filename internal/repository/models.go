@@ -55,6 +55,50 @@ func (ns NullAccountStatus) Value() (driver.Value, error) {
 	return string(ns.AccountStatus), nil
 }
 
+type PaymentStatus string
+
+const (
+	PaymentStatusInitiated PaymentStatus = "initiated"
+	PaymentStatusHolding   PaymentStatus = "holding"
+	PaymentStatusReleased  PaymentStatus = "released"
+	PaymentStatusRefunded  PaymentStatus = "refunded"
+)
+
+func (e *PaymentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PaymentStatus(s)
+	case string:
+		*e = PaymentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PaymentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPaymentStatus struct {
+	PaymentStatus PaymentStatus `json:"payment_status"`
+	Valid         bool          `json:"valid"` // Valid is true if PaymentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPaymentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PaymentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PaymentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPaymentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PaymentStatus), nil
+}
+
 type ServiceActivity string
 
 const (
@@ -232,10 +276,63 @@ func (ns NullStatus) Value() (driver.Value, error) {
 	return string(ns.Status), nil
 }
 
+type TransactionType string
+
+const (
+	TransactionTypeDeduct  TransactionType = "deduct"
+	TransactionTypeRelease TransactionType = "release"
+	TransactionTypeRefund  TransactionType = "refund"
+)
+
+func (e *TransactionType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TransactionType(s)
+	case string:
+		*e = TransactionType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TransactionType: %T", src)
+	}
+	return nil
+}
+
+type NullTransactionType struct {
+	TransactionType TransactionType `json:"transaction_type"`
+	Valid           bool            `json:"valid"` // Valid is true if TransactionType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTransactionType) Scan(value interface{}) error {
+	if value == nil {
+		ns.TransactionType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TransactionType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTransactionType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TransactionType), nil
+}
+
 type AdsWatchingHistory struct {
 	ID       int32     `json:"id"`
 	UserID   string    `json:"user_id"`
 	DateTime time.Time `json:"date_time"`
+}
+
+type Payment struct {
+	ID               int32         `json:"id"`
+	ServiceRequestID int32         `json:"service_request_id"`
+	PayerID          string        `json:"payer_id"`
+	AmountTokens     int32         `json:"amount_tokens"`
+	Status           PaymentStatus `json:"status"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
 }
 
 type Review struct {
@@ -273,7 +370,25 @@ type ServiceRequest struct {
 	ProviderID   string               `json:"provider_id"`
 	StatusDetail ServiceRequestStatus `json:"status_detail"`
 	Activity     ServiceActivity      `json:"activity"`
-	DateTime     time.Time            `json:"date_time"`
+	CreatedAt    time.Time            `json:"created_at"`
+	UpdatedAt    time.Time            `json:"updated_at"`
+}
+
+type ServicesRequestCompletion struct {
+	ID                  int32 `json:"id"`
+	RequestID           int32 `json:"request_id"`
+	RequesterCompletion bool  `json:"requester_completion"`
+	ProviderCompletion  bool  `json:"provider_completion"`
+}
+
+type Transaction struct {
+	ID           int32           `json:"id"`
+	UserID       string          `json:"user_id"`
+	PaymentID    int32           `json:"payment_id"`
+	Type         TransactionType `json:"type"`
+	Amount       int32           `json:"amount"`
+	BalanceAfter int32           `json:"balance_after"`
+	CreatedAt    time.Time       `json:"created_at"`
 }
 
 type User struct {

@@ -14,7 +14,8 @@ type Request struct {
 	Provider     user.User       `json:"provider"`
 	Activity     string          `json:"activity"`
 	StatusDetail string          `json:"status_detail"`
-	DateTime     time.Time       `json:"date_time"`
+	CreatedAt    time.Time       `json:"created_at"`
+	UpdatedAt    time.Time       `json:"updated_at"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {

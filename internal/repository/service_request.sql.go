@@ -10,7 +10,7 @@ import (
 )
 
 const getAllIncomingServiceRequests = `-- name: GetAllIncomingServiceRequests :many
-SELECT id, listing_id, requester_id, provider_id, status_detail, activity, date_time FROM service_requests
+SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at FROM service_requests
 WHERE provider_id = $1 AND activity = 'active'
 `
 
@@ -30,7 +30,8 @@ func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID 
 			&i.ProviderID,
 			&i.StatusDetail,
 			&i.Activity,
-			&i.DateTime,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -43,7 +44,7 @@ func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID 
 }
 
 const getRequestByID = `-- name: GetRequestByID :one
-SELECT id, listing_id, requester_id, provider_id, status_detail, activity, date_time FROM service_requests
+SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at FROM service_requests
 WHERE id = $1
 `
 
@@ -57,18 +58,19 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (ServiceRequest,
 		&i.ProviderID,
 		&i.StatusDetail,
 		&i.Activity,
-		&i.DateTime,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const insertPendingServiceRequest = `-- name: InsertPendingServiceRequest :one
-INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,date_time)
+INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at)
 SELECT
     $1,
     $2,
     sl.posted_by,
-    'pending', 'active', NOW()
+    'pending', 'active', NOW(),NOW()
 FROM service_listings sl
 WHERE sl.id = $1 AND sl.posted_by != $2
 RETURNING id
@@ -86,28 +88,21 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 	return id, err
 }
 
-const insertServiceRequest = `-- name: InsertServiceRequest :one
-INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,date_time)
-VALUES ($1,$2,$3,$4,$5,NOW())
+const updateServiceRequest = `-- name: UpdateServiceRequest :one
+UPDATE service_requests
+SET status_detail = $1, activity = $2, updated_at = NOW()
+WHERE id = $3
 RETURNING id
 `
 
-type InsertServiceRequestParams struct {
-	ListingID    int32                `json:"listing_id"`
-	RequesterID  string               `json:"requester_id"`
-	ProviderID   string               `json:"provider_id"`
+type UpdateServiceRequestParams struct {
 	StatusDetail ServiceRequestStatus `json:"status_detail"`
 	Activity     ServiceActivity      `json:"activity"`
+	ID           int32                `json:"id"`
 }
 
-func (q *Queries) InsertServiceRequest(ctx context.Context, arg InsertServiceRequestParams) (int32, error) {
-	row := q.db.QueryRow(ctx, insertServiceRequest,
-		arg.ListingID,
-		arg.RequesterID,
-		arg.ProviderID,
-		arg.StatusDetail,
-		arg.Activity,
-	)
+func (q *Queries) UpdateServiceRequest(ctx context.Context, arg UpdateServiceRequestParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updateServiceRequest, arg.StatusDetail, arg.Activity, arg.ID)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
