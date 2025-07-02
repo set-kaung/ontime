@@ -16,7 +16,7 @@ func GetClerkUserID(ctx context.Context) (string, error) {
 	}
 	clerkUser, err := user.Get(ctx, claims.Subject)
 	if err != nil {
-		log.Println("authenticate -> GetClerkUserID: ", err)
+		log.Printf("GetClerkUserID: failed to get user: %v", err)
 		return "", internal.ErrInternalServerError
 	}
 	return clerkUser.ID, nil

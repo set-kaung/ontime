@@ -3,7 +3,6 @@ package user
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -114,6 +113,7 @@ func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) 
 			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
 			return
 		}
+		log.Println("failed to get user id in HandleDeleteUser: ", err)
 		helpers.WriteServerError(w, nil)
 		return
 	}
@@ -123,7 +123,7 @@ func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) 
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	fmt.Printf("User with ID %s deleted successfully. Deleted resource ID: %s\n", id, deletedResource.ID)
+	log.Printf("User with ID %s deleted successfully. Deleted resource ID: %s\n", id, deletedResource.ID)
 	err = uh.UserService.DeleteUser(r.Context(), id)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
