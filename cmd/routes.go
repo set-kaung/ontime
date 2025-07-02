@@ -38,6 +38,7 @@ func (a *application) routes() http.Handler {
 	protected := chain.Append(LogMiddleWare, clerkhttp.WithHeaderAuthorization())
 
 	mux.Handle("GET /users/me", protected.Chain(a.userHandler.HandleViewOwnProfile))
+	mux.Handle("GET /users/me/listings", protected.Chain(a.listingHandler.HandleGetOwnListings))
 	mux.Handle("POST /update-profile-metadata", protected.Chain(a.userHandler.HandleInsertUser))
 	mux.Handle("POST /users/me/update", protected.Chain(a.userHandler.HandleUpdateUserProfile))
 	mux.Handle("DELETE /users/me/delete", protected.Chain(a.userHandler.HandleDeleteUser))

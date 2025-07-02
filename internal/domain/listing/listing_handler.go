@@ -73,3 +73,19 @@ func (lh *ListingHandler) HandleGetAllListings(w http.ResponseWriter, r *http.Re
 	}
 	helpers.WriteData(w, http.StatusOK, listings, nil)
 }
+
+func (lh *ListingHandler) HandleGetOwnListings(w http.ResponseWriter, r *http.Request) {
+	id, err := user.GetClerkUserID(r.Context())
+	if err != nil {
+		log.Println("user_handler -> HandleViewOwnProfile: ", err)
+		helpers.WriteError(w, http.StatusInternalServerError, "unauthorized", nil)
+		return
+	}
+	listings, err := lh.ListingService.GetListingsByUserID(r.Context(), id)
+	if err != nil {
+		log.Println("user_handler -> HandleViewOwnProfile: ", err)
+		helpers.WriteError(w, http.StatusInternalServerError, "user not found", nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, listings, nil)
+}
