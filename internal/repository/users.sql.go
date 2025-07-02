@@ -7,7 +7,6 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -95,8 +94,26 @@ func (q *Queries) GetUserTokenBalance(ctx context.Context, id string) (int32, er
 }
 
 const insertUser = `-- name: InsertUser :one
-INSERT INTO users (id,full_name,phone,token_balance,status,address_line_1,address_line_2,city,state_province,zip_postal_code,country,joined_at,email)
-VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())
+INSERT INTO users (
+    id,
+    full_name,
+    phone,
+    token_balance,
+    status,
+    address_line_1,
+    address_line_2,
+    city,
+    state_province,
+    zip_postal_code,
+    country,
+    joined_at,
+    email
+)
+VALUES (
+    $1, $2, $3, $4, $5,
+    $6, $7, $8, $9, $10,
+    $11, NOW(), $12
+)
 RETURNING id
 `
 
@@ -112,7 +129,7 @@ type InsertUserParams struct {
 	StateProvince string        `json:"state_province"`
 	ZipPostalCode string        `json:"zip_postal_code"`
 	Country       string        `json:"country"`
-	JoinedAt      time.Time     `json:"joined_at"`
+	Email         bool          `json:"email"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string, error) {
@@ -128,7 +145,7 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string,
 		arg.StateProvince,
 		arg.ZipPostalCode,
 		arg.Country,
-		arg.JoinedAt,
+		arg.Email,
 	)
 	var id string
 	err := row.Scan(&id)
