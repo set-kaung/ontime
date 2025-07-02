@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var logger = slog.New(slog.NewJSONHandler(os.Stdout))
+var logger *slog.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func LogMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
