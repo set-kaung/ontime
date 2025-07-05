@@ -2,7 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 
@@ -23,20 +22,16 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 	}
 
-	id, err := GetClerkUserID(r.Context())
-	if err != nil {
-		helpers.WriteError(w, http.StatusInternalServerError, err.Error(), nil)
-		return
-	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	dbUser := User{}
 	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&dbUser)
+	err := decoder.Decode(&dbUser)
 	if err != nil {
 		log.Println("user_handler -> HandleInsertUser: ", err)
 		helpers.WriteError(w, http.StatusBadRequest, "invalid json request", nil)
 		return
 	}
-	dbUser.ID = id
+	dbUser.ID = userID
 	dbUser.Status = "active"
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {
@@ -62,13 +57,8 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Request) {
 
-	id, err := GetClerkUserID(r.Context())
-	if err != nil {
-		log.Println(err)
-		helpers.WriteError(w, http.StatusUnauthorized, err.Error(), nil)
-		return
-	}
-	dbUser, err := h.UserService.GetUserByID(r.Context(), id)
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	dbUser, err := h.UserService.GetUserByID(r.Context(), userID)
 	if err != nil {
 		log.Println("user_handler -> HandleViewOwnProfile: ", err)
 		helpers.WriteError(w, http.StatusInternalServerError, "no user data", nil)
@@ -81,23 +71,15 @@ func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *UserHandler) HandleUpdateUserProfile(w http.ResponseWriter, r *http.Request) {
-	id, err := GetClerkUserID(r.Context())
-	if err != nil {
-		if errors.Is(err, internal.ErrUnauthorized) {
-			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
-			return
-		}
-		helpers.WriteServerError(w, nil)
-		return
-	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	decoder := json.NewDecoder(r.Body)
 	u := User{}
-	err = decoder.Decode(&u)
+	err := decoder.Decode(&u)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	u.ID = id
+	u.ID = userID
 	err = h.UserService.UpdateUser(r.Context(), u)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
@@ -107,24 +89,15 @@ func (h *UserHandler) HandleUpdateUserProfile(w http.ResponseWriter, r *http.Req
 }
 
 func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
-	id, err := GetClerkUserID(r.Context())
-	if err != nil {
-		if errors.Is(err, internal.ErrUnauthorized) {
-			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
-			return
-		}
-		log.Println("failed to get user id in HandleDeleteUser: ", err)
-		helpers.WriteServerError(w, nil)
-		return
-	}
-	deletedResource, err := user.Delete(r.Context(), id)
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	deletedResource, err := user.Delete(r.Context(), userID)
 	if err != nil {
 		log.Printf("UserHandler -> HandleDeleteUser: error deleting clerk user: %v", err)
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	log.Printf("User with ID %s deleted successfully. Deleted resource ID: %s\n", id, deletedResource.ID)
-	err = uh.UserService.DeleteUser(r.Context(), id)
+	log.Printf("User with ID %s deleted successfully. Deleted resource ID: %s\n", userID, deletedResource.ID)
+	err = uh.UserService.DeleteUser(r.Context(), userID)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return

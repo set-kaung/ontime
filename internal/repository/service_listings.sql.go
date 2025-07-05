@@ -166,3 +166,33 @@ func (q *Queries) InsertListing(ctx context.Context, arg InsertListingParams) (i
 	err := row.Scan(&id)
 	return id, err
 }
+
+const updateListing = `-- name: UpdateListing :execrows
+UPDATE service_listings
+SET title = $1, description = $2, token_reward = $3, category=$4
+WHERE id = $5 AND posted_by = $6
+`
+
+type UpdateListingParams struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	TokenReward int32  `json:"token_reward"`
+	Category    string `json:"category"`
+	ID          int32  `json:"id"`
+	PostedBy    string `json:"posted_by"`
+}
+
+func (q *Queries) UpdateListing(ctx context.Context, arg UpdateListingParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateListing,
+		arg.Title,
+		arg.Description,
+		arg.TokenReward,
+		arg.Category,
+		arg.ID,
+		arg.PostedBy,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

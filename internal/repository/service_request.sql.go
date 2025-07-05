@@ -11,7 +11,7 @@ import (
 )
 
 const getAllIncomingServiceRequests = `-- name: GetAllIncomingServiceRequests :many
-SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at FROM service_requests
+SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at, token_reward FROM service_requests
 WHERE provider_id = $1 AND activity = 'active'
 `
 
@@ -33,6 +33,7 @@ func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID 
 			&i.Activity,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TokenReward,
 		); err != nil {
 			return nil, err
 		}
@@ -45,48 +46,82 @@ func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID 
 }
 
 const getRequestByID = `-- name: GetRequestByID :one
-SELECT sr.id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at, sl.id, title, description, token_reward, posted_by, posted_at, category FROM service_requests sr
+SELECT
+  sr.id AS sr_id,
+  sr.listing_id AS sr_listing_id,
+  sr.requester_id AS sr_requester_id,
+  sr.provider_id AS sr_provider_id,
+  sr.status_detail AS sr_status_detail,
+  sr.activity AS sr_activity,
+  sr.created_at AS sr_created_at,
+  sr.updated_at AS sr_updated_at,
+  sr.token_reward AS sr_token_reward,
+
+  sl.id AS sl_id,
+  sl.title AS sl_title,
+  sl.description AS sl_description,
+  sl.posted_by AS sl_posted_by,
+  sl.posted_at AS sl_posted_at,
+  sl.category AS sl_category,
+
+  ru.id AS requester_id,
+  ru.full_name AS requester_full_name,
+
+  pu.id AS provider_id,
+  pu.full_name AS provider_full_name
+
+FROM service_requests sr
 JOIN service_listings sl ON sr.listing_id = sl.id
+JOIN users ru ON sr.requester_id = ru.id
+JOIN users pu ON sr.provider_id = pu.id
 WHERE sr.id = $1
 `
 
 type GetRequestByIDRow struct {
-	ID           int32                `json:"id"`
-	ListingID    int32                `json:"listing_id"`
-	RequesterID  string               `json:"requester_id"`
-	ProviderID   string               `json:"provider_id"`
-	StatusDetail ServiceRequestStatus `json:"status_detail"`
-	Activity     ServiceActivity      `json:"activity"`
-	CreatedAt    time.Time            `json:"created_at"`
-	UpdatedAt    time.Time            `json:"updated_at"`
-	ID_2         int32                `json:"id_2"`
-	Title        string               `json:"title"`
-	Description  string               `json:"description"`
-	TokenReward  int32                `json:"token_reward"`
-	PostedBy     string               `json:"posted_by"`
-	PostedAt     time.Time            `json:"posted_at"`
-	Category     string               `json:"category"`
+	SrID              int32                `json:"sr_id"`
+	SrListingID       int32                `json:"sr_listing_id"`
+	SrRequesterID     string               `json:"sr_requester_id"`
+	SrProviderID      string               `json:"sr_provider_id"`
+	SrStatusDetail    ServiceRequestStatus `json:"sr_status_detail"`
+	SrActivity        ServiceActivity      `json:"sr_activity"`
+	SrCreatedAt       time.Time            `json:"sr_created_at"`
+	SrUpdatedAt       time.Time            `json:"sr_updated_at"`
+	SrTokenReward     int32                `json:"sr_token_reward"`
+	SlID              int32                `json:"sl_id"`
+	SlTitle           string               `json:"sl_title"`
+	SlDescription     string               `json:"sl_description"`
+	SlPostedBy        string               `json:"sl_posted_by"`
+	SlPostedAt        time.Time            `json:"sl_posted_at"`
+	SlCategory        string               `json:"sl_category"`
+	RequesterID       string               `json:"requester_id"`
+	RequesterFullName string               `json:"requester_full_name"`
+	ProviderID        string               `json:"provider_id"`
+	ProviderFullName  string               `json:"provider_full_name"`
 }
 
 func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDRow, error) {
 	row := q.db.QueryRow(ctx, getRequestByID, id)
 	var i GetRequestByIDRow
 	err := row.Scan(
-		&i.ID,
-		&i.ListingID,
+		&i.SrID,
+		&i.SrListingID,
+		&i.SrRequesterID,
+		&i.SrProviderID,
+		&i.SrStatusDetail,
+		&i.SrActivity,
+		&i.SrCreatedAt,
+		&i.SrUpdatedAt,
+		&i.SrTokenReward,
+		&i.SlID,
+		&i.SlTitle,
+		&i.SlDescription,
+		&i.SlPostedBy,
+		&i.SlPostedAt,
+		&i.SlCategory,
 		&i.RequesterID,
+		&i.RequesterFullName,
 		&i.ProviderID,
-		&i.StatusDetail,
-		&i.Activity,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ID_2,
-		&i.Title,
-		&i.Description,
-		&i.TokenReward,
-		&i.PostedBy,
-		&i.PostedAt,
-		&i.Category,
+		&i.ProviderFullName,
 	)
 	return i, err
 }

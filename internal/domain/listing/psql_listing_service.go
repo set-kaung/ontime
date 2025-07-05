@@ -132,3 +132,29 @@ func (ls *PostgresListingService) DeleteListing(ctx context.Context, id int32, p
 	}
 	return nil
 }
+
+func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing) (int32, error) {
+	tx, err := pls.DB.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		log.Printf("Listing Service -> Update Listing: failed to delete listinh: %s\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(tx)
+	rowsAffected, err := repo.UpdateListing(ctx, repository.UpdateListingParams{
+		ID:          l.ID,
+		PostedBy:    l.Provider.ID,
+		Title:       l.Title,
+		Description: l.Description,
+		Category:    l.Category,
+		TokenReward: l.TokenReward,
+	})
+	if rowsAffected == 0 {
+		return -1, internal.ErrUnauthorized
+	}
+	if err = tx.Commit(ctx); err != nil {
+		log.Printf("failed to commit: %v\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+	return l.ID, nil
+}

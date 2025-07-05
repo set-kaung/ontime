@@ -372,6 +372,7 @@ type ServiceRequest struct {
 	Activity     ServiceActivity      `json:"activity"`
 	CreatedAt    time.Time            `json:"created_at"`
 	UpdatedAt    time.Time            `json:"updated_at"`
+	TokenReward  int32                `json:"token_reward"`
 }
 
 type ServiceRequestCompletion struct {

@@ -16,6 +16,7 @@ type Request struct {
 	StatusDetail string          `json:"status_detail"`
 	CreatedAt    time.Time       `json:"created_at"`
 	UpdatedAt    time.Time       `json:"updated_at"`
+	TokenReward  int32           `json:"token_reward"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {

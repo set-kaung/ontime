@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/set-kaung/senior_project_1/internal"
-	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/helpers"
 )
 
@@ -17,14 +16,7 @@ type RequestHandler struct {
 }
 
 func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Request) {
-	userID, err := user.GetClerkUserID(r.Context())
-	if err != nil && errors.Is(err, internal.ErrUnauthorized) {
-		helpers.WriteError(w, http.StatusUnauthorized, err.Error(), nil)
-		return
-	} else if err != nil {
-		helpers.WriteServerError(w, nil)
-		return
-	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	pathID := r.PathValue("id")
 	listingID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
@@ -33,7 +25,7 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 		return
 	}
 	serviceRequest := CreateClientServiceRequest(int32(listingID), userID)
-	id, err := rh.RequestService.CreateServiceRequest(r.Context(), serviceRequest)
+	requestID, err := rh.RequestService.CreateServiceRequest(r.Context(), serviceRequest)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			log.Println("request_handler -> HandleCreateRequest: err: ", err)
@@ -47,19 +39,27 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteData(w, http.StatusOK, map[string]int32{"requestID": id}, nil)
+	helpers.WriteData(w, http.StatusOK, map[string]int32{"requestID": requestID}, nil)
 }
 
-func (rh *RequestHandler) HandleGetAllIncomingRequest(w http.ResponseWriter, r *http.Request) {
-	userID, err := user.GetClerkUserID(r.Context())
+func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Request) {
+	pathID := r.PathValue("id")
+	requestID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
-		if errors.Is(err, internal.ErrUnauthorized) {
-			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
-			return
-		}
+		log.Println("request_handler -> HandleGetRequestByID: err: ", err)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		return
+	}
+	request, err := rh.RequestService.GetRequestByID(r.Context(), int32(requestID))
+	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return
 	}
+	helpers.WriteData(w, http.StatusOK, request, nil)
+}
+
+func (rh *RequestHandler) HandleGetAllIncomingRequest(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	requests, err := rh.RequestService.GetAllIncomingRequests(r.Context(), userID)
 	if err != nil {
 		log.Println("request_handler -> HandleGetAllIncomingRequest: err: ", err)
@@ -71,15 +71,7 @@ func (rh *RequestHandler) HandleGetAllIncomingRequest(w http.ResponseWriter, r *
 }
 
 func (rh *RequestHandler) HandleAcceptServiceRequest(w http.ResponseWriter, r *http.Request) {
-	userID, err := user.GetClerkUserID(r.Context())
-	if err != nil {
-		if errors.Is(err, internal.ErrUnauthorized) {
-			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
-			return
-		}
-		helpers.WriteServerError(w, nil)
-		return
-	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	pathID := r.PathValue("id")
 	listingID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
@@ -97,15 +89,7 @@ func (rh *RequestHandler) HandleAcceptServiceRequest(w http.ResponseWriter, r *h
 }
 
 func (rh *RequestHandler) HandleDeclineServiceRequest(w http.ResponseWriter, r *http.Request) {
-	userID, err := user.GetClerkUserID(r.Context())
-	if err != nil {
-		if errors.Is(err, internal.ErrUnauthorized) {
-			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
-			return
-		}
-		helpers.WriteServerError(w, nil)
-		return
-	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	pathID := r.PathValue("id")
 	listingID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
@@ -123,15 +107,7 @@ func (rh *RequestHandler) HandleDeclineServiceRequest(w http.ResponseWriter, r *
 }
 
 func (rh *RequestHandler) HandleCompleteServiceRequest(w http.ResponseWriter, r *http.Request) {
-	userID, err := user.GetClerkUserID(r.Context())
-	if err != nil {
-		if errors.Is(err, internal.ErrUnauthorized) {
-			helpers.WriteError(w, http.StatusUnauthorized, "unauthorized", nil)
-			return
-		}
-		helpers.WriteServerError(w, nil)
-		return
-	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	pathID := r.PathValue("id")
 	requestID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {

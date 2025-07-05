@@ -70,6 +70,34 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 	return rid, nil
 }
 
+func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32) (Request, error) {
+	repo := repository.New(prs.DB)
+	dbRequest, err := repo.GetRequestByID(ctx, rid)
+	if err != nil {
+		log.Println("GetRequestByID: failed to retrieve from db: ", err)
+		return Request{}, internal.ErrInternalServerError
+	}
+	r := Request{
+		ID: dbRequest.SrID,
+		Listing: listing.Listing{
+			ID:          dbRequest.SlID,
+			Title:       dbRequest.SlTitle,
+			Description: dbRequest.SlDescription,
+			Category:    dbRequest.SlCategory,
+		},
+		Requester: user.User{
+			ID:       dbRequest.RequesterID,
+			FullName: dbRequest.RequesterFullName,
+		},
+		CreatedAt:    dbRequest.SrCreatedAt,
+		StatusDetail: string(dbRequest.SrStatusDetail),
+		Activity:     string(dbRequest.SrActivity),
+		TokenReward:  dbRequest.SrTokenReward,
+	}
+
+	return r, nil
+}
+
 func (prs *PostgresRequestService) GetAllIncomingRequests(ctx context.Context, provider_id string) ([]Request, error) {
 	repo := repository.New(prs.DB)
 	dbRequests, err := repo.GetAllIncomingServiceRequests(ctx, provider_id)
@@ -105,7 +133,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		return -1, internal.ErrInternalServerError
 	}
 
-	if repoRequest.ProviderID != providerID && repoRequest.Activity != "active" {
+	if repoRequest.ProviderID != providerID && repoRequest.SrActivity != "active" {
 		return -1, internal.ErrUnauthorized
 	}
 
@@ -142,7 +170,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		log.Println("DeclineServiceRequest: failed to get request from db: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	if repoRequest.ProviderID != providerID && repoRequest.Activity != "active" {
+	if repoRequest.ProviderID != providerID && repoRequest.SrActivity != "active" {
 		return -1, internal.ErrUnauthorized
 	}
 
@@ -163,7 +191,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		return -1, internal.ErrInternalServerError
 	}
 	paymentHolding, err := repo.GetPaymentHolding(ctx, repository.GetPaymentHoldingParams{
-		ServiceRequestID: repoRequest.ID,
+		ServiceRequestID: repoRequest.SrID,
 		PayerID:          repoRequest.RequesterID,
 	})
 	if err != nil {
@@ -237,7 +265,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 	}
 	if requesterComplete && providerComplete {
 		paymentHolding, err := repo.GetPaymentHolding(ctx, repository.GetPaymentHoldingParams{
-			ServiceRequestID: request.ID,
+			ServiceRequestID: request.SrID,
 			PayerID:          request.RequesterID,
 		})
 		if err != nil {
