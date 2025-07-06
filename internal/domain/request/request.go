@@ -7,6 +7,13 @@ import (
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 )
 
+type RequestType string
+
+const (
+	OUTGOING RequestType = "OUTGOING"
+	INCOMING RequestType = "INCOMING"
+)
+
 type Request struct {
 	ID           int32
 	Listing      listing.Listing `json:"listing"`
@@ -17,6 +24,7 @@ type Request struct {
 	CreatedAt    time.Time       `json:"created_at"`
 	UpdatedAt    time.Time       `json:"updated_at"`
 	TokenReward  int32           `json:"token_reward"`
+	Type         RequestType     `json:"type"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {

@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-const getAllIncomingServiceRequests = `-- name: GetAllIncomingServiceRequests :many
+const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :many
 SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at, token_reward FROM service_requests
-WHERE provider_id = $1 AND activity = 'active'
+WHERE (provider_id = $1 OR requester_id = $1) AND activity = 'active'
 `
 
-func (q *Queries) GetAllIncomingServiceRequests(ctx context.Context, providerID string) ([]ServiceRequest, error) {
-	rows, err := q.db.Query(ctx, getAllIncomingServiceRequests, providerID)
+func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID string) ([]ServiceRequest, error) {
+	rows, err := q.db.Query(ctx, getActiveUserServiceRequests, providerID)
 	if err != nil {
 		return nil, err
 	}
