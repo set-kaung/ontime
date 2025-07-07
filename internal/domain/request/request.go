@@ -15,7 +15,7 @@ const (
 )
 
 type Request struct {
-	ID           int32
+	ID           int32           `json:"id"`
 	Listing      listing.Listing `json:"listing"`
 	Requester    user.User       `json:"requester"`
 	Provider     user.User       `json:"provider"`
