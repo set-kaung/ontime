@@ -89,10 +89,12 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 			ID:       dbRequest.RequesterID,
 			FullName: dbRequest.RequesterFullName,
 		},
-		CreatedAt:    dbRequest.SrCreatedAt,
-		StatusDetail: string(dbRequest.SrStatusDetail),
-		Activity:     string(dbRequest.SrActivity),
-		TokenReward:  dbRequest.SrTokenReward,
+		CreatedAt:          dbRequest.SrCreatedAt,
+		StatusDetail:       string(dbRequest.SrStatusDetail),
+		Activity:           string(dbRequest.SrActivity),
+		TokenReward:        dbRequest.SrTokenReward,
+		ProviderCompleted:  dbRequest.ProviderCompleted,
+		RequesterCompleted: dbRequest.RequesterCompleted,
 	}
 
 	return r, nil
@@ -152,7 +154,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 	defer tx.Rollback(ctx)
 	acceptServiceParams := repository.UpdateServiceRequestParams{
 		ID:           requestID,
-		StatusDetail: "accepted",
+		StatusDetail: "in_progress",
 		Activity:     "active",
 	}
 	repo = repository.New(tx)
@@ -259,12 +261,12 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	requesterComplete := requestCompletion.RequesterCompletion || (userID == request.RequesterID)
-	providerComplete := requestCompletion.ProviderCompletion || (userID == request.ProviderID)
+	requesterComplete := requestCompletion.RequesterCompleted || (userID == request.RequesterID)
+	providerComplete := requestCompletion.ProviderCompleted || (userID == request.ProviderID)
 	err = repo.UpdateServiceRequestCompletion(ctx, repository.UpdateServiceRequestCompletionParams{
-		RequesterCompletion: requesterComplete,
-		ProviderCompletion:  providerComplete,
-		IsActive:            !(requesterComplete && providerComplete),
+		RequesterCompleted: requesterComplete,
+		ProviderCompleted:  providerComplete,
+		IsActive:           !(requesterComplete && providerComplete),
 	})
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)

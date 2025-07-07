@@ -15,16 +15,19 @@ const (
 )
 
 type Request struct {
-	ID           int32           `json:"id"`
-	Listing      listing.Listing `json:"listing"`
-	Requester    user.User       `json:"requester"`
-	Provider     user.User       `json:"provider"`
-	Activity     string          `json:"activity"`
-	StatusDetail string          `json:"status_detail"`
-	CreatedAt    time.Time       `json:"created_at"`
-	UpdatedAt    time.Time       `json:"updated_at"`
-	TokenReward  int32           `json:"token_reward"`
-	Type         RequestType     `json:"type"`
+	ID                 int32           `json:"id"`
+	Listing            listing.Listing `json:"listing"`
+	Requester          user.User       `json:"requester"`
+	Provider           user.User       `json:"provider"`
+	Activity           string          `json:"activity"`
+	StatusDetail       string          `json:"status_detail"`
+	CreatedAt          time.Time       `json:"created_at"`
+	UpdatedAt          time.Time       `json:"updated_at"`
+	TokenReward        int32           `json:"token_reward"`
+	Type               RequestType     `json:"type"`
+	ProviderCompleted  bool            `json:"provider_completed"`
+	RequesterCompleted bool            `json:"requester_completed"`
+	IsProvider         bool            `json:"is_provider"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {

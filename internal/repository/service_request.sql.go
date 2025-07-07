@@ -68,35 +68,42 @@ SELECT
   ru.full_name AS requester_full_name,
 
   pu.id AS provider_id,
-  pu.full_name AS provider_full_name
+  pu.full_name AS provider_full_name,
+
+  src.requester_completed,
+  src.provider_completed
 
 FROM service_requests sr
 JOIN service_listings sl ON sr.listing_id = sl.id
 JOIN users ru ON sr.requester_id = ru.id
 JOIN users pu ON sr.provider_id = pu.id
+JOIN service_request_completion src ON sr.id = src.request_id
+
 WHERE sr.id = $1
 `
 
 type GetRequestByIDRow struct {
-	SrID              int32                `json:"sr_id"`
-	SrListingID       int32                `json:"sr_listing_id"`
-	SrRequesterID     string               `json:"sr_requester_id"`
-	SrProviderID      string               `json:"sr_provider_id"`
-	SrStatusDetail    ServiceRequestStatus `json:"sr_status_detail"`
-	SrActivity        ServiceActivity      `json:"sr_activity"`
-	SrCreatedAt       time.Time            `json:"sr_created_at"`
-	SrUpdatedAt       time.Time            `json:"sr_updated_at"`
-	SrTokenReward     int32                `json:"sr_token_reward"`
-	SlID              int32                `json:"sl_id"`
-	SlTitle           string               `json:"sl_title"`
-	SlDescription     string               `json:"sl_description"`
-	SlPostedBy        string               `json:"sl_posted_by"`
-	SlPostedAt        time.Time            `json:"sl_posted_at"`
-	SlCategory        string               `json:"sl_category"`
-	RequesterID       string               `json:"requester_id"`
-	RequesterFullName string               `json:"requester_full_name"`
-	ProviderID        string               `json:"provider_id"`
-	ProviderFullName  string               `json:"provider_full_name"`
+	SrID               int32                `json:"sr_id"`
+	SrListingID        int32                `json:"sr_listing_id"`
+	SrRequesterID      string               `json:"sr_requester_id"`
+	SrProviderID       string               `json:"sr_provider_id"`
+	SrStatusDetail     ServiceRequestStatus `json:"sr_status_detail"`
+	SrActivity         ServiceActivity      `json:"sr_activity"`
+	SrCreatedAt        time.Time            `json:"sr_created_at"`
+	SrUpdatedAt        time.Time            `json:"sr_updated_at"`
+	SrTokenReward      int32                `json:"sr_token_reward"`
+	SlID               int32                `json:"sl_id"`
+	SlTitle            string               `json:"sl_title"`
+	SlDescription      string               `json:"sl_description"`
+	SlPostedBy         string               `json:"sl_posted_by"`
+	SlPostedAt         time.Time            `json:"sl_posted_at"`
+	SlCategory         string               `json:"sl_category"`
+	RequesterID        string               `json:"requester_id"`
+	RequesterFullName  string               `json:"requester_full_name"`
+	ProviderID         string               `json:"provider_id"`
+	ProviderFullName   string               `json:"provider_full_name"`
+	RequesterCompleted bool                 `json:"requester_completed"`
+	ProviderCompleted  bool                 `json:"provider_completed"`
 }
 
 func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDRow, error) {
@@ -122,12 +129,14 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 		&i.RequesterFullName,
 		&i.ProviderID,
 		&i.ProviderFullName,
+		&i.RequesterCompleted,
+		&i.ProviderCompleted,
 	)
 	return i, err
 }
 
 const getServiceRequestCompletion = `-- name: GetServiceRequestCompletion :one
-SELECT id, request_id, requester_completion, provider_completion, is_active FROM service_request_completion
+SELECT id, request_id, requester_completed, provider_completed, is_active FROM service_request_completion
 WHERE request_id = $1
 `
 
@@ -137,8 +146,8 @@ func (q *Queries) GetServiceRequestCompletion(ctx context.Context, requestID int
 	err := row.Scan(
 		&i.ID,
 		&i.RequestID,
-		&i.RequesterCompletion,
-		&i.ProviderCompletion,
+		&i.RequesterCompleted,
+		&i.ProviderCompleted,
 		&i.IsActive,
 	)
 	return i, err
@@ -169,7 +178,7 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 }
 
 const insertServiceRequestCompletion = `-- name: InsertServiceRequestCompletion :exec
-INSERT INTO service_request_completion (request_id,requester_completion,provider_completion,is_active)
+INSERT INTO service_request_completion (request_id,requester_completed,provider_completed,is_active)
 VALUES ($1,false,false,true)
 `
 
@@ -200,16 +209,16 @@ func (q *Queries) UpdateServiceRequest(ctx context.Context, arg UpdateServiceReq
 
 const updateServiceRequestCompletion = `-- name: UpdateServiceRequestCompletion :exec
 UPDATE service_request_completion
-SET requester_completion = $1, provider_completion = $2, is_active = $3
+SET requester_completed = $1, provider_completed = $2, is_active = $3
 `
 
 type UpdateServiceRequestCompletionParams struct {
-	RequesterCompletion bool `json:"requester_completion"`
-	ProviderCompletion  bool `json:"provider_completion"`
-	IsActive            bool `json:"is_active"`
+	RequesterCompleted bool `json:"requester_completed"`
+	ProviderCompleted  bool `json:"provider_completed"`
+	IsActive           bool `json:"is_active"`
 }
 
 func (q *Queries) UpdateServiceRequestCompletion(ctx context.Context, arg UpdateServiceRequestCompletionParams) error {
-	_, err := q.db.Exec(ctx, updateServiceRequestCompletion, arg.RequesterCompletion, arg.ProviderCompletion, arg.IsActive)
+	_, err := q.db.Exec(ctx, updateServiceRequestCompletion, arg.RequesterCompleted, arg.ProviderCompleted, arg.IsActive)
 	return err
 }

@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -20,7 +19,6 @@ var logger *slog.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func LogMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Request Started")
 		next.ServeHTTP(w, r)
 	})
 }

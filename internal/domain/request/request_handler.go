@@ -44,6 +44,7 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 
 func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Request) {
 	pathID := r.PathValue("id")
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	requestID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
 		log.Println("request_handler -> HandleGetRequestByID: err: ", err)
@@ -55,6 +56,7 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 		helpers.WriteServerError(w, nil)
 		return
 	}
+	request.IsProvider = userID == request.Provider.ID
 	helpers.WriteData(w, http.StatusOK, request, nil)
 }
 
