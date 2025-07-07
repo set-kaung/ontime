@@ -98,7 +98,7 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 	return r, nil
 }
 
-func (prs *PostgresRequestService) GetActiveUserServiceRequests(ctx context.Context, user_id string) ([]Request, error) {
+func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Context, user_id string) ([]Request, error) {
 	repo := repository.New(prs.DB)
 	dbRequests, err := repo.GetActiveUserServiceRequests(ctx, user_id)
 	if err != nil {

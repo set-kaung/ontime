@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -28,12 +27,10 @@ func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Error loading .env file")
-		log.Println("Using System Defaults:")
+		log.Println("Using system defaults.")
 	}
 
 	clerk.SetKey(os.Getenv("CLARKE_SECRET_KEY"))
-
-	fmt.Printf("accepting request from %s \n", os.Getenv("REMOTE_ORIGIN"))
 
 	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DBURL"))
 	if err != nil {

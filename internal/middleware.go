@@ -32,10 +32,8 @@ func getClerkUserID(ctx context.Context) (string, error) {
 	}
 	clerkUser, err := user.Get(ctx, claims.Subject)
 	if err != nil {
-		log.Printf("GetClerkUserID: failed to get user: %v", err)
 		return "", ErrInternalServerError
 	}
-	log.Printf("Request from User %s with ID %s", *clerkUser.FirstName+*clerkUser.LastName, clerkUser.ID)
 	return clerkUser.ID, nil
 }
 
@@ -64,7 +62,6 @@ func CORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-		// Handle preflight OPTIONS request
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return

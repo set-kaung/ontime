@@ -121,8 +121,8 @@ func (pus *PostgresUserService) UpdateUser(ctx context.Context, user User) error
 	return nil
 }
 
-func (us *PostgresUserService) DeleteUser(ctx context.Context, id string) error {
-	tx, err := us.DB.Begin(ctx)
+func (pus *PostgresUserService) DeleteUser(ctx context.Context, id string) error {
+	tx, err := pus.DB.Begin(ctx)
 	if err != nil {
 		log.Printf("failed to begin tx: %s\n", err)
 		return internal.ErrInternalServerError
