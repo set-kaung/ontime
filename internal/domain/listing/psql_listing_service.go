@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
@@ -37,6 +38,7 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 				ID:       dbListing.Uid,
 				FullName: dbListing.FullName,
 			},
+			ImageURL: dbListing.ImageUrl.String,
 		}
 	}
 	return listings, nil
@@ -56,6 +58,7 @@ func (pls *PostgresListingService) CreateListing(ctx context.Context, listing Li
 	createListingParams.Category = listing.Category
 	createListingParams.TokenReward = listing.TokenReward
 	createListingParams.PostedBy = listing.Provider.ID
+	createListingParams.ImageUrl = pgtype.Text{String: listing.ImageURL}
 	id, err := repo.InsertListing(ctx, createListingParams)
 	if err != nil {
 		log.Printf("ListingService -> CreateListing : error creating listing: %s\n", err)
@@ -87,6 +90,7 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 			TokenReward: dbListing.TokenReward,
 			Category:    dbListing.Category,
 			PostedAt:    dbListing.PostedAt,
+			ImageURL:    dbListing.ImageUrl.String,
 		}
 	}
 	return listings, nil
@@ -107,6 +111,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32)
 	listing.TokenReward = dbListing.TokenReward
 	listing.PostedAt = dbListing.PostedAt
 	listing.Provider = user.User{ID: dbListing.Uid, FullName: dbListing.FullName}
+	listing.ImageURL = dbListing.ImageUrl.String
 	return listing, nil
 }
 
@@ -148,6 +153,7 @@ func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing)
 		Description: l.Description,
 		Category:    l.Category,
 		TokenReward: l.TokenReward,
+		ImageUrl:    pgtype.Text{String: l.ImageURL},
 	})
 	if err != nil {
 		log.Printf("listing_service -> UpdateListing: err : %v\n", err)

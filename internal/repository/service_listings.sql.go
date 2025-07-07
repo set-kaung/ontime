@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deleteListing = `-- name: DeleteListing :execresult
@@ -27,21 +28,22 @@ func (q *Queries) DeleteListing(ctx context.Context, arg DeleteListingParams) (p
 }
 
 const getAllListings = `-- name: GetAllListings :many
-SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,u.id uid,u.full_name FROM service_listings sl
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,u.id uid,u.full_name FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
 WHERE posted_by != $1
 `
 
 type GetAllListingsRow struct {
-	ID          int32     `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	TokenReward int32     `json:"token_reward"`
-	PostedAt    time.Time `json:"posted_at"`
-	Category    string    `json:"category"`
-	Uid         string    `json:"uid"`
-	FullName    string    `json:"full_name"`
+	ID          int32       `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	TokenReward int32       `json:"token_reward"`
+	PostedAt    time.Time   `json:"posted_at"`
+	Category    string      `json:"category"`
+	ImageUrl    pgtype.Text `json:"image_url"`
+	Uid         string      `json:"uid"`
+	FullName    string      `json:"full_name"`
 }
 
 func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAllListingsRow, error) {
@@ -60,6 +62,7 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 			&i.TokenReward,
 			&i.PostedAt,
 			&i.Category,
+			&i.ImageUrl,
 			&i.Uid,
 			&i.FullName,
 		); err != nil {
@@ -74,21 +77,22 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 }
 
 const getListingByID = `-- name: GetListingByID :one
-SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,u.id uid,u.full_name FROM service_listings sl
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,u.id uid,u.full_name FROM service_listings sl
 JOIN users u
 on u.id = sl.posted_by
 WHERE sl.id = $1
 `
 
 type GetListingByIDRow struct {
-	ID          int32     `json:"id"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	TokenReward int32     `json:"token_reward"`
-	PostedAt    time.Time `json:"posted_at"`
-	Category    string    `json:"category"`
-	Uid         string    `json:"uid"`
-	FullName    string    `json:"full_name"`
+	ID          int32       `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	TokenReward int32       `json:"token_reward"`
+	PostedAt    time.Time   `json:"posted_at"`
+	Category    string      `json:"category"`
+	ImageUrl    pgtype.Text `json:"image_url"`
+	Uid         string      `json:"uid"`
+	FullName    string      `json:"full_name"`
 }
 
 func (q *Queries) GetListingByID(ctx context.Context, id int32) (GetListingByIDRow, error) {
@@ -101,6 +105,7 @@ func (q *Queries) GetListingByID(ctx context.Context, id int32) (GetListingByIDR
 		&i.TokenReward,
 		&i.PostedAt,
 		&i.Category,
+		&i.ImageUrl,
 		&i.Uid,
 		&i.FullName,
 	)
@@ -108,7 +113,7 @@ func (q *Queries) GetListingByID(ctx context.Context, id int32) (GetListingByIDR
 }
 
 const getUserListings = `-- name: GetUserListings :many
-SELECT id, title, description, token_reward, posted_by, posted_at, category FROM service_listings
+SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url FROM service_listings
 WHERE posted_by = $1
 `
 
@@ -129,6 +134,7 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]Servi
 			&i.PostedBy,
 			&i.PostedAt,
 			&i.Category,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -141,17 +147,18 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]Servi
 }
 
 const insertListing = `-- name: InsertListing :one
-INSERT INTO service_listings (title,"description",token_reward,posted_by,category,posted_at)
-VALUES ($1, $2, $3, $4,$5, NOW())
+INSERT INTO service_listings (title,"description",token_reward,posted_by,category,image_url,posted_at)
+VALUES ($1, $2, $3, $4,$5,$6, NOW())
 RETURNING id
 `
 
 type InsertListingParams struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	TokenReward int32  `json:"token_reward"`
-	PostedBy    string `json:"posted_by"`
-	Category    string `json:"category"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	TokenReward int32       `json:"token_reward"`
+	PostedBy    string      `json:"posted_by"`
+	Category    string      `json:"category"`
+	ImageUrl    pgtype.Text `json:"image_url"`
 }
 
 func (q *Queries) InsertListing(ctx context.Context, arg InsertListingParams) (int32, error) {
@@ -161,6 +168,7 @@ func (q *Queries) InsertListing(ctx context.Context, arg InsertListingParams) (i
 		arg.TokenReward,
 		arg.PostedBy,
 		arg.Category,
+		arg.ImageUrl,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -169,17 +177,18 @@ func (q *Queries) InsertListing(ctx context.Context, arg InsertListingParams) (i
 
 const updateListing = `-- name: UpdateListing :execrows
 UPDATE service_listings
-SET title = $1, description = $2, token_reward = $3, category=$4
-WHERE id = $5 AND posted_by = $6
+SET title = $1, description = $2, token_reward = $3, category=$4, image_url = $5
+WHERE id = $6 AND posted_by = $7
 `
 
 type UpdateListingParams struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	TokenReward int32  `json:"token_reward"`
-	Category    string `json:"category"`
-	ID          int32  `json:"id"`
-	PostedBy    string `json:"posted_by"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	TokenReward int32       `json:"token_reward"`
+	Category    string      `json:"category"`
+	ImageUrl    pgtype.Text `json:"image_url"`
+	ID          int32       `json:"id"`
+	PostedBy    string      `json:"posted_by"`
 }
 
 func (q *Queries) UpdateListing(ctx context.Context, arg UpdateListingParams) (int64, error) {
@@ -188,6 +197,7 @@ func (q *Queries) UpdateListing(ctx context.Context, arg UpdateListingParams) (i
 		arg.Description,
 		arg.TokenReward,
 		arg.Category,
+		arg.ImageUrl,
 		arg.ID,
 		arg.PostedBy,
 	)
