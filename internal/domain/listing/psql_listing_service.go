@@ -45,6 +45,7 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 }
 
 func (pls *PostgresListingService) CreateListing(ctx context.Context, listing Listing) (int32, error) {
+	log.Println("Listing service called with data: ", listing)
 	tx, err := pls.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		log.Printf("CreateLising: failed to begin tx: %s\n", err)
@@ -58,7 +59,7 @@ func (pls *PostgresListingService) CreateListing(ctx context.Context, listing Li
 	createListingParams.Category = listing.Category
 	createListingParams.TokenReward = listing.TokenReward
 	createListingParams.PostedBy = listing.Provider.ID
-	createListingParams.ImageUrl = pgtype.Text{String: listing.ImageURL}
+	createListingParams.ImageUrl = pgtype.Text{String: listing.ImageURL, Valid: listing.ImageURL != ""}
 	id, err := repo.InsertListing(ctx, createListingParams)
 	if err != nil {
 		log.Printf("ListingService -> CreateListing : error creating listing: %s\n", err)
@@ -153,7 +154,7 @@ func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing)
 		Description: l.Description,
 		Category:    l.Category,
 		TokenReward: l.TokenReward,
-		ImageUrl:    pgtype.Text{String: l.ImageURL},
+		ImageUrl:    pgtype.Text{String: l.ImageURL, Valid: l.ImageURL != ""},
 	})
 	if err != nil {
 		log.Printf("listing_service -> UpdateListing: err : %v\n", err)

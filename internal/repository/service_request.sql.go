@@ -154,12 +154,12 @@ func (q *Queries) GetServiceRequestCompletion(ctx context.Context, requestID int
 }
 
 const insertPendingServiceRequest = `-- name: InsertPendingServiceRequest :one
-INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at)
+INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at,token_reward)
 SELECT
     $1,
     $2,
     sl.posted_by,
-    'pending', 'active', NOW(),NOW()
+    'pending', 'active', NOW(),NOW(),sl.token_reward
 FROM service_listings sl
 WHERE sl.id = $1 AND sl.posted_by != $2
 RETURNING id
