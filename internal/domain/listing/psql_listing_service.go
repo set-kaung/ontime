@@ -52,7 +52,7 @@ func (pls *PostgresListingService) CreateListing(ctx context.Context, listing Li
 		return -1, internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
-	repo := repository.New(tx)
+	repo := repository.New(pls.DB).WithTx(tx)
 	createListingParams := repository.InsertListingParams{}
 	createListingParams.Title = listing.Title
 	createListingParams.Description = listing.Description
@@ -123,7 +123,7 @@ func (pls *PostgresListingService) DeleteListing(ctx context.Context, id int32, 
 		return internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
-	repo := repository.New(tx)
+	repo := repository.New(pls.DB).WithTx(tx)
 	candidateListing := repository.DeleteListingParams{ID: id, PostedBy: postedBy}
 	cmdTag, err := repo.DeleteListing(ctx, candidateListing)
 	log.Println(cmdTag)
@@ -146,7 +146,7 @@ func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing)
 		return -1, internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
-	repo := repository.New(tx)
+	repo := repository.New(pls.DB).WithTx(tx)
 	rowsAffected, err := repo.UpdateListing(ctx, repository.UpdateListingParams{
 		ID:          l.ID,
 		PostedBy:    l.Provider.ID,

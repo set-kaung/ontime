@@ -69,7 +69,7 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 		return errors.New("invalid account status")
 	}
 
-	repo := repository.New(tx)
+	repo := repository.New(pus.DB).WithTx(tx)
 	_, err = repo.InsertUser(ctx, insertUserParams)
 	if err != nil {
 		log.Println(err)
@@ -107,7 +107,7 @@ func (pus *PostgresUserService) UpdateUser(ctx context.Context, user User) error
 		ZipPostalCode: user.ZipPostalCode,
 		ID:            user.ID,
 	}
-	repo := repository.New(tx)
+	repo := repository.New(pus.DB).WithTx(tx)
 	_, err = repo.UpdateUser(ctx, updateUserParams)
 	if err != nil {
 		log.Printf("UserService -> UpdateUser: error: %s\n", err)
@@ -133,7 +133,7 @@ func (pus *PostgresUserService) DeleteUser(ctx context.Context, id string) error
 		}
 	}()
 
-	repo := repository.New(tx)
+	repo := repository.New(pus.DB).WithTx(tx)
 	_, err = repo.DeleteUser(ctx, id)
 	if err != nil {
 		log.Printf("UserService -> DeleteUser: error: %s\n", err)

@@ -210,15 +210,22 @@ func (q *Queries) UpdateServiceRequest(ctx context.Context, arg UpdateServiceReq
 const updateServiceRequestCompletion = `-- name: UpdateServiceRequestCompletion :exec
 UPDATE service_request_completion
 SET requester_completed = $1, provider_completed = $2, is_active = $3
+WHERE request_id = $4
 `
 
 type UpdateServiceRequestCompletionParams struct {
-	RequesterCompleted bool `json:"requester_completed"`
-	ProviderCompleted  bool `json:"provider_completed"`
-	IsActive           bool `json:"is_active"`
+	RequesterCompleted bool  `json:"requester_completed"`
+	ProviderCompleted  bool  `json:"provider_completed"`
+	IsActive           bool  `json:"is_active"`
+	RequestID          int32 `json:"request_id"`
 }
 
 func (q *Queries) UpdateServiceRequestCompletion(ctx context.Context, arg UpdateServiceRequestCompletionParams) error {
-	_, err := q.db.Exec(ctx, updateServiceRequestCompletion, arg.RequesterCompleted, arg.ProviderCompleted, arg.IsActive)
+	_, err := q.db.Exec(ctx, updateServiceRequestCompletion,
+		arg.RequesterCompleted,
+		arg.ProviderCompleted,
+		arg.IsActive,
+		arg.RequestID,
+	)
 	return err
 }

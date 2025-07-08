@@ -24,7 +24,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 	}
 	defer tx.Rollback(ctx)
 
-	repo := repository.New(tx)
+	repo := repository.New(prs.DB).WithTx(tx)
 
 	insertServiceRequestParams := repository.InsertPendingServiceRequestParams{
 		ListingID:   r.Listing.ID,
@@ -70,6 +70,9 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+	repo = repository.New(prs.DB)
+	user, err := repo.GetUserByID(ctx, r.Requester.ID)
+	log.Println(user, err)
 	return rid, nil
 }
 
@@ -91,6 +94,9 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		Requester: user.User{
 			ID:       dbRequest.RequesterID,
 			FullName: dbRequest.RequesterFullName,
+		},
+		Provider: user.User{
+			ID: dbRequest.SrProviderID,
 		},
 		CreatedAt:          dbRequest.SrCreatedAt,
 		StatusDetail:       string(dbRequest.SrStatusDetail),
@@ -145,7 +151,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		return -1, internal.ErrInternalServerError
 	}
 
-	if repoRequest.ProviderID != providerID && repoRequest.SrActivity != "active" {
+	if repoRequest.ProviderID != providerID || repoRequest.SrActivity != "active" {
 		return -1, internal.ErrUnauthorized
 	}
 
@@ -160,7 +166,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		StatusDetail: "in_progress",
 		Activity:     "active",
 	}
-	repo = repository.New(tx)
+	repo = repository.New(prs.DB).WithTx(tx)
 	id, err := repo.UpdateServiceRequest(ctx, acceptServiceParams)
 	if err != nil {
 		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
@@ -182,7 +188,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		log.Println("DeclineServiceRequest: failed to get request from db: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	if repoRequest.ProviderID != providerID && repoRequest.SrActivity != "active" {
+	if repoRequest.ProviderID != providerID || repoRequest.SrActivity != "active" {
 		return -1, internal.ErrUnauthorized
 	}
 
@@ -192,7 +198,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		return -1, internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
-	repo = repository.New(tx)
+	repo = repository.New(prs.DB).WithTx(tx)
 	rID, err := repo.UpdateServiceRequest(ctx, repository.UpdateServiceRequestParams{
 		ID:           requestID,
 		StatusDetail: "declined",
@@ -241,12 +247,13 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 
 func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, requestID int32, userID string) (int32, error) {
 	rid := int32(-1)
-	repo := repository.New(prs.DB)
 	tx, err := prs.DB.Begin(ctx)
+	repo := repository.New(prs.DB).WithTx(tx)
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to create db transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+	defer tx.Rollback(ctx)
 	request, err := repo.GetRequestByID(ctx, requestID)
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to get request from db: ", err)
@@ -257,12 +264,12 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 	}
 
 	requestCompletion, err := repo.GetServiceRequestCompletion(ctx, requestID)
-	if !requestCompletion.IsActive {
-		return -1, internal.ErrUnauthorized
-	}
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)
 		return -1, internal.ErrInternalServerError
+	}
+	if !requestCompletion.IsActive {
+		return -1, internal.ErrUnauthorized
 	}
 	requesterComplete := requestCompletion.RequesterCompleted || (userID == request.RequesterID)
 	providerComplete := requestCompletion.ProviderCompleted || (userID == request.ProviderID)
@@ -270,12 +277,19 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		RequesterCompleted: requesterComplete,
 		ProviderCompleted:  providerComplete,
 		IsActive:           !(requesterComplete && providerComplete),
+		RequestID:          requestID,
 	})
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	if requesterComplete && providerComplete {
+	requestCompletion, err = repo.GetServiceRequestCompletion(ctx, requestID)
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to get requestCompletion from db: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	if requestCompletion.RequesterCompleted && requestCompletion.ProviderCompleted {
 		paymentHolding, err := repo.GetPaymentHolding(ctx, repository.GetPaymentHoldingParams{
 			ServiceRequestID: request.SrID,
 			PayerID:          request.RequesterID,
@@ -286,7 +300,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		}
 		err = repo.AddTokens(ctx, repository.AddTokensParams{
 			TokenBalance: paymentHolding.AmountTokens,
-			ID:           request.RequesterID,
+			ID:           request.ProviderID,
 		})
 		if err != nil {
 			log.Println("CompleteServiceRequest: failed to get add user tokens: ", err)
@@ -298,11 +312,21 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 			ServiceRequestID: requestID,
 		})
 
+		if err != nil {
+			log.Println("CompleteServiceRequest: failed to update payment holding ", err)
+			return -1, internal.ErrInternalServerError
+		}
+
 		rid, err = repo.UpdateServiceRequest(ctx, repository.UpdateServiceRequestParams{
 			StatusDetail: "completed",
 			Activity:     "inactive",
 			ID:           requestID,
 		})
+
+		if err != nil {
+			log.Println("CompleteServiceRequest: failed to update payment holding ", err)
+			return -1, internal.ErrInternalServerError
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {

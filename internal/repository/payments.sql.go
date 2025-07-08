@@ -58,7 +58,7 @@ func (q *Queries) InsertPaymentHolding(ctx context.Context, arg InsertPaymentHol
 
 const updatePaymentHolding = `-- name: UpdatePaymentHolding :execresult
 UPDATE payments
-SET status = $1 AND updated_at = NOW()
+SET status = $1, updated_at = NOW()
 WHERE service_request_id = $2
 `
 
