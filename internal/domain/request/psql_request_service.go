@@ -55,7 +55,6 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 	insertPaymentRequestParams := repository.InsertPaymentHoldingParams{
 		ServiceRequestID: rid,
 		PayerID:          r.Requester.ID,
-		AmountTokens:     r.Listing.TokenReward,
 	}
 
 	_, err = repo.InsertPaymentHolding(ctx, insertPaymentRequestParams)
