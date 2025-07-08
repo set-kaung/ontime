@@ -70,9 +70,6 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	repo = repository.New(prs.DB)
-	user, err := repo.GetUserByID(ctx, r.Requester.ID)
-	log.Println(user, err)
 	return rid, nil
 }
 

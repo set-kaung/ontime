@@ -45,7 +45,6 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 }
 
 func (pls *PostgresListingService) CreateListing(ctx context.Context, listing Listing) (int32, error) {
-	log.Println("Listing service called with data: ", listing)
 	tx, err := pls.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		log.Printf("CreateLising: failed to begin tx: %s\n", err)
