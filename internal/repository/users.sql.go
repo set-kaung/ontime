@@ -29,18 +29,20 @@ func (q *Queries) AddTokens(ctx context.Context, arg AddTokensParams) error {
 
 const deductTokens = `-- name: DeductTokens :execrows
 UPDATE users
-SET token_balance = token_balance - $1
-WHERE id = $2
-AND token_balance >= $1
+SET token_balance = token_balance - s.token_reward
+FROM service_listings s
+WHERE users.id = $1
+  AND s.id = $2
+  AND users.token_balance >= s.token_reward
 `
 
 type DeductTokensParams struct {
-	TokenBalance int32  `json:"token_balance"`
-	ID           string `json:"id"`
+	UserID    string `json:"user_id"`
+	ListingID int32  `json:"listing_id"`
 }
 
 func (q *Queries) DeductTokens(ctx context.Context, arg DeductTokensParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deductTokens, arg.TokenBalance, arg.ID)
+	result, err := q.db.Exec(ctx, deductTokens, arg.UserID, arg.ListingID)
 	if err != nil {
 		return 0, err
 	}

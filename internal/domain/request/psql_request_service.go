@@ -30,6 +30,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		ListingID:   r.Listing.ID,
 		RequesterID: r.Requester.ID,
 	}
+
 	rid, err := repo.InsertPendingServiceRequest(ctx, insertServiceRequestParams)
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to insert service request to db: ", err)
@@ -41,13 +42,16 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to insert service request completion to db: ", err)
 		return -1, err
 	}
-	result, err := repo.DeductTokens(ctx, repository.DeductTokensParams{
-		TokenBalance: r.Listing.TokenReward,
-		ID:           r.Requester.ID,
+
+	rowsAffected, err := repo.DeductTokens(ctx, repository.DeductTokensParams{
+		ListingID: r.Listing.ID,
+		UserID:    r.Requester.ID,
 	})
-	if result == 0 {
+
+	if rowsAffected != 1 {
 		return -1, internal.ErrInsufficientBalance
 	}
+
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to deduct tokens: ", err)
 		return -1, internal.ErrInternalServerError
@@ -248,7 +252,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		log.Println("CompleteServiceRequest: failed to get request from db: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	if request.ProviderID != userID && request.RequesterID == userID {
+	if request.ProviderID != userID && request.RequesterID != userID {
 		return -1, internal.ErrUnauthorized
 	}
 
