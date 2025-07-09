@@ -91,9 +91,11 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		Requester: user.User{
 			ID:       dbRequest.RequesterID,
 			FullName: dbRequest.RequesterFullName,
+			JoinedAt: dbRequest.RequesterJoinedAt,
 		},
 		Provider: user.User{
-			ID: dbRequest.SrProviderID,
+			ID:       dbRequest.SrProviderID,
+			JoinedAt: dbRequest.ProviderJoinedAt,
 		},
 		CreatedAt:          dbRequest.SrCreatedAt,
 		StatusDetail:       string(dbRequest.SrStatusDetail),
@@ -102,7 +104,6 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		ProviderCompleted:  dbRequest.ProviderCompleted,
 		RequesterCompleted: dbRequest.RequesterCompleted,
 	}
-
 	return r, nil
 }
 
@@ -122,11 +123,12 @@ func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Cont
 		} else {
 			requestType = OUTGOING
 		}
+
 		requests[i] = Request{
 			ID:           dbRequest.ID,
 			Listing:      listing.Listing{ID: dbRequest.ListingID},
-			Requester:    user.User{ID: dbRequest.RequesterID},
-			Provider:     user.User{ID: dbRequest.ProviderID},
+			Requester:    user.User{ID: dbRequest.RequesterID, FullName: dbRequest.RequesterName},
+			Provider:     user.User{ID: dbRequest.ProviderID, FullName: dbRequest.ProviderName},
 			Activity:     string(dbRequest.Activity),
 			StatusDetail: string(dbRequest.StatusDetail),
 			CreatedAt:    dbRequest.CreatedAt,

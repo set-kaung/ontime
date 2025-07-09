@@ -11,19 +11,42 @@ import (
 )
 
 const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :many
-SELECT id, listing_id, requester_id, provider_id, status_detail, activity, created_at, updated_at, token_reward FROM service_requests
-WHERE (provider_id = $1 OR requester_id = $1) AND activity = 'active'
+SELECT
+    sr.id, sr.listing_id, sr.requester_id, sr.provider_id, sr.status_detail, sr.activity, sr.created_at, sr.updated_at, sr.token_reward,
+    requester.full_name AS requester_name,
+    provider.full_name  AS provider_name
+FROM
+    service_requests sr
+JOIN users requester ON sr.requester_id = requester.id
+JOIN users provider  ON sr.provider_id = provider.id
+WHERE
+    (sr.provider_id = $1 OR sr.requester_id = $1)
+    AND sr.activity = 'active'
 `
 
-func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID string) ([]ServiceRequest, error) {
+type GetActiveUserServiceRequestsRow struct {
+	ID            int32                `json:"id"`
+	ListingID     int32                `json:"listing_id"`
+	RequesterID   string               `json:"requester_id"`
+	ProviderID    string               `json:"provider_id"`
+	StatusDetail  ServiceRequestStatus `json:"status_detail"`
+	Activity      ServiceActivity      `json:"activity"`
+	CreatedAt     time.Time            `json:"created_at"`
+	UpdatedAt     time.Time            `json:"updated_at"`
+	TokenReward   int32                `json:"token_reward"`
+	RequesterName string               `json:"requester_name"`
+	ProviderName  string               `json:"provider_name"`
+}
+
+func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID string) ([]GetActiveUserServiceRequestsRow, error) {
 	rows, err := q.db.Query(ctx, getActiveUserServiceRequests, providerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ServiceRequest
+	var items []GetActiveUserServiceRequestsRow
 	for rows.Next() {
-		var i ServiceRequest
+		var i GetActiveUserServiceRequestsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ListingID,
@@ -34,6 +57,8 @@ func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID s
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.TokenReward,
+			&i.RequesterName,
+			&i.ProviderName,
 		); err != nil {
 			return nil, err
 		}
@@ -66,9 +91,11 @@ SELECT
 
   ru.id AS requester_id,
   ru.full_name AS requester_full_name,
+  ru.joined_at AS requester_joined_at,
 
   pu.id AS provider_id,
   pu.full_name AS provider_full_name,
+  pu.joined_at AS provider_joined_at,
 
   src.requester_completed,
   src.provider_completed
@@ -100,8 +127,10 @@ type GetRequestByIDRow struct {
 	SlCategory         string               `json:"sl_category"`
 	RequesterID        string               `json:"requester_id"`
 	RequesterFullName  string               `json:"requester_full_name"`
+	RequesterJoinedAt  time.Time            `json:"requester_joined_at"`
 	ProviderID         string               `json:"provider_id"`
 	ProviderFullName   string               `json:"provider_full_name"`
+	ProviderJoinedAt   time.Time            `json:"provider_joined_at"`
 	RequesterCompleted bool                 `json:"requester_completed"`
 	ProviderCompleted  bool                 `json:"provider_completed"`
 }
@@ -127,8 +156,10 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 		&i.SlCategory,
 		&i.RequesterID,
 		&i.RequesterFullName,
+		&i.RequesterJoinedAt,
 		&i.ProviderID,
 		&i.ProviderFullName,
+		&i.ProviderJoinedAt,
 		&i.RequesterCompleted,
 		&i.ProviderCompleted,
 	)
