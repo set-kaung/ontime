@@ -33,6 +33,8 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.Country = repoUser.Country
 	user.JoinedAt = repoUser.JoinedAt
 	user.Email = repoUser.Email
+	user.ServicesProvided = uint32(repoUser.ServicesProvided)
+	user.ServicesReceived = uint32(repoUser.ServicesReceived)
 
 	return user, err
 }

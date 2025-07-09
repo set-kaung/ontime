@@ -7,6 +7,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -58,13 +59,49 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) (pgconn.CommandTag,
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, phone, token_balance, status, address_line_1, address_line_2, city, state_province, zip_postal_code, country, joined_at, email, full_name FROM users
-WHERE id = $1
+SELECT
+    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.email, u.full_name,
+    COALESCE(sp.requested_count, 0) AS services_received,
+    COALESCE(sp.provided_count, 0) AS services_provided
+FROM users u
+LEFT JOIN (
+    SELECT
+      user_id,
+      COUNT(*) FILTER (WHERE role = 'requester') AS requested_count,
+      COUNT(*) FILTER (WHERE role = 'provider') AS provided_count
+    FROM (
+      SELECT requester_id AS user_id, 'requester' AS role
+      FROM service_requests
+      UNION ALL
+      SELECT provider_id AS user_id, 'provider' AS role
+      FROM service_requests
+    ) combined
+    GROUP BY user_id
+) sp ON u.id = sp.user_id
+WHERE u.id = $1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
+type GetUserByIDRow struct {
+	ID               string        `json:"id"`
+	Phone            string        `json:"phone"`
+	TokenBalance     int32         `json:"token_balance"`
+	Status           AccountStatus `json:"status"`
+	AddressLine1     string        `json:"address_line_1"`
+	AddressLine2     string        `json:"address_line_2"`
+	City             string        `json:"city"`
+	StateProvince    string        `json:"state_province"`
+	ZipPostalCode    string        `json:"zip_postal_code"`
+	Country          string        `json:"country"`
+	JoinedAt         time.Time     `json:"joined_at"`
+	Email            bool          `json:"email"`
+	FullName         string        `json:"full_name"`
+	ServicesReceived int64         `json:"services_received"`
+	ServicesProvided int64         `json:"services_provided"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
-	var i User
+	var i GetUserByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Phone,
@@ -79,6 +116,8 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (User, error) {
 		&i.JoinedAt,
 		&i.Email,
 		&i.FullName,
+		&i.ServicesReceived,
+		&i.ServicesProvided,
 	)
 	return i, err
 }
