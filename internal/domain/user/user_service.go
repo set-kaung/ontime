@@ -9,4 +9,6 @@ type UserService interface {
 	InsertUser(context.Context, User) error
 	UpdateUser(context.Context, User) error
 	DeleteUser(context.Context, string) error
+	InsertAdsHistory(context.Context, string) error
+	GetAdsHistory(context.Context, string) (int64, error)
 }

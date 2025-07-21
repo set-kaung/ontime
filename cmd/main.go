@@ -26,7 +26,7 @@ type application struct {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Error loading .env file")
+		log.Println("Error loading .env file: ", err)
 		log.Println("Using system defaults.")
 	}
 

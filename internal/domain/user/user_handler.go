@@ -2,8 +2,10 @@ package user
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
@@ -102,5 +104,32 @@ func (uh *UserHandler) HandleDeleteUser(w http.ResponseWriter, r *http.Request) 
 		helpers.WriteServerError(w, nil)
 		return
 	}
+	helpers.WriteSuccess(w, http.StatusOK, "user deleted", nil)
+}
 
+func (uh *UserHandler) HandleAdWatched(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	err := uh.UserService.InsertAdsHistory(r.Context(), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "ad watched", nil)
+}
+
+func (uh *UserHandler) HandleGetAdsWatched(w http.ResponseWriter, r *http.Request) {
+	type AdsStatus struct {
+		Count     int64 `json:"count"`
+		IsAtLimit bool  `json:"is_at_limit"`
+	}
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	count, err := uh.UserService.GetAdsHistory(r.Context(), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, AdsStatus{
+		Count:     count,
+		IsAtLimit: fmt.Sprintf("%d", count) == os.Getenv("DAILY_ADS_LIMIT"),
+	}, nil)
 }

@@ -148,3 +148,47 @@ func (pus *PostgresUserService) DeleteUser(ctx context.Context, id string) error
 	}
 	return nil
 }
+
+func (pus *PostgresUserService) InsertAdsHistory(ctx context.Context, userID string) error {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("failed to begin tx: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+			log.Printf("failed to rollback tx: %s\n", err)
+		}
+	}()
+
+	repo := repository.New(pus.DB).WithTx(tx)
+	_, err = repo.InsertAdsHistory(ctx, userID)
+	if err != nil {
+		log.Printf("failed to insert ads history: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	err = repo.AddTokens(ctx, repository.AddTokensParams{
+		TokenBalance: 1,
+		ID:           userID,
+	})
+	if err != nil {
+		log.Printf("failed to add token balance for ad watching: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	if err = tx.Commit(ctx); err != nil {
+		log.Printf("failed to commit ads history: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
+	return nil
+}
+
+func (pus *PostgresUserService) GetAdsHistory(ctx context.Context, userID string) (int64, error) {
+	repo := repository.New(pus.DB)
+	count, err := repo.GetAdsWatched(ctx, userID)
+	if err != nil {
+		log.Printf("failed to get ads history: %s\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+	return count, nil
+}

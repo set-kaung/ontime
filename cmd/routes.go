@@ -56,5 +56,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /requests/{id}", protected.Chain(a.requestHandler.HandleGetRequestByID))
 	mux.Handle("GET /requests/incoming", protected.Chain(a.requestHandler.HandleGetAllIncomingRequest))
 
+	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
+	mux.Handle("GET /ads/watched", protected.Chain(a.userHandler.HandleGetAdsWatched))
 	return internal.CORS(mux)
 }
