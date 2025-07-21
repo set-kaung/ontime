@@ -95,6 +95,7 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		},
 		Provider: user.User{
 			ID:       dbRequest.SrProviderID,
+			FullName: dbRequest.ProviderFullName,
 			JoinedAt: dbRequest.ProviderJoinedAt,
 		},
 		CreatedAt:          dbRequest.SrCreatedAt,
