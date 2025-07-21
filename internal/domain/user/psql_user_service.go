@@ -2,8 +2,9 @@ package user
 
 import (
 	"context"
-	"errors"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -60,16 +61,7 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 		Country:       user.Country,
 	}
 
-	switch user.Status {
-	case "active":
-		insertUserParams.Status = repository.AccountStatusActive
-	case "suspended":
-		insertUserParams.Status = repository.AccountStatusSuspended
-	case "banned":
-		insertUserParams.Status = repository.AccountStatusBanned
-	default:
-		return errors.New("invalid account status")
-	}
+	insertUserParams.Status = repository.AccountStatusActive
 
 	repo := repository.New(pus.DB).WithTx(tx)
 	_, err = repo.InsertUser(ctx, insertUserParams)
@@ -82,6 +74,13 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 		}
 		return internal.ErrInternalServerError
 	}
+	tokenReward := os.Getenv("ONETIME_PAYMENT_TOKENS")
+	tokens, _ := strconv.Atoi(tokenReward)
+
+	err = repo.AddTokens(ctx, repository.AddTokensParams{
+		TokenBalance: int32(tokens),
+		ID:           user.ID,
+	})
 	err = tx.Commit(ctx)
 	if err != nil {
 		log.Printf("UserService -> InsertUser: error commiting transaction: %s\n", err)

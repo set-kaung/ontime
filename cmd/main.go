@@ -6,6 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"strconv"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
@@ -47,6 +48,11 @@ func main() {
 		log.Println("invalid port: ", port)
 		log.Println("Using default port 8080")
 		port = "8080"
+	}
+	tokenReward := os.Getenv("ONETIME_PAYMENT_TOKENS")
+	_, err = strconv.Atoi(tokenReward)
+	if err != nil {
+		panic(err)
 	}
 	a := &application{}
 

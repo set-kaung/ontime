@@ -18,4 +18,5 @@ type User struct {
 	Email            bool      `json:"email"`
 	ServicesReceived uint32    `json:"services_received"`
 	ServicesProvided uint32    `json:"services_provided"`
+	OneTimePaid      bool      `json:"paid"`
 }
