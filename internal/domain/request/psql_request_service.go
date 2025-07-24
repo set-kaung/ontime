@@ -127,7 +127,7 @@ func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Cont
 
 		requests[i] = Request{
 			ID:           dbRequest.ID,
-			Listing:      listing.Listing{ID: dbRequest.ListingID},
+			Listing:      listing.Listing{ID: dbRequest.ListingID, Title: dbRequest.Title},
 			Requester:    user.User{ID: dbRequest.RequesterID, FullName: dbRequest.RequesterName},
 			Provider:     user.User{ID: dbRequest.ProviderID, FullName: dbRequest.ProviderName},
 			Activity:     string(dbRequest.Activity),
@@ -135,6 +135,7 @@ func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Cont
 			CreatedAt:    dbRequest.CreatedAt,
 			UpdatedAt:    dbRequest.UpdatedAt,
 			Type:         requestType,
+			TokenReward:  dbRequest.TokenReward,
 		}
 	}
 	return requests, nil

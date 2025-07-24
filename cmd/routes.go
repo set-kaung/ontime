@@ -54,7 +54,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /requests/decline/{id}", protected.Chain(a.requestHandler.HandleDeclineServiceRequest))
 	mux.Handle("POST /requests/complete/{id}", protected.Chain(a.requestHandler.HandleCompleteServiceRequest))
 	mux.Handle("GET /requests/{id}", protected.Chain(a.requestHandler.HandleGetRequestByID))
-	mux.Handle("GET /requests/incoming", protected.Chain(a.requestHandler.HandleGetAllIncomingRequest))
+	mux.Handle("GET /requests/all", protected.Chain(a.requestHandler.HandleGetAllUserRequests))
 
 	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
 	mux.Handle("GET /ads/watched", protected.Chain(a.userHandler.HandleGetAdsWatched))

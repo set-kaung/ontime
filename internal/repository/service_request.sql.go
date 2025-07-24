@@ -14,11 +14,13 @@ const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :man
 SELECT
     sr.id, sr.listing_id, sr.requester_id, sr.provider_id, sr.status_detail, sr.activity, sr.created_at, sr.updated_at, sr.token_reward,
     requester.full_name AS requester_name,
-    provider.full_name  AS provider_name
+    provider.full_name  AS provider_name,
+    l.title
 FROM
     service_requests sr
 JOIN users requester ON sr.requester_id = requester.id
 JOIN users provider  ON sr.provider_id = provider.id
+JOIN service_listings l on sr.listing_id  = l.id
 WHERE
     (sr.provider_id = $1 OR sr.requester_id = $1)
     AND sr.activity = 'active'
@@ -36,6 +38,7 @@ type GetActiveUserServiceRequestsRow struct {
 	TokenReward   int32                `json:"token_reward"`
 	RequesterName string               `json:"requester_name"`
 	ProviderName  string               `json:"provider_name"`
+	Title         string               `json:"title"`
 }
 
 func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID string) ([]GetActiveUserServiceRequestsRow, error) {
@@ -59,6 +62,7 @@ func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID s
 			&i.TokenReward,
 			&i.RequesterName,
 			&i.ProviderName,
+			&i.Title,
 		); err != nil {
 			return nil, err
 		}

@@ -60,7 +60,7 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 	helpers.WriteData(w, http.StatusOK, request, nil)
 }
 
-func (rh *RequestHandler) HandleGetAllIncomingRequest(w http.ResponseWriter, r *http.Request) {
+func (rh *RequestHandler) HandleGetAllUserRequests(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	requests, err := rh.RequestService.GetUserActiveServiceRequests(r.Context(), userID)
 	if err != nil {
