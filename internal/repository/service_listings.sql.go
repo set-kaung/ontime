@@ -77,11 +77,17 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 }
 
 const getListingByID = `-- name: GetListingByID :one
-SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,u.id uid,u.full_name FROM service_listings sl
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,u.id uid,u.full_name,sr.id as request_id  FROM service_listings sl
 JOIN users u
-on u.id = sl.posted_by
+ON u.id = sl.posted_by
+LEFT JOIN service_requests sr ON sr.listing_id = sl.id AND sr.activity = 'active' AND sr.requester_id = $2
 WHERE sl.id = $1
 `
+
+type GetListingByIDParams struct {
+	ID          int32  `json:"id"`
+	RequesterID string `json:"requester_id"`
+}
 
 type GetListingByIDRow struct {
 	ID          int32       `json:"id"`
@@ -93,10 +99,11 @@ type GetListingByIDRow struct {
 	ImageUrl    pgtype.Text `json:"image_url"`
 	Uid         string      `json:"uid"`
 	FullName    string      `json:"full_name"`
+	RequestID   pgtype.Int4 `json:"request_id"`
 }
 
-func (q *Queries) GetListingByID(ctx context.Context, id int32) (GetListingByIDRow, error) {
-	row := q.db.QueryRow(ctx, getListingByID, id)
+func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) (GetListingByIDRow, error) {
+	row := q.db.QueryRow(ctx, getListingByID, arg.ID, arg.RequesterID)
 	var i GetListingByIDRow
 	err := row.Scan(
 		&i.ID,
@@ -108,6 +115,7 @@ func (q *Queries) GetListingByID(ctx context.Context, id int32) (GetListingByIDR
 		&i.ImageUrl,
 		&i.Uid,
 		&i.FullName,
+		&i.RequestID,
 	)
 	return i, err
 }

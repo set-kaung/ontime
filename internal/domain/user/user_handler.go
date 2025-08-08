@@ -133,3 +133,13 @@ func (uh *UserHandler) HandleGetAdsWatched(w http.ResponseWriter, r *http.Reques
 		IsAtLimit: fmt.Sprintf("%d", count) == os.Getenv("DAILY_ADS_LIMIT"),
 	}, nil)
 }
+
+func (uh *UserHandler) GetUserNotifications(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	notifications, err := uh.UserService.GetNotifications(r.Context(), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, notifications, nil)
+}

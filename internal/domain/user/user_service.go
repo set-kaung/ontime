@@ -11,4 +11,5 @@ type UserService interface {
 	DeleteUser(context.Context, string) error
 	InsertAdsHistory(context.Context, string) error
 	GetAdsHistory(context.Context, string) (int64, error)
+	GetNotifications(context.Context, string) ([]Notification, error)
 }

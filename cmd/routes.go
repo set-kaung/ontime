@@ -43,6 +43,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /update-profile-metadata", protected.Chain(a.userHandler.HandleInsertUser))
 	mux.Handle("POST /users/me/update", protected.Chain(a.userHandler.HandleUpdateUserProfile))
 	mux.Handle("DELETE /users/me/delete", protected.Chain(a.userHandler.HandleDeleteUser))
+	mux.Handle("GET /notifications", protected.Chain(a.userHandler.GetUserNotifications))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))

@@ -20,3 +20,10 @@ type User struct {
 	ServicesProvided uint32    `json:"services_provided"`
 	OneTimePaid      bool      `json:"paid"`
 }
+
+type Notification struct {
+	ID        int32     `json:"id"`
+	Message   string    `json:"message"`
+	UserID    string    `json:"user_id"`
+	Timestamp time.Time `json:"timestamp"`
+}

@@ -2,7 +2,9 @@ package listing
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -13,7 +15,8 @@ import (
 )
 
 type PostgresListingService struct {
-	DB *pgxpool.Pool
+	DB     *pgxpool.Pool
+	Logger *slog.Logger
 }
 
 func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy string) ([]Listing, error) {
@@ -96,9 +99,13 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 	return listings, nil
 }
 
-func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32) (Listing, error) {
+func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32, userId string) (Listing, error) {
 	repo := repository.New(pls.DB)
-	dbListing, err := repo.GetListingByID(ctx, id)
+	dbListing, err := repo.GetListingByID(ctx,
+		repository.GetListingByIDParams{
+			ID:          id,
+			RequesterID: userId,
+		})
 	if err != nil {
 		log.Println("psql_listing_service -> GetListingByID: err getting listing by id: ", err)
 		return Listing{}, err
@@ -112,6 +119,15 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32)
 	listing.PostedAt = dbListing.PostedAt
 	listing.Provider = user.User{ID: dbListing.Uid, FullName: dbListing.FullName}
 	listing.ImageURL = dbListing.ImageUrl.String
+	listing.TakenRequestID = -1
+
+	if dbListing.RequestID.Valid {
+		listing.TakenRequestID = dbListing.RequestID.Int32
+	}
+	fmt.Println(dbListing.RequestID)
+	pls.Logger.Log(ctx, slog.LevelDebug, "listing details by id",
+		slog.Any("listing", listing))
+
 	return listing, nil
 }
 
