@@ -11,3 +11,4 @@ query/
 dump_cmd.txt
 .DS_Store
 jwts.*
+*.sh
