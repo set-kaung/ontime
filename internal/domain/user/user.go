@@ -22,8 +22,13 @@ type User struct {
 }
 
 type Notification struct {
-	ID        int32     `json:"id"`
-	Message   string    `json:"message"`
-	UserID    string    `json:"user_id"`
-	Timestamp time.Time `json:"timestamp"`
+	ID              int32     `json:"id"`
+	Message         string    `json:"message"`
+	RecipientUserID string    `json:"recipient_user_id"`
+	ActionUserID    string    `json:"action_user_id"`
+	IsRead          bool      `jons:"is_read"`
+	EventID         int64     `json:"event_id"`
+	CreatedAt       time.Time `json:"created_at"`
+	EventType       string    `json:"event_type"`
+	EventTargetID   int32     `json:"event_target_id"`
 }

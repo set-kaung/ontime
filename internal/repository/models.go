@@ -326,10 +326,19 @@ type AdsWatchingHistory struct {
 }
 
 type Notification struct {
-	ID        int32     `json:"id"`
-	Message   string    `json:"message"`
-	UserID    string    `json:"user_id"`
-	Timestamp time.Time `json:"timestamp"`
+	ID              int32  `json:"id"`
+	Message         string `json:"message"`
+	RecipientUserID string `json:"recipient_user_id"`
+	ActionUserID    string `json:"action_user_id"`
+	IsRead          bool   `json:"is_read"`
+	EventID         int64  `json:"event_id"`
+}
+
+type NotificationEvent struct {
+	Type      string    `json:"type"`
+	TargetID  int32     `json:"target_id"`
+	CreatedAt time.Time `json:"created_at"`
+	ID        int64     `json:"id"`
 }
 
 type Payment struct {

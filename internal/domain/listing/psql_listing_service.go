@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -15,8 +14,7 @@ import (
 )
 
 type PostgresListingService struct {
-	DB     *pgxpool.Pool
-	Logger *slog.Logger
+	DB *pgxpool.Pool
 }
 
 func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy string) ([]Listing, error) {
@@ -125,9 +123,6 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 		listing.TakenRequestID = dbListing.RequestID.Int32
 	}
 	fmt.Println(dbListing.RequestID)
-	pls.Logger.Log(ctx, slog.LevelDebug, "listing details by id",
-		slog.Any("listing", listing))
-
 	return listing, nil
 }
 

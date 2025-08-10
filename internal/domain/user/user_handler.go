@@ -135,11 +135,13 @@ func (uh *UserHandler) HandleGetAdsWatched(w http.ResponseWriter, r *http.Reques
 }
 
 func (uh *UserHandler) GetUserNotifications(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("User requested for notifications!")
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	notifications, err := uh.UserService.GetNotifications(r.Context(), userID)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return
 	}
+
 	helpers.WriteData(w, http.StatusOK, notifications, nil)
 }

@@ -206,10 +206,15 @@ func (pus *PostgresUserService) GetNotifications(ctx context.Context, userID str
 	notifications := make([]Notification, 0, len(dbNotis))
 	for _, dbN := range dbNotis {
 		notifications = append(notifications, Notification{
-			ID:        dbN.ID,
-			UserID:    dbN.UserID,
-			Message:   dbN.Message,
-			Timestamp: dbN.Timestamp,
+			ID:              dbN.ID,
+			ActionUserID:    dbN.ActionUserID,
+			RecipientUserID: dbN.RecipientUserID,
+			EventID:         dbN.EventID,
+			Message:         dbN.Message,
+			IsRead:          dbN.IsRead,
+			CreatedAt:       dbN.CreatedAt,
+			EventType:       dbN.Type,
+			EventTargetID:   dbN.TargetID,
 		})
 	}
 	return notifications, nil

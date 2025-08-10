@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"log/slog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -58,9 +57,7 @@ func main() {
 	a := &application{}
 
 	psqlUserService := &user.PostgresUserService{DB: dbpool}
-	psqlListingService := &listing.PostgresListingService{DB: dbpool, Logger: slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))}
+	psqlListingService := &listing.PostgresListingService{DB: dbpool}
 	psqlRequestService := &request.PostgresRequestService{DB: dbpool}
 
 	a.userHandler = &user.UserHandler{UserService: psqlUserService}

@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -9,6 +10,10 @@ import (
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/repository"
+)
+
+const (
+	REQUEST_EVENT = "request"
 )
 
 type PostgresRequestService struct {
@@ -66,10 +71,39 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to insert payment holding to db: ", err)
 		return -1, err
 	}
+	request, err := repo.GetRequestByID(ctx, rid)
+	if err != nil {
+		log.Println("CreateServiceRequest: failed to get request: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	eID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+		TargetID: request.SrID,
+		Type:     REQUEST_EVENT,
+	})
+
+	if err != nil {
+		log.Println("CreateServiceRequest: failed to insert notification event: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	fmt.Println("Event with ID: ", eID)
+	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+		Message:         fmt.Sprintf("%s has requested your service \"%s\"", request.RequesterFullName, request.SlTitle),
+		RecipientUserID: request.ProviderID,
+		ActionUserID:    request.RequesterID,
+		EventID:         eID,
+	})
+
+	if err != nil {
+		log.Println("CreateServiceRequest: failed to insert notification: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("CreateServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+	log.Println("notification added")
 	return rid, nil
 }
 
@@ -173,10 +207,36 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		log.Println("AcceptServiceRequest: failed to create db transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+
+	eID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+		TargetID: repoRequest.SrID,
+		Type:     REQUEST_EVENT,
+	})
+
+	if err != nil {
+		log.Println("Accept Service Request: failed to insert notification event: ", err)
+		return -1, internal.ErrInternalServerError
+
+	}
+
+	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+		Message:         fmt.Sprintf("%s has accepted your request for \"%s\"", repoRequest.ProviderFullName, repoRequest.SlTitle),
+		RecipientUserID: repoRequest.RequesterID,
+		ActionUserID:    repoRequest.ProviderID,
+		EventID:         eID,
+	})
+
+	if err != nil {
+		log.Println("Accept Service Request: failed to insert notification: ", err)
+		return -1, internal.ErrInternalServerError
+
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("AcceptServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+
 	return id, nil
 }
 

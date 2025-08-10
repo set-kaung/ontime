@@ -7,29 +7,50 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const getNotifications = `-- name: GetNotifications :many
-SELECT id, message, user_id, timestamp FROM notifications
-WHERE user_id = $1
+SELECT n.id, message, recipient_user_id, action_user_id, is_read, event_id, type, target_id, created_at, ne.id FROM notifications n
+JOIN notification_events ne ON ne.id = n.event_id
+WHERE recipient_user_id = $1
 `
 
-func (q *Queries) GetNotifications(ctx context.Context, userID string) ([]Notification, error) {
-	rows, err := q.db.Query(ctx, getNotifications, userID)
+type GetNotificationsRow struct {
+	ID              int32     `json:"id"`
+	Message         string    `json:"message"`
+	RecipientUserID string    `json:"recipient_user_id"`
+	ActionUserID    string    `json:"action_user_id"`
+	IsRead          bool      `json:"is_read"`
+	EventID         int64     `json:"event_id"`
+	Type            string    `json:"type"`
+	TargetID        int32     `json:"target_id"`
+	CreatedAt       time.Time `json:"created_at"`
+	ID_2            int64     `json:"id_2"`
+}
+
+func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) ([]GetNotificationsRow, error) {
+	rows, err := q.db.Query(ctx, getNotifications, recipientUserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Notification
+	var items []GetNotificationsRow
 	for rows.Next() {
-		var i Notification
+		var i GetNotificationsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Message,
-			&i.UserID,
-			&i.Timestamp,
+			&i.RecipientUserID,
+			&i.ActionUserID,
+			&i.IsRead,
+			&i.EventID,
+			&i.Type,
+			&i.TargetID,
+			&i.CreatedAt,
+			&i.ID_2,
 		); err != nil {
 			return nil, err
 		}
@@ -41,16 +62,41 @@ func (q *Queries) GetNotifications(ctx context.Context, userID string) ([]Notifi
 	return items, nil
 }
 
-const insertNotification = `-- name: InsertNotification :execresult
-INSERT INTO notifications (message,user_id,timestamp)
+const insertEvent = `-- name: InsertEvent :one
+INSERT INTO notification_events (target_id,"type",created_at)
 VALUES ($1,$2,NOW())
+RETURNING id
+`
+
+type InsertEventParams struct {
+	TargetID int32  `json:"target_id"`
+	Type     string `json:"type"`
+}
+
+func (q *Queries) InsertEvent(ctx context.Context, arg InsertEventParams) (int64, error) {
+	row := q.db.QueryRow(ctx, insertEvent, arg.TargetID, arg.Type)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const insertNotification = `-- name: InsertNotification :execresult
+INSERT INTO notifications (message,recipient_user_id,action_user_id,is_read,event_id)
+VALUES ($1,$2,$3,false,$4)
 `
 
 type InsertNotificationParams struct {
-	Message string `json:"message"`
-	UserID  string `json:"user_id"`
+	Message         string `json:"message"`
+	RecipientUserID string `json:"recipient_user_id"`
+	ActionUserID    string `json:"action_user_id"`
+	EventID         int64  `json:"event_id"`
 }
 
 func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotificationParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, insertNotification, arg.Message, arg.UserID)
+	return q.db.Exec(ctx, insertNotification,
+		arg.Message,
+		arg.RecipientUserID,
+		arg.ActionUserID,
+		arg.EventID,
+	)
 }
