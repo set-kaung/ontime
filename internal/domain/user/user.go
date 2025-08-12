@@ -26,7 +26,7 @@ type Notification struct {
 	Message         string    `json:"message"`
 	RecipientUserID string    `json:"recipient_user_id"`
 	ActionUserID    string    `json:"action_user_id"`
-	IsRead          bool      `jons:"is_read"`
+	IsRead          bool      `json:"is_read"`
 	EventID         int64     `json:"event_id"`
 	CreatedAt       time.Time `json:"created_at"`
 	EventType       string    `json:"event_type"`

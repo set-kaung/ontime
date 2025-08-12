@@ -217,5 +217,33 @@ func (pus *PostgresUserService) GetNotifications(ctx context.Context, userID str
 			EventTargetID:   dbN.TargetID,
 		})
 	}
+
 	return notifications, nil
+}
+
+func (pus *PostgresUserService) UpdateNotificationStatus(ctx context.Context, userID string, notiID int32) error {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Println("UpdateNotificationStatus: failed to start transaction: ", err)
+		return internal.ErrInternalServerError
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
+			log.Printf("failed to rollback tx: %s\n", err)
+		}
+	}()
+	repo := repository.New(pus.DB).WithTx(tx)
+	_, err = repo.SetUserNotificationsRead(ctx, repository.SetUserNotificationsReadParams{
+		RecipientUserID: userID,
+		ID:              notiID,
+	})
+	if err != nil {
+		log.Println("UpdateNotificationStatus: failed to update notifications: ", err)
+		return internal.ErrInternalServerError
+	}
+	if err = tx.Commit(ctx); err != nil {
+		log.Println("UpdateNotificationStatus: failed to commit transaction: ", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/repository"
 )
@@ -103,7 +104,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	log.Println("notification added")
+	internal.PusherClient.Trigger(fmt.Sprintf("user-%s", request.ProviderID), "new-notification", nil)
 	return rid, nil
 }
 
@@ -236,7 +237,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		log.Println("AcceptServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-
+	internal.PusherClient.Trigger(fmt.Sprintf("user-%s", repoRequest.RequesterID), "new-notification", nil)
 	return id, nil
 }
 

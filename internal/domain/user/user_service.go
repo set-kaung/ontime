@@ -12,4 +12,5 @@ type UserService interface {
 	InsertAdsHistory(context.Context, string) error
 	GetAdsHistory(context.Context, string) (int64, error)
 	GetNotifications(context.Context, string) ([]Notification, error)
+	UpdateNotificationStatus(context.Context, string, int32) error
 }

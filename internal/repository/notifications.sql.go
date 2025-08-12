@@ -62,6 +62,18 @@ func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) 
 	return items, nil
 }
 
+const getUnreadNotificationsCount = `-- name: GetUnreadNotificationsCount :one
+SELECT COUNT(n.id) FROM notifications n
+WHERE n.recipient_user_id = $1 AND n.is_read = false
+`
+
+func (q *Queries) GetUnreadNotificationsCount(ctx context.Context, recipientUserID string) (int64, error) {
+	row := q.db.QueryRow(ctx, getUnreadNotificationsCount, recipientUserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const insertEvent = `-- name: InsertEvent :one
 INSERT INTO notification_events (target_id,"type",created_at)
 VALUES ($1,$2,NOW())
@@ -99,4 +111,19 @@ func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotification
 		arg.ActionUserID,
 		arg.EventID,
 	)
+}
+
+const setUserNotificationsRead = `-- name: SetUserNotificationsRead :execresult
+UPDATE notifications
+SET is_read = true
+WHERE id = $1 AND recipient_user_id = $2 AND is_read = false
+`
+
+type SetUserNotificationsReadParams struct {
+	ID              int32  `json:"id"`
+	RecipientUserID string `json:"recipient_user_id"`
+}
+
+func (q *Queries) SetUserNotificationsRead(ctx context.Context, arg SetUserNotificationsReadParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, setUserNotificationsRead, arg.ID, arg.RecipientUserID)
 }

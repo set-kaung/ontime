@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
@@ -135,7 +136,6 @@ func (uh *UserHandler) HandleGetAdsWatched(w http.ResponseWriter, r *http.Reques
 }
 
 func (uh *UserHandler) GetUserNotifications(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("User requested for notifications!")
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	notifications, err := uh.UserService.GetNotifications(r.Context(), userID)
 	if err != nil {
@@ -143,5 +143,23 @@ func (uh *UserHandler) GetUserNotifications(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	log.Println(notifications)
+
 	helpers.WriteData(w, http.StatusOK, notifications, nil)
+}
+
+func (uh *UserHandler) HandleUpdateNotificationStatus(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+
+	notiIDStr := r.URL.Query().Get("id")
+	notiID, err := strconv.ParseInt(notiIDStr, 10, 32)
+	if err != nil {
+		helpers.WriteError(w, http.StatusBadRequest, "invalid notification id", nil)
+		return
+	}
+
+	err = uh.UserService.UpdateNotificationStatus(r.Context(), userID, int32(notiID))
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+	}
 }
