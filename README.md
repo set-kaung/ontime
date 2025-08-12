@@ -1,5 +1,9 @@
 # Ontime
 
+Developed as part of the Bachelor of Computer Science curriculum at Assumption University, this project demonstrates core competencies in backend development, system design, and software engineering principles.
+
+# Overview
+
 This project is a backend service built with Go that provides user authentication, database integration, and real-time notifications.
 
 ## Features
