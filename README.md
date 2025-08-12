@@ -81,15 +81,15 @@ PUSHER_CLUSTER=your_cluster
 
 ```
 +-- cmd/                  # Application entry points
-+-- internal/             # Private application code
++-- internal/
 |   +-- domain/           # Business logic by domain
 |   +-- helpers/          # Helper functions
 |   +-- repository/       # Database access layer
-+-- .env                  # Environment variables
-+-- .gitignore            # Git ignore file
-+-- go.mod                # Go module definition
-+-- go.sum                # Go module checksums
-+-- README.md             # This file
++-- .env
++-- .gitignore
++-- go.mod
++-- go.sum
++-- README.md
 ```
 
 ## Database ERD
