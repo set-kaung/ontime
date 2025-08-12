@@ -20,7 +20,6 @@ This project is a backend service built with Go that provides user authenticatio
 - **Authentication**: Clerk
 - **Real-time Updates**: Pusher
 - **Environment**: Configurable via .env
-- **Tools**: sqlc
 
 ## Getting Started
 
@@ -30,7 +29,6 @@ This project is a backend service built with Go that provides user authenticatio
 - PostgreSQL
 - Pusher account (for real-time features)
 - Clerk account (required for authentication)
--
 
 ### Installation
 
