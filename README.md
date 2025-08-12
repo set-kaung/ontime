@@ -30,6 +30,7 @@ This project is a backend service built with Go that provides user authenticatio
 - PostgreSQL
 - Pusher account (for real-time features)
 - Clerk account (required for authentication)
+-
 
 ### Installation
 
@@ -50,7 +51,15 @@ This project is a backend service built with Go that provides user authenticatio
 
 4. Run the application
    ```bash
-   go run cmd/main.go
+   make run
+   ```
+   or if you want to just build
+   ```bash
+   make build
+   ```
+   and
+   ```bash
+   ./bin/ontime
    ```
 
 ## Configuration
