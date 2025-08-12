@@ -20,7 +20,7 @@ This project is a backend service built with Go that provides user authenticatio
 - **Authentication**: Clerk
 - **Real-time Updates**: Pusher
 - **Environment**: Configurable via .env
-- **Tooling**: sqlc
+- **Tools**: sqlc
 
 ## Getting Started
 
