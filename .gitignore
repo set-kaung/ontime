@@ -7,7 +7,7 @@ query/
 *.env*
 *.crt
 *.json
-*doc*
+doc.md
 dump_cmd.txt
 .DS_Store
 jwts.*

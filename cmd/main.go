@@ -32,7 +32,7 @@ func main() {
 		log.Println("Using system defaults.")
 	}
 
-	clerk.SetKey(os.Getenv("CLARKE_SECRET_KEY"))
+	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
 
 	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DBURL"))
 	if err != nil {
