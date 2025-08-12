@@ -7,6 +7,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/joho/godotenv"
@@ -33,13 +34,14 @@ func main() {
 	}
 
 	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
-
-	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DBURL"))
+	initCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	dbpool, err := pgxpool.New(initCtx, os.Getenv("DBURL"))
 	if err != nil {
-		log.Fatalln("error creating a pgxpool: ", err)
-		return
+		log.Fatalf("error creating a pgxpool: %v\n", err)
 	}
 	defer dbpool.Close()
+
 	if err := dbpool.Ping(context.Background()); err != nil {
 		log.Fatalln("ping failed:", err)
 		return
