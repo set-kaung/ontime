@@ -87,7 +87,6 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to insert notification event: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	fmt.Println("Event with ID: ", eID)
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         fmt.Sprintf("%s has requested your service \"%s\"", request.RequesterFullName, request.SlTitle),
 		RecipientUserID: request.ProviderID,
@@ -104,7 +103,10 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		log.Println("CreateServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	internal.PusherClient.Trigger(fmt.Sprintf("user-%s", request.ProviderID), "new-notification", nil)
+	err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", request.ProviderID), "new-notification", nil)
+	if err != nil {
+		log.Println("CreateServiceRequest: failed to send notification: ", err)
+	}
 	return rid, nil
 }
 
@@ -237,7 +239,10 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 		log.Println("AcceptServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
-	internal.PusherClient.Trigger(fmt.Sprintf("user-%s", repoRequest.RequesterID), "new-notification", nil)
+	err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", repoRequest.RequesterID), "new-notification", nil)
+	if err != nil {
+		log.Println("AcceptServiceRequest: failed to send notification: ", err)
+	}
 	return id, nil
 }
 
@@ -298,11 +303,37 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		return -1, internal.ErrInternalServerError
 	}
 
+	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+		TargetID: repoRequest.SrID,
+		Type:     REQUEST_EVENT,
+	})
+
+	if err != nil {
+		log.Println("DeclineServiceRequest: failed to insert event: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+		Message:         fmt.Sprintf("%s has declined your service request.", repoRequest.ProviderFullName),
+		RecipientUserID: repoRequest.RequesterID,
+		ActionUserID:    repoRequest.ProviderID,
+		EventID:         eventID,
+	})
+
+	if err != nil {
+		log.Println("DeclineServiceRequest: failed to insert notification: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("DeclineServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
 
+	err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", repoRequest.RequesterID), "new-notification", nil)
+	if err != nil {
+		log.Println("DeclineServiceRequest: failed to send notification: ", err)
+	}
 	return rID, nil
 
 }
@@ -391,9 +422,48 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		}
 	}
 
+	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+		TargetID: request.SrID,
+		Type:     REQUEST_EVENT,
+	})
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to insert event: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+	var notificationMessage string
+	var actionUserID string
+	var recipientID string
+	if request.RequesterFullName == "" || request.ProviderFullName == "" {
+		return -1, internal.ErrInternalServerError
+	}
+	if userID == request.RequesterID {
+		actionUserID = request.RequesterID
+		recipientID = request.ProviderID
+		notificationMessage = fmt.Sprintf("%s has confirmed completion.", request.RequesterFullName)
+	} else {
+		actionUserID = request.ProviderID
+		recipientID = request.RequesterID
+		notificationMessage = fmt.Sprintf("%s has confirmed completion.", request.ProviderFullName)
+	}
+	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+		Message:         notificationMessage,
+		EventID:         eventID,
+		ActionUserID:    actionUserID,
+		RecipientUserID: recipientID,
+	})
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to insert notification: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("CompleteServiceRequest: failed to commit transaction: ", err)
 		return -1, internal.ErrInternalServerError
+	}
+
+	err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", recipientID), "new-notification", nil)
+	if err != nil {
+		log.Println("CompleteServiceRequest: failed to send notification: ", err)
 	}
 	return rid, nil
 }

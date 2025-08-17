@@ -2,7 +2,6 @@ package listing
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -43,9 +42,7 @@ func (lh *ListingHandler) HandleGetListingByID(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
 		return
 	}
-
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
-	fmt.Printf("Debug: Listing %d\n", id)
 	listing, err := lh.ListingService.GetListingByID(r.Context(), int32(id), userID)
 	if err != nil {
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
