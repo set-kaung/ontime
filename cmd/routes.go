@@ -33,7 +33,7 @@ func (r *RouteChainer) Append(appendingRoutes ...func(http.Handler) http.Handler
 
 func (a *application) routes() http.Handler {
 
-	limiter := internal.NewSimpleRateLimiter(rate.Every(time.Second*20), 1)
+	limiter := internal.NewSimpleRateLimiter(rate.Every(time.Second*60), 1)
 	mux := http.NewServeMux()
 
 	chain := NewRouteChainer()
