@@ -45,6 +45,8 @@ func main() {
 	if err := dbpool.Ping(context.Background()); err != nil {
 		log.Fatalln("ping failed:", err)
 		return
+	} else {
+		log.Println("db connection Successful.")
 	}
 	port := os.Getenv("PORT")
 	if port == "" {

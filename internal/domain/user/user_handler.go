@@ -143,8 +143,6 @@ func (uh *UserHandler) GetUserNotifications(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	log.Println(notifications)
-
 	helpers.WriteData(w, http.StatusOK, notifications, nil)
 }
 
