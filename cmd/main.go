@@ -14,6 +14,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/request"
@@ -48,6 +49,7 @@ func main() {
 		log.Fatalln("can't load db url")
 		return
 	}
+
 	dbpool, err := pgxpool.New(initCtx, dbURL)
 	if err != nil {
 		log.Fatalf("error creating a pgxpool: %v\n", err)
@@ -71,6 +73,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	internal.PusherClient = internal.NewPusherClient()
+
 	a := &application{}
 
 	psqlUserService := &user.PostgresUserService{DB: dbpool}

@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
 	"github.com/set-kaung/senior_project_1/internal"
+	"golang.org/x/time/rate"
 )
 
 type RouteChainer struct {
@@ -30,6 +32,8 @@ func (r *RouteChainer) Append(appendingRoutes ...func(http.Handler) http.Handler
 }
 
 func (a *application) routes() http.Handler {
+
+	limiter := internal.NewSimpleRateLimiter(rate.Every(time.Second*20), 1)
 	mux := http.NewServeMux()
 
 	chain := NewRouteChainer()
@@ -43,7 +47,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /update-profile-metadata", protected.Chain(a.userHandler.HandleInsertUser))
 	mux.Handle("POST /users/me/update", protected.Chain(a.userHandler.HandleUpdateUserProfile))
 	mux.Handle("DELETE /users/me/delete", protected.Chain(a.userHandler.HandleDeleteUser))
-	mux.Handle("GET /notifications", protected.Chain(a.userHandler.GetUserNotifications))
+	mux.Handle("GET /notifications", protected.Chain(limiter.RateLimitMiddleware(a.userHandler.GetUserNotifications)))
 	mux.Handle("PUT /read-notification", protected.Chain(a.userHandler.HandleUpdateNotificationStatus))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
