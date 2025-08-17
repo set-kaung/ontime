@@ -33,10 +33,22 @@ func main() {
 		log.Println("Using system defaults.")
 	}
 
-	clerk.SetKey(os.Getenv("CLERK_SECRET_KEY"))
+	clerkKey := os.Getenv("CLERK_SECRET_KEY")
+
+	if clerkKey == "" {
+		log.Fatalln("can't load clerk key.")
+		return
+	}
+
+	clerk.SetKey(clerkKey)
 	initCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	dbpool, err := pgxpool.New(initCtx, os.Getenv("DBURL"))
+	dbURL := os.Getenv("DBURL")
+	if dbURL == "" {
+		log.Fatalln("can't load db url")
+		return
+	}
+	dbpool, err := pgxpool.New(initCtx, dbURL)
 	if err != nil {
 		log.Fatalf("error creating a pgxpool: %v\n", err)
 	}

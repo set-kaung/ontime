@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"log"
 	"os"
 
 	"github.com/pusher/pusher-http-go/v5"
@@ -9,11 +10,20 @@ import (
 var PusherClient = NewPusherClient()
 
 func NewPusherClient() *pusher.Client {
+	pusherAppID := os.Getenv("PUSHER_APP_ID")
+	pusherKey := os.Getenv("PUSHER_KEY")
+	pusherSecret := os.Getenv("PUSHER_SECRET")
+	pusherCluster := os.Getenv("PUSHER_CLUSTER")
+
+	if pusherAppID == "" || pusherKey == "" || pusherSecret == "" || pusherCluster == "" {
+		log.Fatalln("failed to load pusher variables")
+	}
+
 	return &pusher.Client{
-		AppID:   os.Getenv("PUSHER_APP_ID"),
-		Key:     os.Getenv("PUSHER_KEY"),
-		Secret:  os.Getenv("PUSHER_SECRET"),
-		Cluster: os.Getenv("PUSHER_CLUSTER"),
+		AppID:   pusherAppID,
+		Key:     pusherKey,
+		Secret:  pusherSecret,
+		Cluster: pusherCluster,
 		Secure:  true,
 	}
 }
