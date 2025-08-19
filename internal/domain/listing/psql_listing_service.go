@@ -2,7 +2,6 @@ package listing
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/jackc/pgx/v5"
@@ -122,7 +121,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 	if dbListing.RequestID.Valid {
 		listing.TakenRequestID = dbListing.RequestID.Int32
 	}
-	fmt.Println(dbListing.RequestID)
+
 	return listing, nil
 }
 
