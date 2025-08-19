@@ -145,9 +145,9 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 	return r, nil
 }
 
-func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Context, user_id string) ([]Request, error) {
+func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Context, userID string) ([]Request, error) {
 	repo := repository.New(prs.DB)
-	dbRequests, err := repo.GetActiveUserServiceRequests(ctx, user_id)
+	dbRequests, err := repo.GetActiveUserServiceRequests(ctx, userID)
 	if err != nil {
 		log.Println("GetAllIncomingRequests: failed to retrieve from db: ", err)
 		return nil, internal.ErrInternalServerError
@@ -156,7 +156,7 @@ func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Cont
 	var requestType RequestType
 	for i := range len(dbRequests) {
 		dbRequest := dbRequests[i]
-		if dbRequest.ProviderID == user_id {
+		if dbRequest.ProviderID == userID {
 			requestType = INCOMING
 		} else {
 			requestType = OUTGOING
@@ -173,8 +173,10 @@ func (prs *PostgresRequestService) GetUserActiveServiceRequests(ctx context.Cont
 			UpdatedAt:    dbRequest.UpdatedAt,
 			Type:         requestType,
 			TokenReward:  dbRequest.TokenReward,
+			IsProvider:   dbRequest.ProviderID == userID,
 		}
 	}
+
 	return requests, nil
 }
 
