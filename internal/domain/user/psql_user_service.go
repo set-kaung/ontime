@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -243,6 +244,31 @@ func (pus *PostgresUserService) UpdateNotificationStatus(ctx context.Context, us
 	}
 	if err = tx.Commit(ctx); err != nil {
 		log.Println("UpdateNotificationStatus: failed to commit transaction: ", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
+}
+
+func (pus *PostgresUserService) MarkAllAllNotificationsRead(ctx context.Context, recipientUserID string, targetTime time.Time) error {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Println("MarkAllAllNotificationsRead: failed to start transaction: ", err)
+		return internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(pus.DB).WithTx(tx)
+	_, err = repo.SetAllNotificationsRead(ctx, repository.SetAllNotificationsReadParams{
+		RecipientUserID: recipientUserID,
+		CreatedAt:       targetTime,
+	})
+
+	if err != nil {
+		log.Println("MarkAllAllNotificationsRead: failed to update all notifications: ", err)
+		return internal.ErrInternalServerError
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		log.Println("MarkAllNotificationsRead: failed to commit transaction: ", err)
 		return internal.ErrInternalServerError
 	}
 	return nil

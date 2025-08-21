@@ -22,3 +22,13 @@ WHERE n.recipient_user_id = $1 AND n.is_read = false;
 UPDATE notifications
 SET is_read = true
 WHERE id = $1 AND recipient_user_id = $2 AND is_read = false;
+
+
+-- name: SetAllNotificationsRead :exec
+UPDATE notifications
+SET is_read = true
+WHERE recipient_user_id = $1
+  AND event_id IN (
+    SELECT id FROM notification_events
+    WHERE created_at < $2
+  );

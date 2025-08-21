@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
@@ -159,5 +160,18 @@ func (uh *UserHandler) HandleUpdateNotificationStatus(w http.ResponseWriter, r *
 	err = uh.UserService.UpdateNotificationStatus(r.Context(), userID, int32(notiID))
 	if err != nil {
 		helpers.WriteServerError(w, nil)
+		return
 	}
+	helpers.WriteSuccess(w, http.StatusOK, "", nil)
+}
+
+func (uh *UserHandler) HandleMarkAllAsRead(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	targetTime := time.Now()
+	err := uh.UserService.MarkAllAllNotificationsRead(r.Context(), userID, targetTime)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "", nil)
 }

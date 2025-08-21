@@ -113,6 +113,25 @@ func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotification
 	)
 }
 
+const setAllNotificationsRead = `-- name: SetAllNotificationsRead :execresult
+UPDATE notifications
+SET is_read = true
+WHERE recipient_user_id = $1
+  AND event_id IN (
+    SELECT id FROM notification_events
+    WHERE created_at < $2
+  )
+`
+
+type SetAllNotificationsReadParams struct {
+	RecipientUserID string    `json:"recipient_user_id"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+func (q *Queries) SetAllNotificationsRead(ctx context.Context, arg SetAllNotificationsReadParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, setAllNotificationsRead, arg.RecipientUserID, arg.CreatedAt)
+}
+
 const setUserNotificationsRead = `-- name: SetUserNotificationsRead :execresult
 UPDATE notifications
 SET is_read = true
