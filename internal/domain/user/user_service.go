@@ -13,4 +13,5 @@ type UserService interface {
 	GetAdsHistory(context.Context, string) (int64, error)
 	GetNotifications(context.Context, string) ([]Notification, error)
 	UpdateNotificationStatus(context.Context, string, int32) error
+	UpdateUserFullName(ctx context.Context, newName string, userID string) error
 }

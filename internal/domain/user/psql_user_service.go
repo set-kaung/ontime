@@ -247,3 +247,28 @@ func (pus *PostgresUserService) UpdateNotificationStatus(ctx context.Context, us
 	}
 	return nil
 }
+
+func (pus *PostgresUserService) UpdateUserFullName(ctx context.Context, newName string, userID string) error {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Println("UpdateUserFullName: failed to start transactions: ", err)
+		return internal.ErrInternalServerError
+	}
+	repo := repository.New(pus.DB).WithTx(tx)
+	defer tx.Rollback(ctx)
+
+	_, err = repo.UpdateUserFullNmae(ctx, repository.UpdateUserFullNmaeParams{
+		FullName: newName,
+		ID:       userID,
+	})
+
+	if err != nil {
+		log.Println("UpdateUserFullName: failed to update user full name: ", err)
+		return internal.ErrInternalServerError
+	}
+	if err = tx.Commit(ctx); err != nil {
+		log.Println("UpdateUserFullName: failed to commit: ", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
+}

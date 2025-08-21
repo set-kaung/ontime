@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
@@ -160,4 +161,26 @@ func (uh *UserHandler) HandleUpdateNotificationStatus(w http.ResponseWriter, r *
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 	}
+}
+
+func (uh *UserHandler) HandlUpdateUserFullName(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	data := map[string]string{}
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		log.Println(err)
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	newName := strings.TrimSpace(data["full_name"])
+	if newName == "" {
+		helpers.WriteError(w, http.StatusBadRequest, "username can't be empty", nil)
+		return
+	}
+	err = uh.UserService.UpdateUserFullName(r.Context(), newName, userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "Name updated successfully", nil)
 }

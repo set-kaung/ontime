@@ -224,3 +224,22 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (pgconn.
 		arg.ID,
 	)
 }
+
+const updateUserFullNmae = `-- name: UpdateUserFullNmae :execrows
+UPDATE users
+SET full_name = $1
+WHERE id = $2
+`
+
+type UpdateUserFullNmaeParams struct {
+	FullName string `json:"full_name"`
+	ID       string `json:"id"`
+}
+
+func (q *Queries) UpdateUserFullNmae(ctx context.Context, arg UpdateUserFullNmaeParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateUserFullNmae, arg.FullName, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

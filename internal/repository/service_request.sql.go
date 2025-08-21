@@ -8,6 +8,8 @@ package repository
 import (
 	"context"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :many
@@ -185,6 +187,36 @@ func (q *Queries) GetServiceRequestCompletion(ctx context.Context, requestID int
 		&i.ProviderCompleted,
 		&i.IsActive,
 	)
+	return i, err
+}
+
+const inserUserRequestReview = `-- name: InserUserRequestReview :one
+INSERT INTO reviews (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
+VALUES ($1,$2,(SELECT provider_id from service_requests WHERE id = $1),$3,$4,NOW())
+RETURNING id, reviewee_id
+`
+
+type InserUserRequestReviewParams struct {
+	RequestID  int32       `json:"request_id"`
+	ReviewerID string      `json:"reviewer_id"`
+	Rating     int32       `json:"rating"`
+	Comment    pgtype.Text `json:"comment"`
+}
+
+type InserUserRequestReviewRow struct {
+	ID         int32  `json:"id"`
+	RevieweeID string `json:"reviewee_id"`
+}
+
+func (q *Queries) InserUserRequestReview(ctx context.Context, arg InserUserRequestReviewParams) (InserUserRequestReviewRow, error) {
+	row := q.db.QueryRow(ctx, inserUserRequestReview,
+		arg.RequestID,
+		arg.ReviewerID,
+		arg.Rating,
+		arg.Comment,
+	)
+	var i InserUserRequestReviewRow
+	err := row.Scan(&i.ID, &i.RevieweeID)
 	return i, err
 }
 
