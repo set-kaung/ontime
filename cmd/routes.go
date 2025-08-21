@@ -34,7 +34,7 @@ func (r *RouteChainer) Append(appendingRoutes ...func(http.Handler) http.Handler
 
 func (a *application) routes() http.Handler {
 
-	limiter := internal.NewSimpleRateLimiter(rate.Every(time.Second*60), 4)
+	limiter := internal.NewSimpleRateLimiter(rate.Every(time.Second*10), 20)
 	mux := http.NewServeMux()
 
 	chain := NewRouteChainer()
@@ -47,6 +47,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /users/me/services", protected.Chain(a.listingHandler.HandleGetOwnListings))
 	mux.Handle("POST /update-profile-metadata", protected.Chain(a.userHandler.HandleInsertUser))
 	mux.Handle("POST /users/me/update", protected.Chain(a.userHandler.HandleUpdateUserProfile))
+	mux.Handle("PATCH /users/me/change-name", protected.Chain(a.userHandler.HandlUpdateUserFullName))
 	mux.Handle("DELETE /users/me/delete", protected.Chain(a.userHandler.HandleDeleteUser))
 	mux.Handle("GET /notifications", protected.Chain(limiter.RateLimitMiddleware(a.userHandler.GetUserNotifications)))
 	mux.Handle("PUT /read-notification", protected.Chain(a.userHandler.HandleUpdateNotificationStatus))
@@ -63,6 +64,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /requests/complete/{id}", protected.Chain(a.requestHandler.HandleCompleteServiceRequest))
 	mux.Handle("GET /requests/{id}", protected.Chain(a.requestHandler.HandleGetRequestByID))
 	mux.Handle("GET /requests/all", protected.Chain(a.requestHandler.HandleGetAllUserRequests))
+	mux.Handle("GET /requests/review/{id}", protected.Chain(a.requestHandler.HandleSubmitReview))
 
 	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
 	mux.Handle("GET /ads/watched", protected.Chain(a.userHandler.HandleGetAdsWatched))
