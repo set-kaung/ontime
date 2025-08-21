@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -165,10 +166,33 @@ func (uh *UserHandler) HandleUpdateNotificationStatus(w http.ResponseWriter, r *
 	helpers.WriteSuccess(w, http.StatusOK, "", nil)
 }
 
+func (uh *UserHandler) HandleUpdateUserFullName(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	data := map[string]string{}
+	err := json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+
+	newName := strings.TrimSpace(data["full_name"])
+	if newName == "" {
+		helpers.WriteError(w, http.StatusBadRequest, "name can't be empty or only spaces", nil)
+		return
+	}
+
+	err = uh.UserService.UpdateUserFullName(r.Context(), newName, userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "", nil)
+}
+
 func (uh *UserHandler) HandleMarkAllAsRead(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	targetTime := time.Now()
-	err := uh.UserService.MarkAllAllNotificationsRead(r.Context(), userID, targetTime)
+	err := uh.UserService.MarkAllNotificationsRead(r.Context(), userID, targetTime)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return
