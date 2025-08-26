@@ -60,7 +60,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) (pgconn.CommandTag,
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.email, u.full_name,
+    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.email, u.full_name, u.avg_rating,
     COALESCE(sp.requested_count, 0) AS services_received,
     COALESCE(sp.provided_count, 0) AS services_provided
 FROM users u
@@ -95,6 +95,7 @@ type GetUserByIDRow struct {
 	JoinedAt         time.Time     `json:"joined_at"`
 	Email            bool          `json:"email"`
 	FullName         string        `json:"full_name"`
+	AvgRating        float32       `json:"avg_rating"`
 	ServicesReceived int64         `json:"services_received"`
 	ServicesProvided int64         `json:"services_provided"`
 }
@@ -116,6 +117,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 		&i.JoinedAt,
 		&i.Email,
 		&i.FullName,
+		&i.AvgRating,
 		&i.ServicesReceived,
 		&i.ServicesProvided,
 	)
@@ -148,12 +150,13 @@ INSERT INTO users (
     zip_postal_code,
     country,
     joined_at,
-    email
+    email,
+    rating
 )
 VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
-    $11, NOW(), $12
+    $11, NOW(), $12, 0
 )
 RETURNING id
 `

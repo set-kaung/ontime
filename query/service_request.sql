@@ -19,8 +19,6 @@ WHERE
 SELECT
   sr.id AS sr_id,
   sr.listing_id AS sr_listing_id,
-  sr.requester_id AS sr_requester_id,
-  sr.provider_id AS sr_provider_id,
   sr.status_detail AS sr_status_detail,
   sr.activity AS sr_activity,
   sr.created_at AS sr_created_at,
@@ -86,7 +84,7 @@ SET requester_completed = $1, provider_completed = $2, is_active = $3
 WHERE request_id = $4;
 
 
--- name: InserServiceRequestReview :one
+-- name: InsertServiceRequestReview :one
 INSERT INTO reviews (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
 VALUES ($1,$2,(SELECT provider_id from service_requests WHERE id = $1),$3,$4,NOW())
 RETURNING id, reviewee_id;

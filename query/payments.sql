@@ -1,4 +1,4 @@
--- name: InsertPaymentHolding :execresult
+-- name: InsertPaymentHolding :one
 INSERT INTO payments(service_request_id,payer_id,status,amount_tokens,created_at,updated_at)
 SELECT
     $1,

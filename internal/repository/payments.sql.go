@@ -36,7 +36,7 @@ func (q *Queries) GetPaymentHolding(ctx context.Context, arg GetPaymentHoldingPa
 	return i, err
 }
 
-const insertPaymentHolding = `-- name: InsertPaymentHolding :execresult
+const insertPaymentHolding = `-- name: InsertPaymentHolding :one
 INSERT INTO payments(service_request_id,payer_id,status,amount_tokens,created_at,updated_at)
 SELECT
     $1,
@@ -52,8 +52,11 @@ type InsertPaymentHoldingParams struct {
 	PayerID          string `json:"payer_id"`
 }
 
-func (q *Queries) InsertPaymentHolding(ctx context.Context, arg InsertPaymentHoldingParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, insertPaymentHolding, arg.ServiceRequestID, arg.PayerID)
+func (q *Queries) InsertPaymentHolding(ctx context.Context, arg InsertPaymentHoldingParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertPaymentHolding, arg.ServiceRequestID, arg.PayerID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const updatePaymentHolding = `-- name: UpdatePaymentHolding :execresult

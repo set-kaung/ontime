@@ -37,6 +37,7 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.Email = repoUser.Email
 	user.ServicesProvided = uint32(repoUser.ServicesProvided)
 	user.ServicesReceived = uint32(repoUser.ServicesReceived)
+	user.Rating = repoUser.AvgRating
 
 	return user, err
 }
@@ -257,7 +258,7 @@ func (pus *PostgresUserService) MarkAllNotificationsRead(ctx context.Context, re
 	}
 	defer tx.Rollback(ctx)
 	repo := repository.New(pus.DB).WithTx(tx)
-	_, err = repo.SetAllNotificationsRead(ctx, repository.SetAllNotificationsReadParams{
+	err = repo.SetAllNotificationsRead(ctx, repository.SetAllNotificationsReadParams{
 		RecipientUserID: recipientUserID,
 		CreatedAt:       targetTime,
 	})

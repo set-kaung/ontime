@@ -80,8 +80,6 @@ const getRequestByID = `-- name: GetRequestByID :one
 SELECT
   sr.id AS sr_id,
   sr.listing_id AS sr_listing_id,
-  sr.requester_id AS sr_requester_id,
-  sr.provider_id AS sr_provider_id,
   sr.status_detail AS sr_status_detail,
   sr.activity AS sr_activity,
   sr.created_at AS sr_created_at,
@@ -118,8 +116,6 @@ WHERE sr.id = $1
 type GetRequestByIDRow struct {
 	SrID               int32                `json:"sr_id"`
 	SrListingID        int32                `json:"sr_listing_id"`
-	SrRequesterID      string               `json:"sr_requester_id"`
-	SrProviderID       string               `json:"sr_provider_id"`
 	SrStatusDetail     ServiceRequestStatus `json:"sr_status_detail"`
 	SrActivity         ServiceActivity      `json:"sr_activity"`
 	SrCreatedAt        time.Time            `json:"sr_created_at"`
@@ -147,8 +143,6 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 	err := row.Scan(
 		&i.SrID,
 		&i.SrListingID,
-		&i.SrRequesterID,
-		&i.SrProviderID,
 		&i.SrStatusDetail,
 		&i.SrActivity,
 		&i.SrCreatedAt,
@@ -190,36 +184,6 @@ func (q *Queries) GetServiceRequestCompletion(ctx context.Context, requestID int
 	return i, err
 }
 
-const inserUserRequestReview = `-- name: InserUserRequestReview :one
-INSERT INTO reviews (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
-VALUES ($1,$2,(SELECT provider_id from service_requests WHERE id = $1),$3,$4,NOW())
-RETURNING id, reviewee_id
-`
-
-type InserUserRequestReviewParams struct {
-	RequestID  int32       `json:"request_id"`
-	ReviewerID string      `json:"reviewer_id"`
-	Rating     int32       `json:"rating"`
-	Comment    pgtype.Text `json:"comment"`
-}
-
-type InserUserRequestReviewRow struct {
-	ID         int32  `json:"id"`
-	RevieweeID string `json:"reviewee_id"`
-}
-
-func (q *Queries) InserUserRequestReview(ctx context.Context, arg InserUserRequestReviewParams) (InserUserRequestReviewRow, error) {
-	row := q.db.QueryRow(ctx, inserUserRequestReview,
-		arg.RequestID,
-		arg.ReviewerID,
-		arg.Rating,
-		arg.Comment,
-	)
-	var i InserUserRequestReviewRow
-	err := row.Scan(&i.ID, &i.RevieweeID)
-	return i, err
-}
-
 const insertPendingServiceRequest = `-- name: InsertPendingServiceRequest :one
 INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at,token_reward)
 SELECT
@@ -252,6 +216,36 @@ VALUES ($1,false,false,true)
 func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID int32) error {
 	_, err := q.db.Exec(ctx, insertServiceRequestCompletion, requestID)
 	return err
+}
+
+const insertServiceRequestReview = `-- name: InsertServiceRequestReview :one
+INSERT INTO reviews (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
+VALUES ($1,$2,(SELECT provider_id from service_requests WHERE id = $1),$3,$4,NOW())
+RETURNING id, reviewee_id
+`
+
+type InsertServiceRequestReviewParams struct {
+	RequestID  int32       `json:"request_id"`
+	ReviewerID string      `json:"reviewer_id"`
+	Rating     int32       `json:"rating"`
+	Comment    pgtype.Text `json:"comment"`
+}
+
+type InsertServiceRequestReviewRow struct {
+	ID         int32  `json:"id"`
+	RevieweeID string `json:"reviewee_id"`
+}
+
+func (q *Queries) InsertServiceRequestReview(ctx context.Context, arg InsertServiceRequestReviewParams) (InsertServiceRequestReviewRow, error) {
+	row := q.db.QueryRow(ctx, insertServiceRequestReview,
+		arg.RequestID,
+		arg.ReviewerID,
+		arg.Rating,
+		arg.Comment,
+	)
+	var i InsertServiceRequestReviewRow
+	err := row.Scan(&i.ID, &i.RevieweeID)
+	return i, err
 }
 
 const updateServiceRequest = `-- name: UpdateServiceRequest :one

@@ -276,49 +276,6 @@ func (ns NullStatus) Value() (driver.Value, error) {
 	return string(ns.Status), nil
 }
 
-type TransactionType string
-
-const (
-	TransactionTypeDeduct  TransactionType = "deduct"
-	TransactionTypeRelease TransactionType = "release"
-	TransactionTypeRefund  TransactionType = "refund"
-)
-
-func (e *TransactionType) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = TransactionType(s)
-	case string:
-		*e = TransactionType(s)
-	default:
-		return fmt.Errorf("unsupported scan type for TransactionType: %T", src)
-	}
-	return nil
-}
-
-type NullTransactionType struct {
-	TransactionType TransactionType `json:"transaction_type"`
-	Valid           bool            `json:"valid"` // Valid is true if TransactionType is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullTransactionType) Scan(value interface{}) error {
-	if value == nil {
-		ns.TransactionType, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.TransactionType.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullTransactionType) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.TransactionType), nil
-}
-
 type AdsWatchingHistory struct {
 	ID       int32     `json:"id"`
 	UserID   string    `json:"user_id"`
@@ -349,6 +306,15 @@ type Payment struct {
 	Status           PaymentStatus `json:"status"`
 	CreatedAt        time.Time     `json:"created_at"`
 	UpdatedAt        time.Time     `json:"updated_at"`
+}
+
+type Report struct {
+	ID           int32       `json:"id"`
+	ListingID    int32       `json:"listing_id"`
+	ReporterID   string      `json:"reporter_id"`
+	Datetime     time.Time   `json:"datetime"`
+	ReportReason pgtype.Text `json:"report_reason"`
+	Status       string      `json:"status"`
 }
 
 type Review struct {
@@ -401,13 +367,11 @@ type ServiceRequestCompletion struct {
 }
 
 type Transaction struct {
-	ID           int32           `json:"id"`
-	UserID       string          `json:"user_id"`
-	PaymentID    int32           `json:"payment_id"`
-	Type         TransactionType `json:"type"`
-	Amount       int32           `json:"amount"`
-	BalanceAfter int32           `json:"balance_after"`
-	CreatedAt    time.Time       `json:"created_at"`
+	ID        int32     `json:"id"`
+	UserID    string    `json:"user_id"`
+	Type      string    `json:"type"`
+	Amount    int32     `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type User struct {
@@ -424,4 +388,5 @@ type User struct {
 	JoinedAt      time.Time     `json:"joined_at"`
 	Email         bool          `json:"email"`
 	FullName      string        `json:"full_name"`
+	AvgRating     float32       `json:"avg_rating"`
 }

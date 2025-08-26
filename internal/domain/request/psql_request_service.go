@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	REQUEST_EVENT = "request"
-	REVIEW_EVENT  = "review"
+	REQUEST_EVENT   = "request"
+	REVIEW_EVENT    = "review"
+	DEDUCTION_TRANS = "deduct"
+	ADDITION_TRANS  = "addition"
 )
 
 type PostgresRequestService struct {
@@ -70,11 +72,12 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		PayerID:          r.Requester.ID,
 	}
 
-	_, err = repo.InsertPaymentHolding(ctx, insertPaymentRequestParams)
+	paymentID, err := repo.InsertPaymentHolding(ctx, insertPaymentRequestParams)
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to insert payment holding to db: ", err)
 		return -1, err
 	}
+
 	request, err := repo.GetRequestByID(ctx, rid)
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to get request: ", err)
@@ -88,6 +91,16 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 
 	if err != nil {
 		log.Println("CreateServiceRequest: failed to insert notification event: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	_, err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+		UserID:    r.Requester.ID,
+		Type:      DEDUCTION_TRANS,
+		PaymentID: paymentID,
+	})
+	if err != nil {
+		log.Println("CreateServiceRequest: failed to insert transaction: ", err)
 		return -1, internal.ErrInternalServerError
 	}
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
@@ -134,7 +147,7 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 			JoinedAt: dbRequest.RequesterJoinedAt,
 		},
 		Provider: user.User{
-			ID:       dbRequest.SrProviderID,
+			ID:       dbRequest.ProviderID,
 			FullName: dbRequest.ProviderFullName,
 			JoinedAt: dbRequest.ProviderJoinedAt,
 		},
@@ -294,6 +307,12 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		ID:           repoRequest.RequesterID,
 	})
 
+	_, err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+		UserID:    repoRequest.RequesterID,
+		Type:      ADDITION_TRANS,
+		PaymentID: paymentHolding.ID,
+	})
+
 	if err != nil {
 		log.Println("DeclineServiceRequest: failed to add user tokens: ", err)
 		return -1, internal.ErrInternalServerError
@@ -400,6 +419,11 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 			TokenBalance: paymentHolding.AmountTokens,
 			ID:           request.ProviderID,
 		})
+		_, err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+			UserID:    request.ProviderID,
+			Type:      ADDITION_TRANS,
+			PaymentID: paymentHolding.ID,
+		})
 		if err != nil {
 			log.Println("CompleteServiceRequest: failed to get add user tokens: ", err)
 			return -1, internal.ErrInternalServerError
@@ -456,6 +480,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		ActionUserID:    actionUserID,
 		RecipientUserID: recipientID,
 	})
+
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to insert notification: ", err)
 		return -1, internal.ErrInternalServerError
@@ -485,7 +510,7 @@ func (prs *PostgresRequestService) InsertRequestReview(ctx context.Context, r Re
 		}
 	}()
 	repo := repository.New(prs.DB).WithTx(tx)
-	insertedData, err := repo.InserUserRequestReview(ctx, repository.InserUserRequestReviewParams{
+	insertedData, err := repo.InsertServiceRequestReview(ctx, repository.InsertServiceRequestReviewParams{
 		RequestID:  r.RequestID,
 		ReviewerID: r.ReviewerID,
 		Comment:    pgtype.Text{String: r.Comment, Valid: !(r.Comment == "")},

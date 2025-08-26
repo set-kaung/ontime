@@ -2,8 +2,9 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.5
--- Dumped by pg_dump version 17.5 (Homebrew)
+
+-- Dumped from database version 17.5 (1b53132)
+-- Dumped by pg_dump version 17.6 (Homebrew)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -18,14 +19,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
 --
 
 COMMENT ON SCHEMA public IS '';
 
 
 --
--- Name: account_status; Type: TYPE; Schema: public; Owner: -
+-- Name: account_status; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.account_status AS ENUM (
@@ -35,8 +36,10 @@ CREATE TYPE public.account_status AS ENUM (
 );
 
 
+ALTER TYPE public.account_status OWNER TO neondb_owner;
+
 --
--- Name: payment_status; Type: TYPE; Schema: public; Owner: -
+-- Name: payment_status; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.payment_status AS ENUM (
@@ -47,8 +50,10 @@ CREATE TYPE public.payment_status AS ENUM (
 );
 
 
+ALTER TYPE public.payment_status OWNER TO neondb_owner;
+
 --
--- Name: service_activity; Type: TYPE; Schema: public; Owner: -
+-- Name: service_activity; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.service_activity AS ENUM (
@@ -57,8 +62,10 @@ CREATE TYPE public.service_activity AS ENUM (
 );
 
 
+ALTER TYPE public.service_activity OWNER TO neondb_owner;
+
 --
--- Name: service_request_status; Type: TYPE; Schema: public; Owner: -
+-- Name: service_request_status; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.service_request_status AS ENUM (
@@ -72,8 +79,10 @@ CREATE TYPE public.service_request_status AS ENUM (
 );
 
 
+ALTER TYPE public.service_request_status OWNER TO neondb_owner;
+
 --
--- Name: service_status; Type: TYPE; Schema: public; Owner: -
+-- Name: service_status; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.service_status AS ENUM (
@@ -84,8 +93,10 @@ CREATE TYPE public.service_status AS ENUM (
 );
 
 
+ALTER TYPE public.service_status OWNER TO neondb_owner;
+
 --
--- Name: status; Type: TYPE; Schema: public; Owner: -
+-- Name: status; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.status AS ENUM (
@@ -96,23 +107,14 @@ CREATE TYPE public.status AS ENUM (
 );
 
 
---
--- Name: transaction_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.transaction_type AS ENUM (
-    'deduct',
-    'release',
-    'refund'
-);
-
+ALTER TYPE public.status OWNER TO neondb_owner;
 
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: ads_watching_history; Type: TABLE; Schema: public; Owner: -
+-- Name: ads_watching_history; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.ads_watching_history (
@@ -122,8 +124,10 @@ CREATE TABLE public.ads_watching_history (
 );
 
 
+ALTER TABLE public.ads_watching_history OWNER TO neondb_owner;
+
 --
--- Name: ads_watching_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: ads_watching_history_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.ads_watching_history_id_seq
@@ -135,15 +139,17 @@ CREATE SEQUENCE public.ads_watching_history_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.ads_watching_history_id_seq OWNER TO neondb_owner;
+
 --
--- Name: ads_watching_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: ads_watching_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.ads_watching_history_id_seq OWNED BY public.ads_watching_history.id;
 
 
 --
--- Name: notification_events; Type: TABLE; Schema: public; Owner: -
+-- Name: notification_events; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.notification_events (
@@ -154,8 +160,10 @@ CREATE TABLE public.notification_events (
 );
 
 
+ALTER TABLE public.notification_events OWNER TO neondb_owner;
+
 --
--- Name: notification_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: notification_events_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE public.notification_events ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
@@ -169,7 +177,7 @@ ALTER TABLE public.notification_events ALTER COLUMN id ADD GENERATED ALWAYS AS I
 
 
 --
--- Name: notifications; Type: TABLE; Schema: public; Owner: -
+-- Name: notifications; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.notifications (
@@ -182,8 +190,10 @@ CREATE TABLE public.notifications (
 );
 
 
+ALTER TABLE public.notifications OWNER TO neondb_owner;
+
 --
--- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE public.notifications ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
@@ -197,7 +207,7 @@ ALTER TABLE public.notifications ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDE
 
 
 --
--- Name: payments; Type: TABLE; Schema: public; Owner: -
+-- Name: payments; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.payments (
@@ -211,8 +221,10 @@ CREATE TABLE public.payments (
 );
 
 
+ALTER TABLE public.payments OWNER TO neondb_owner;
+
 --
--- Name: payments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: payments_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.payments_id_seq
@@ -224,15 +236,47 @@ CREATE SEQUENCE public.payments_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.payments_id_seq OWNER TO neondb_owner;
+
 --
--- Name: payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.payments_id_seq OWNED BY public.payments.id;
 
 
 --
--- Name: reviews; Type: TABLE; Schema: public; Owner: -
+-- Name: reports; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.reports (
+    id integer NOT NULL,
+    listing_id integer NOT NULL,
+    reporter_id text NOT NULL,
+    datetime timestamptz NOT NULL,
+    report_reason text,
+    status text NOT NULL
+);
+
+
+ALTER TABLE public.reports OWNER TO neondb_owner;
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE public.reports ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public.reports_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- Name: reviews; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.reviews (
@@ -246,8 +290,10 @@ CREATE TABLE public.reviews (
 );
 
 
+ALTER TABLE public.reviews OWNER TO neondb_owner;
+
 --
--- Name: service_requests; Type: TABLE; Schema: public; Owner: -
+-- Name: service_requests; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.service_requests (
@@ -263,8 +309,10 @@ CREATE TABLE public.service_requests (
 );
 
 
+ALTER TABLE public.service_requests OWNER TO neondb_owner;
+
 --
--- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.reviews_id_seq
@@ -276,15 +324,17 @@ CREATE SEQUENCE public.reviews_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.reviews_id_seq OWNER TO neondb_owner;
+
 --
--- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.reviews_id_seq OWNED BY public.service_requests.id;
 
 
 --
--- Name: reviews_id_seq1; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: reviews_id_seq1; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.reviews_id_seq1
@@ -296,15 +346,17 @@ CREATE SEQUENCE public.reviews_id_seq1
     CACHE 1;
 
 
+ALTER SEQUENCE public.reviews_id_seq1 OWNER TO neondb_owner;
+
 --
--- Name: reviews_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: reviews_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.reviews_id_seq1 OWNED BY public.reviews.id;
 
 
 --
--- Name: rewards; Type: TABLE; Schema: public; Owner: -
+-- Name: rewards; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.rewards (
@@ -316,8 +368,10 @@ CREATE TABLE public.rewards (
 );
 
 
+ALTER TABLE public.rewards OWNER TO neondb_owner;
+
 --
--- Name: rewards_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: rewards_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.rewards_id_seq
@@ -329,15 +383,17 @@ CREATE SEQUENCE public.rewards_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.rewards_id_seq OWNER TO neondb_owner;
+
 --
--- Name: rewards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: rewards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.rewards_id_seq OWNED BY public.rewards.id;
 
 
 --
--- Name: service_listings; Type: TABLE; Schema: public; Owner: -
+-- Name: service_listings; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.service_listings (
@@ -352,8 +408,10 @@ CREATE TABLE public.service_listings (
 );
 
 
+ALTER TABLE public.service_listings OWNER TO neondb_owner;
+
 --
--- Name: service_listings_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: service_listings_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.service_listings_id_seq
@@ -365,15 +423,17 @@ CREATE SEQUENCE public.service_listings_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.service_listings_id_seq OWNER TO neondb_owner;
+
 --
--- Name: service_listings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: service_listings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.service_listings_id_seq OWNED BY public.service_listings.id;
 
 
 --
--- Name: service_request_completion; Type: TABLE; Schema: public; Owner: -
+-- Name: service_request_completion; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.service_request_completion (
@@ -385,8 +445,10 @@ CREATE TABLE public.service_request_completion (
 );
 
 
+ALTER TABLE public.service_request_completion OWNER TO neondb_owner;
+
 --
--- Name: services_request_completion_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: services_request_completion_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.services_request_completion_id_seq
@@ -398,30 +460,32 @@ CREATE SEQUENCE public.services_request_completion_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.services_request_completion_id_seq OWNER TO neondb_owner;
+
 --
--- Name: services_request_completion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: services_request_completion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.services_request_completion_id_seq OWNED BY public.service_request_completion.id;
 
 
 --
--- Name: transactions; Type: TABLE; Schema: public; Owner: -
+-- Name: transactions; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.transactions (
     id integer NOT NULL,
     user_id text NOT NULL,
-    payment_id integer NOT NULL,
-    type public.transaction_type NOT NULL,
+    type text NOT NULL,
     amount integer NOT NULL,
-    balance_after integer NOT NULL,
     created_at timestamptz DEFAULT now() NOT NULL
 );
 
 
+ALTER TABLE public.transactions OWNER TO neondb_owner;
+
 --
--- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.transactions_id_seq
@@ -433,15 +497,17 @@ CREATE SEQUENCE public.transactions_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.transactions_id_seq OWNER TO neondb_owner;
+
 --
--- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: -
+-- Name: users; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.users (
@@ -457,12 +523,15 @@ CREATE TABLE public.users (
     country text NOT NULL,
     joined_at timestamptz NOT NULL,
     email boolean NOT NULL,
-    full_name text NOT NULL
+    full_name text NOT NULL,
+    avg_rating real NOT NULL
 );
 
 
+ALTER TABLE public.users OWNER TO neondb_owner;
+
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -474,71 +543,73 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.users_id_seq OWNER TO neondb_owner;
+
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: ads_watching_history id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: ads_watching_history id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.ads_watching_history ALTER COLUMN id SET DEFAULT nextval('public.ads_watching_history_id_seq'::regclass);
 
 
 --
--- Name: payments id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: payments id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.payments ALTER COLUMN id SET DEFAULT nextval('public.payments_id_seq'::regclass);
 
 
 --
--- Name: reviews id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: reviews id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq1'::regclass);
 
 
 --
--- Name: rewards id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: rewards id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.rewards ALTER COLUMN id SET DEFAULT nextval('public.rewards_id_seq'::regclass);
 
 
 --
--- Name: service_listings id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: service_listings id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_listings ALTER COLUMN id SET DEFAULT nextval('public.service_listings_id_seq'::regclass);
 
 
 --
--- Name: service_request_completion id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: service_request_completion id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_request_completion ALTER COLUMN id SET DEFAULT nextval('public.services_request_completion_id_seq'::regclass);
 
 
 --
--- Name: service_requests id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: service_requests id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_requests ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
 
 
 --
--- Name: transactions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: transactions id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.transactions ALTER COLUMN id SET DEFAULT nextval('public.transactions_id_seq'::regclass);
 
 
 --
--- Name: ads_watching_history ads_watching_history_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: ads_watching_history ads_watching_history_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.ads_watching_history
@@ -546,7 +617,7 @@ ALTER TABLE ONLY public.ads_watching_history
 
 
 --
--- Name: notification_events notification_events_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notification_events notification_events_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.notification_events
@@ -554,7 +625,7 @@ ALTER TABLE ONLY public.notification_events
 
 
 --
--- Name: notifications notifications_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications notifications_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.notifications
@@ -562,7 +633,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: payments payments_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.payments
@@ -570,7 +641,15 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: service_requests requests_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: reports reports_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_pk PRIMARY KEY (id);
+
+
+--
+-- Name: service_requests requests_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_requests
@@ -578,7 +657,7 @@ ALTER TABLE ONLY public.service_requests
 
 
 --
--- Name: reviews reviews_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews reviews_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -586,7 +665,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews reviews_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews reviews_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -594,7 +673,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: rewards rewards_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: rewards rewards_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.rewards
@@ -602,7 +681,7 @@ ALTER TABLE ONLY public.rewards
 
 
 --
--- Name: service_listings service_listings_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: service_listings service_listings_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_listings
@@ -610,7 +689,7 @@ ALTER TABLE ONLY public.service_listings
 
 
 --
--- Name: service_request_completion services_request_completion_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: service_request_completion services_request_completion_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_request_completion
@@ -618,7 +697,7 @@ ALTER TABLE ONLY public.service_request_completion
 
 
 --
--- Name: transactions transactions_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.transactions
@@ -626,7 +705,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- Name: users users_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.users
@@ -634,7 +713,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.users
@@ -642,7 +721,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: ads_watching_history ads_watching_history_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ads_watching_history ads_watching_history_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.ads_watching_history
@@ -650,7 +729,7 @@ ALTER TABLE ONLY public.ads_watching_history
 
 
 --
--- Name: notifications notifications_notification_events_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications notifications_notification_events_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.notifications
@@ -658,7 +737,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: notifications notifications_users_action_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications notifications_users_action_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.notifications
@@ -666,7 +745,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: notifications notifications_users_recipient_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: notifications notifications_users_recipient_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.notifications
@@ -674,7 +753,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: payments payments_service_requests_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_service_requests_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.payments
@@ -682,7 +761,7 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: payments payments_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: payments payments_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.payments
@@ -690,7 +769,23 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: reviews reviews_service_requests_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reports reports_service_listings_fk_1; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_service_listings_fk_1 FOREIGN KEY (listing_id) REFERENCES public.service_listings(id);
+
+
+--
+-- Name: reports reports_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_users_fk FOREIGN KEY (reporter_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: reviews reviews_service_requests_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -698,7 +793,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews reviews_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews reviews_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -706,7 +801,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews reviews_users_fk_1; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: reviews reviews_users_fk_1; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.reviews
@@ -714,7 +809,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: service_listings service_listings_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: service_listings service_listings_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_listings
@@ -722,7 +817,7 @@ ALTER TABLE ONLY public.service_listings
 
 
 --
--- Name: service_requests service_requests_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: service_requests service_requests_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_requests
@@ -730,7 +825,7 @@ ALTER TABLE ONLY public.service_requests
 
 
 --
--- Name: service_requests service_requests_users_fk_1; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: service_requests service_requests_users_fk_1; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_requests
@@ -738,7 +833,7 @@ ALTER TABLE ONLY public.service_requests
 
 
 --
--- Name: service_request_completion services_request_completion_service_requests_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: service_request_completion services_request_completion_service_requests_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.service_request_completion
@@ -746,19 +841,25 @@ ALTER TABLE ONLY public.service_request_completion
 
 
 --
--- Name: transactions transactions_payments_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_payments_fk FOREIGN KEY (payment_id) REFERENCES public.payments(id);
-
-
---
--- Name: transactions transactions_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: transactions transactions_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO neon_superuser WITH GRANT OPTION;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABLES TO neon_superuser WITH GRANT OPTION;
 
 
 --

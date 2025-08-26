@@ -19,7 +19,7 @@ type User struct {
 	ServicesReceived uint32    `json:"services_received"`
 	ServicesProvided uint32    `json:"services_provided"`
 	OneTimePaid      bool      `json:"paid"`
-	Rating           float64   `json:"rating"`
+	Rating           float32   `json:"rating"`
 }
 
 type Notification struct {
