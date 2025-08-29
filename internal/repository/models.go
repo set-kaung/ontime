@@ -308,6 +308,14 @@ type Payment struct {
 	UpdatedAt        time.Time     `json:"updated_at"`
 }
 
+type RedeemedReward struct {
+	ID         int32     `json:"id"`
+	RewardID   int32     `json:"reward_id"`
+	UserID     string    `json:"user_id"`
+	RedeemedAt time.Time `json:"redeemed_at"`
+	Cost       int32     `json:"cost"`
+}
+
 type Report struct {
 	ID           int32       `json:"id"`
 	ListingID    int32       `json:"listing_id"`
@@ -328,11 +336,14 @@ type Review struct {
 }
 
 type Reward struct {
-	ID              int32  `json:"id"`
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	Cost            int32  `json:"cost"`
-	AvailableAmount int32  `json:"available_amount"`
+	ID              int32       `json:"id"`
+	Title           string      `json:"title"`
+	Description     string      `json:"description"`
+	Cost            int32       `json:"cost"`
+	AvailableAmount int32       `json:"available_amount"`
+	ImageUrl        pgtype.Text `json:"image_url"`
+	CreatedDate     time.Time   `json:"created_date"`
+	CouponCode      string      `json:"coupon_code"`
 }
 
 type ServiceListing struct {

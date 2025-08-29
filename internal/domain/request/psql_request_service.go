@@ -94,7 +94,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 		return -1, internal.ErrInternalServerError
 	}
 
-	_, err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+	err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 		UserID:    r.Requester.ID,
 		Type:      DEDUCTION_TRANS,
 		PaymentID: paymentID,
@@ -307,7 +307,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		ID:           repoRequest.RequesterID,
 	})
 
-	_, err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+	err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 		UserID:    repoRequest.RequesterID,
 		Type:      ADDITION_TRANS,
 		PaymentID: paymentHolding.ID,
@@ -419,7 +419,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 			TokenBalance: paymentHolding.AmountTokens,
 			ID:           request.ProviderID,
 		})
-		_, err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+		err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 			UserID:    request.ProviderID,
 			Type:      ADDITION_TRANS,
 			PaymentID: paymentHolding.ID,

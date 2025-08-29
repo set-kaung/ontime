@@ -2,7 +2,6 @@
 -- PostgreSQL database dump
 --
 
-
 -- Dumped from database version 17.5 (1b53132)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
@@ -246,6 +245,43 @@ ALTER SEQUENCE public.payments_id_seq OWNED BY public.payments.id;
 
 
 --
+-- Name: redeemed_rewards; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.redeemed_rewards (
+    id integer NOT NULL,
+    reward_id integer NOT NULL,
+    user_id text NOT NULL,
+    redeemed_at timestamptz NOT NULL,
+    cost integer NOT NULL
+);
+
+
+ALTER TABLE public.redeemed_rewards OWNER TO neondb_owner;
+
+--
+-- Name: redeemed_rewards_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+--
+
+CREATE SEQUENCE public.redeemed_rewards_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.redeemed_rewards_id_seq OWNER TO neondb_owner;
+
+--
+-- Name: redeemed_rewards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+--
+
+ALTER SEQUENCE public.redeemed_rewards_id_seq OWNED BY public.redeemed_rewards.id;
+
+
+--
 -- Name: reports; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
@@ -364,7 +400,10 @@ CREATE TABLE public.rewards (
     title text NOT NULL,
     description text NOT NULL,
     cost integer NOT NULL,
-    available_amount integer NOT NULL
+    available_amount integer NOT NULL,
+    image_url character varying,
+    created_date timestamptz NOT NULL,
+    coupon_code character varying NOT NULL
 );
 
 
@@ -567,6 +606,13 @@ ALTER TABLE ONLY public.payments ALTER COLUMN id SET DEFAULT nextval('public.pay
 
 
 --
+-- Name: redeemed_rewards id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.redeemed_rewards ALTER COLUMN id SET DEFAULT nextval('public.redeemed_rewards_id_seq'::regclass);
+
+
+--
 -- Name: reviews id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
@@ -638,6 +684,14 @@ ALTER TABLE ONLY public.notifications
 
 ALTER TABLE ONLY public.payments
     ADD CONSTRAINT payments_pk PRIMARY KEY (id);
+
+
+--
+-- Name: redeemed_rewards redeemed_rewards_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.redeemed_rewards
+    ADD CONSTRAINT redeemed_rewards_pk PRIMARY KEY (id);
 
 
 --
@@ -766,6 +820,22 @@ ALTER TABLE ONLY public.payments
 
 ALTER TABLE ONLY public.payments
     ADD CONSTRAINT payments_users_fk FOREIGN KEY (payer_id) REFERENCES public.users(id);
+
+
+--
+-- Name: redeemed_rewards redeemed_rewards_rewards_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.redeemed_rewards
+    ADD CONSTRAINT redeemed_rewards_rewards_fk FOREIGN KEY (reward_id) REFERENCES public.rewards(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: redeemed_rewards redeemed_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.redeemed_rewards
+    ADD CONSTRAINT redeemed_user_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

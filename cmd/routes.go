@@ -51,6 +51,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /notifications", protected.Chain(limiter.RateLimitMiddleware(a.userHandler.GetUserNotifications)))
 	mux.Handle("PUT /read-notification", protected.Chain(a.userHandler.HandleUpdateNotificationStatus))
 	mux.Handle("PUT /notifications/mark-all-read", protected.Chain(a.userHandler.HandleMarkAllAsRead))
+	mux.Handle("GET /users/me/rewards", protected.Chain(a.rewardHandler.HandleGetAllUserRedeemdRewards))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))
@@ -67,5 +68,9 @@ func (a *application) routes() http.Handler {
 
 	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
 	mux.Handle("GET /ads/watched", protected.Chain(a.userHandler.HandleGetAdsWatched))
+
+	mux.Handle("GET /rewards", protected.Chain(a.rewardHandler.HandleGetAllRewards))
+	mux.Handle("GET /rewards/{id}", protected.Chain(a.rewardHandler.HandleRewardByID))
+	mux.Handle("POST /rewards/redeem/{id}", protected.Chain(a.rewardHandler.HandleRedeemReward))
 	return internal.CORS(mux)
 }

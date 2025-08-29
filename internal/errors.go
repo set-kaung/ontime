@@ -11,4 +11,5 @@ var (
 	ErrInternalServerError = errors.New("internal server error")
 	ErrInsufficientBalance = errors.New("not enough tokens")
 	ErrUnauthorized        = errors.New("unauthorized")
+	ErrMismatchAmount      = errors.New("invalid reward amount")
 )

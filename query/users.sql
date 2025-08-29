@@ -73,7 +73,11 @@ WHERE users.id = sqlc.arg(user_id)
   AND s.id = sqlc.arg(listing_id)
   AND users.token_balance >= s.token_reward;
 
-
+-- name: DeductRewardTokens :exec
+UPDATE users
+SET token_balance = token_balance - r.cost
+FROM rewards r
+WHERE users.id = sqlc.arg(user_id) AND r.id = sqlc.arg(reward_id) AND users.token_balance >= r.cost;
 
 -- name: UpdateUserFullNmae :execrows
 UPDATE users

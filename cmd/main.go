@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+	"github.com/set-kaung/senior_project_1/internal/domain/reward"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/request"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
@@ -25,6 +26,7 @@ type application struct {
 	userHandler    *user.UserHandler
 	listingHandler *listing.ListingHandler
 	requestHandler *request.RequestHandler
+	rewardHandler  *reward.RewardHandler
 }
 
 func main() {
@@ -79,11 +81,12 @@ func main() {
 	psqlUserService := &user.PostgresUserService{DB: dbpool}
 	psqlListingService := &listing.PostgresListingService{DB: dbpool}
 	psqlRequestService := &request.PostgresRequestService{DB: dbpool}
+	psqlRewardService := &reward.PostgresRewardService{DB: dbpool}
 
 	a.userHandler = &user.UserHandler{UserService: psqlUserService}
 	a.listingHandler = &listing.ListingHandler{ListingService: psqlListingService}
 	a.requestHandler = &request.RequestHandler{RequestService: psqlRequestService}
-
+	a.rewardHandler = &reward.RewardHandler{RewardService: psqlRewardService}
 	mux := a.routes()
 
 	log.Printf("starting server on port %s", port)

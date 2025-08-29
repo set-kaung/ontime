@@ -9,3 +9,4 @@ dump_cmd.txt
 .DS_Store
 jwts.*
 *.sh
+dump_data.sql
