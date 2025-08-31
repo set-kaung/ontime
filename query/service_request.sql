@@ -88,3 +88,17 @@ WHERE request_id = $4;
 INSERT INTO reviews (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
 VALUES ($1,$2,(SELECT provider_id from service_requests WHERE id = $1),$3,$4,NOW())
 RETURNING id, reviewee_id;
+
+-- name: GetAllUserRequests :many
+SELECT
+    sr.*,
+    requester.full_name AS requester_name,
+    provider.full_name  AS provider_name,
+    l.title
+FROM
+    service_requests sr
+JOIN users requester ON sr.requester_id = requester.id
+JOIN users provider  ON sr.provider_id = provider.id
+JOIN service_listings l on sr.listing_id  = l.id
+WHERE
+    (sr.provider_id = sqlc.arg(user_id) OR sr.requester_id = sqlc.arg(user_id));

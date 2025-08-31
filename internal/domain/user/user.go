@@ -33,3 +33,12 @@ type Notification struct {
 	EventType       string    `json:"event_type"`
 	EventTargetID   int32     `json:"event_target_id"`
 }
+
+type InteractionHistory struct {
+	InteractionType string    `json:"interaction_type"`
+	Description     string    `json:"description"`
+	IsIncoming      bool      `json:"is_incoming"`
+	Amount          int32     `json:"amount"`
+	Status          string    `json:"status"`
+	Timestamp       time.Time `json:"timestamp"`
+}

@@ -114,7 +114,10 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 	listing.Category = dbListing.Category
 	listing.TokenReward = dbListing.TokenReward
 	listing.PostedAt = dbListing.PostedAt
-	listing.Provider = user.User{ID: dbListing.Uid, FullName: dbListing.FullName}
+	listing.Provider = user.User{
+		ID:       dbListing.Uid,
+		FullName: dbListing.FullName,
+		Rating:   float32(dbListing.TotalRatings.Int32) / max(1.0, float32(dbListing.RatingCount.Int32))}
 	listing.ImageURL = dbListing.ImageUrl.String
 	listing.TakenRequestID = -1
 

@@ -2,7 +2,9 @@
 SELECT
     u.*,
     COALESCE(sp.requested_count, 0) AS services_received,
-    COALESCE(sp.provided_count, 0) AS services_provided
+    COALESCE(sp.provided_count, 0) AS services_provided,
+    r.total_ratings,
+    r.rating_count
 FROM users u
 LEFT JOIN (
     SELECT
@@ -18,6 +20,8 @@ LEFT JOIN (
     ) combined
     GROUP BY user_id
 ) sp ON u.id = sp.user_id
+LEFT JOIN ratings r
+ON r.user_id = u.id
 WHERE u.id = $1;
 
 -- name: InsertUser :one

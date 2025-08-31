@@ -49,11 +49,15 @@ This project is a backend service built with Go that provides user authenticatio
 
 4. Run the application
    ```bash
-   go run ./cmd
+   make run
    ```
-   or if you want to build
+   or if you want to just build
    ```bash
-   go build -o bin/ontime ./cmd
+   make build
+   ```
+   and
+   ```bash
+   ./bin/ontime
    ```
 
 ## Configuration

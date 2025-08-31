@@ -50,8 +50,9 @@ func (a *application) routes() http.Handler {
 	mux.Handle("DELETE /users/me/delete", protected.Chain(a.userHandler.HandleDeleteUser))
 	mux.Handle("GET /notifications", protected.Chain(limiter.RateLimitMiddleware(a.userHandler.GetUserNotifications)))
 	mux.Handle("PUT /read-notification", protected.Chain(a.userHandler.HandleUpdateNotificationStatus))
-	mux.Handle("PUT /notifications/mark-all-read", protected.Chain(a.userHandler.HandleMarkAllAsRead))
 	mux.Handle("GET /users/me/rewards", protected.Chain(a.rewardHandler.HandleGetAllUserRedeemdRewards))
+	mux.Handle("GET /users/me/history", protected.Chain(a.userHandler.HandleGetAllHistories))
+	mux.Handle("PUT /notifications/mark-all-read", protected.Chain(a.userHandler.HandleMarkAllAsRead))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))

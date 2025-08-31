@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -37,7 +38,7 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.Email = repoUser.Email
 	user.ServicesProvided = uint32(repoUser.ServicesProvided)
 	user.ServicesReceived = uint32(repoUser.ServicesReceived)
-	user.Rating = repoUser.AvgRating
+	user.Rating = float32(repoUser.TotalRatings.Int32) / max(1.0, float32(repoUser.RatingCount.Int32))
 
 	return user, err
 }
@@ -274,7 +275,7 @@ func (pus *PostgresUserService) MarkAllNotificationsRead(ctx context.Context, re
 	return nil
 }
 
-func (pus *PostgresUserService) UpdateUserFullName(ctx context.Context, newName string, userID string) error {
+func (pus *PostgresUserService) UpdateFullName(ctx context.Context, newName string, userID string) error {
 	tx, err := pus.DB.Begin(ctx)
 	if err != nil {
 		log.Println("UpdateUserFullName: failed to start transactions: ", err)
@@ -297,4 +298,57 @@ func (pus *PostgresUserService) UpdateUserFullName(ctx context.Context, newName 
 		return internal.ErrInternalServerError
 	}
 	return nil
+}
+
+func (pus *PostgresUserService) GetAllHistory(ctx context.Context, userID string) ([]InteractionHistory, error) {
+	var interactionHistories []InteractionHistory
+	repo := repository.New(pus.DB)
+	repoRequests, err := repo.GetAllUserRequests(ctx, userID)
+	if err != nil {
+		log.Printf("GetAllHistory: failed to get request histories: %v\n", err)
+		return nil, internal.ErrInternalServerError
+	}
+	for _, r := range repoRequests {
+		interactionHistories = append(interactionHistories, InteractionHistory{
+			InteractionType: "request",
+			Description:     fmt.Sprintf("Service Request: %s", r.Title),
+			IsIncoming:      r.ProviderName == userID,
+			Amount:          r.TokenReward,
+			Status:          string(r.StatusDetail),
+			Timestamp:       r.CreatedAt,
+		})
+	}
+
+	adsHistories, err := repo.GetAdsHistory(ctx, userID)
+	if err != nil {
+		log.Printf("GetAllHistory: failed to get ads histories: %v\n", err)
+		return nil, internal.ErrInternalServerError
+	}
+	for _, a := range adsHistories {
+		interactionHistories = append(interactionHistories, InteractionHistory{
+			InteractionType: "advertisement",
+			Description:     "Advertisement Watched",
+			IsIncoming:      true,
+			Amount:          1,
+			Status:          "completed",
+			Timestamp:       a.DateTime,
+		})
+	}
+
+	rewardHistories, err := repo.GetAllUserRedeemdRewards(ctx, userID)
+	if err != nil {
+		log.Printf("GetAllHistory: failed to get redeemed reward histories: %v\n", err)
+		return nil, internal.ErrInternalServerError
+	}
+	for _, rr := range rewardHistories {
+		interactionHistories = append(interactionHistories, InteractionHistory{
+			InteractionType: "reward",
+			Description:     "Reward Redeemed",
+			IsIncoming:      false,
+			Amount:          rr.RedeemedCost,
+			Status:          "completed",
+			Timestamp:       rr.RedeemedAt,
+		})
+	}
+	return interactionHistories, nil
 }

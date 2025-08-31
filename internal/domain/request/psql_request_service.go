@@ -9,17 +9,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
+	"github.com/set-kaung/senior_project_1/internal/domain"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/repository"
-)
-
-const (
-	REQUEST_EVENT   = "request"
-	REVIEW_EVENT    = "review"
-	DEDUCTION_TRANS = "deduct"
-	ADDITION_TRANS  = "addition"
 )
 
 type PostgresRequestService struct {
@@ -86,7 +80,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 
 	eID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID: request.SrID,
-		Type:     REQUEST_EVENT,
+		Type:     domain.REQUEST_EVENT,
 	})
 
 	if err != nil {
@@ -96,7 +90,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 
 	err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 		UserID:    r.Requester.ID,
-		Type:      DEDUCTION_TRANS,
+		Type:      domain.DEDUCTION_TRANS,
 		PaymentID: paymentID,
 	})
 	if err != nil {
@@ -231,7 +225,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 
 	eID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID: repoRequest.SrID,
-		Type:     REQUEST_EVENT,
+		Type:     domain.REQUEST_EVENT,
 	})
 
 	if err != nil {
@@ -309,7 +303,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 
 	err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 		UserID:    repoRequest.RequesterID,
-		Type:      ADDITION_TRANS,
+		Type:      domain.ADDITION_TRANS,
 		PaymentID: paymentHolding.ID,
 	})
 
@@ -329,7 +323,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID: repoRequest.SrID,
-		Type:     REQUEST_EVENT,
+		Type:     domain.REQUEST_EVENT,
 	})
 
 	if err != nil {
@@ -421,7 +415,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		})
 		err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 			UserID:    request.ProviderID,
-			Type:      ADDITION_TRANS,
+			Type:      domain.ADDITION_TRANS,
 			PaymentID: paymentHolding.ID,
 		})
 		if err != nil {
@@ -453,7 +447,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID: request.SrID,
-		Type:     REQUEST_EVENT,
+		Type:     domain.REQUEST_EVENT,
 	})
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to insert event: ", err)
@@ -523,7 +517,7 @@ func (prs *PostgresRequestService) InsertRequestReview(ctx context.Context, r Re
 
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID: r.RequestID,
-		Type:     REVIEW_EVENT,
+		Type:     domain.REVIEW_EVENT,
 	})
 
 	if err != nil {

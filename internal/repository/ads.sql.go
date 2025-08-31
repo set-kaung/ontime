@@ -11,8 +11,33 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const getAdsHistory = `-- name: GetAdsHistory :many
+SELECT id, user_id, date_time FROM ads_watching_history
+WHERE user_id = $1
+`
+
+func (q *Queries) GetAdsHistory(ctx context.Context, userID string) ([]AdsWatchingHistory, error) {
+	rows, err := q.db.Query(ctx, getAdsHistory, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdsWatchingHistory
+	for rows.Next() {
+		var i AdsWatchingHistory
+		if err := rows.Scan(&i.ID, &i.UserID, &i.DateTime); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAdsWatched = `-- name: GetAdsWatched :one
-select count(id) from ads_watching_history
+SELECT count(id) FROM ads_watching_history
 WHERE user_id = $1 AND date_time > (NOW() - INTERVAL '24 hour')
 `
 

@@ -181,7 +181,7 @@ func (uh *UserHandler) HandleUpdateUserFullName(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	err = uh.UserService.UpdateUserFullName(r.Context(), newName, userID)
+	err = uh.UserService.UpdateFullName(r.Context(), newName, userID)
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return
@@ -198,4 +198,14 @@ func (uh *UserHandler) HandleMarkAllAsRead(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	helpers.WriteSuccess(w, http.StatusOK, "", nil)
+}
+
+func (uh *UserHandler) HandleGetAllHistories(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	histories, err := uh.UserService.GetAllHistory(r.Context(), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, histories, nil)
 }

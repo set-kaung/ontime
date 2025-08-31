@@ -308,6 +308,12 @@ type Payment struct {
 	UpdatedAt        time.Time     `json:"updated_at"`
 }
 
+type Rating struct {
+	UserID       string `json:"user_id"`
+	TotalRatings int32  `json:"total_ratings"`
+	RatingCount  int32  `json:"rating_count"`
+}
+
 type RedeemedReward struct {
 	ID         int32     `json:"id"`
 	RewardID   int32     `json:"reward_id"`
@@ -399,5 +405,4 @@ type User struct {
 	JoinedAt      time.Time     `json:"joined_at"`
 	Email         bool          `json:"email"`
 	FullName      string        `json:"full_name"`
-	AvgRating     float32       `json:"avg_rating"`
 }

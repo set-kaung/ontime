@@ -76,6 +76,69 @@ func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID s
 	return items, nil
 }
 
+const getAllUserRequests = `-- name: GetAllUserRequests :many
+SELECT
+    sr.id, sr.listing_id, sr.requester_id, sr.provider_id, sr.status_detail, sr.activity, sr.created_at, sr.updated_at, sr.token_reward,
+    requester.full_name AS requester_name,
+    provider.full_name  AS provider_name,
+    l.title
+FROM
+    service_requests sr
+JOIN users requester ON sr.requester_id = requester.id
+JOIN users provider  ON sr.provider_id = provider.id
+JOIN service_listings l on sr.listing_id  = l.id
+WHERE
+    (sr.provider_id = $1 OR sr.requester_id = $1)
+`
+
+type GetAllUserRequestsRow struct {
+	ID            int32                `json:"id"`
+	ListingID     int32                `json:"listing_id"`
+	RequesterID   string               `json:"requester_id"`
+	ProviderID    string               `json:"provider_id"`
+	StatusDetail  ServiceRequestStatus `json:"status_detail"`
+	Activity      ServiceActivity      `json:"activity"`
+	CreatedAt     time.Time            `json:"created_at"`
+	UpdatedAt     time.Time            `json:"updated_at"`
+	TokenReward   int32                `json:"token_reward"`
+	RequesterName string               `json:"requester_name"`
+	ProviderName  string               `json:"provider_name"`
+	Title         string               `json:"title"`
+}
+
+func (q *Queries) GetAllUserRequests(ctx context.Context, userID string) ([]GetAllUserRequestsRow, error) {
+	rows, err := q.db.Query(ctx, getAllUserRequests, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllUserRequestsRow
+	for rows.Next() {
+		var i GetAllUserRequestsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ListingID,
+			&i.RequesterID,
+			&i.ProviderID,
+			&i.StatusDetail,
+			&i.Activity,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.TokenReward,
+			&i.RequesterName,
+			&i.ProviderName,
+			&i.Title,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRequestByID = `-- name: GetRequestByID :one
 SELECT
   sr.id AS sr_id,
