@@ -308,11 +308,12 @@ func (pus *PostgresUserService) GetAllHistory(ctx context.Context, userID string
 		log.Printf("GetAllHistory: failed to get request histories: %v\n", err)
 		return nil, internal.ErrInternalServerError
 	}
+
 	for _, r := range repoRequests {
 		interactionHistories = append(interactionHistories, InteractionHistory{
 			InteractionType: "request",
 			Description:     fmt.Sprintf("Service Request: %s", r.Title),
-			IsIncoming:      r.ProviderName == userID,
+			IsIncoming:      r.ProviderID == userID,
 			Amount:          r.TokenReward,
 			Status:          string(r.StatusDetail),
 			Timestamp:       r.CreatedAt,
