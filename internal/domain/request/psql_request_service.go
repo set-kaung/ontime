@@ -515,6 +515,16 @@ func (prs *PostgresRequestService) InsertRequestReview(ctx context.Context, r Re
 		return -1, internal.ErrInternalServerError
 	}
 
+	err = repo.UpdateUserRating(ctx, repository.UpdateUserRatingParams{
+		TotalRatings: r.Rating,
+		UserID:       r.RevieweeID,
+	})
+
+	if err != nil {
+		log.Println("InsertRequestReview: failed to update user rating: ", err)
+		return -1, internal.ErrInternalServerError
+	}
+
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID: r.RequestID,
 		Type:     domain.REVIEW_EVENT,

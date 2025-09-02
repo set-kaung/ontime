@@ -18,3 +18,13 @@ type Listing struct {
 	HasAlreadyTaken bool      `json:"has_already_taken"`
 	TakenRequestID  int32     `json:"taken_request_id"`
 }
+
+type ListingReport struct {
+	ID               int32     `json:"id"`
+	ListingID        int32     `json:"listing_id"`
+	ReporterID       string    `json:"reporter_id"`
+	Datetime         time.Time `json:"datetime"`
+	ReportReason     string    `json:"report_reason"`
+	Status           string    `json:"status"`
+	AdditionalDetail string    `json:"additional_detail"`
+}

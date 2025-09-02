@@ -9,4 +9,5 @@ type ListingService interface {
 	GetListingsByUserID(context.Context, string) ([]Listing, error)
 	UpdateListing(context.Context, Listing) (int32, error)
 	DeleteListing(context.Context, int32, string) error
+	ReportListing(ctx context.Context, lr ListingReport) error
 }

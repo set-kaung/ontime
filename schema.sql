@@ -275,7 +275,8 @@ CREATE TABLE public.reports (
     reporter_id text NOT NULL,
     datetime timestamptz NOT NULL,
     report_reason text,
-    status text NOT NULL
+    status text NOT NULL,
+    additional_detail text
 );
 
 

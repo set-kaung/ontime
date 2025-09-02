@@ -44,7 +44,7 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// need to update clerk public metadata for profileCompletion
-	updateDate := map[string]interface{}{
+	updateDate := map[string]any{
 		"profileComplete": true,
 	}
 

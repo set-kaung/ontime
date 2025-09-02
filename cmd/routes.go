@@ -58,6 +58,8 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))
 	mux.Handle("POST /services/create", protected.Chain(a.listingHandler.HandleCreateListing))
 	mux.Handle("PUT /services/update/{id}", protected.Chain(a.listingHandler.HandleUpdateListing))
+	mux.Handle("POST /services/report/{id}", protected.Chain(a.listingHandler.HandleReportListing))
+	mux.Handle("DELETE /services/delete/{id}", protected.Chain(a.listingHandler.HandleDeleteListing))
 
 	mux.Handle("POST /requests/create/{id}", protected.Chain(a.requestHandler.HandleCreateRequest))
 	mux.Handle("POST /requests/accept/{id}", protected.Chain(a.requestHandler.HandleAcceptServiceRequest))
@@ -65,7 +67,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /requests/complete/{id}", protected.Chain(a.requestHandler.HandleCompleteServiceRequest))
 	mux.Handle("GET /requests/{id}", protected.Chain(a.requestHandler.HandleGetRequestByID))
 	mux.Handle("GET /requests/all", protected.Chain(a.requestHandler.HandleGetAllUserRequests))
-	mux.Handle("GET /requests/review/{id}", protected.Chain(a.requestHandler.HandleSubmitReview))
+	mux.Handle("POST /requests/review/{id}", protected.Chain(a.requestHandler.HandleSubmitReview))
 
 	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
 	mux.Handle("GET /ads/watched", protected.Chain(a.userHandler.HandleGetAdsWatched))

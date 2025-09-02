@@ -3,6 +3,7 @@ package listing
 import (
 	"context"
 	"log"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -154,7 +155,7 @@ func (pls *PostgresListingService) DeleteListing(ctx context.Context, id int32, 
 func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing) (int32, error) {
 	tx, err := pls.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		log.Printf("Listing Service -> Update Listing: failed to delete listinh: %s\n", err)
+		log.Printf("Listing Service -> UpdateListing: failed to start transaction: %s\n", err)
 		return -1, internal.ErrInternalServerError
 	}
 	defer tx.Rollback(ctx)
@@ -169,15 +170,43 @@ func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing)
 		ImageUrl:    pgtype.Text{String: l.ImageURL, Valid: l.ImageURL != ""},
 	})
 	if err != nil {
-		log.Printf("listing_service -> UpdateListing: err : %v\n", err)
+		log.Printf("listing_service -> UpdateListing: failed to update listing : %v\n", err)
 		return -1, internal.ErrInternalServerError
 	}
 	if rowsAffected == 0 {
 		return -1, internal.ErrUnauthorized
 	}
 	if err = tx.Commit(ctx); err != nil {
-		log.Printf("failed to commit: %v\n", err)
+		log.Printf("listing_service -> UpdateListing: failed to commit: %v\n", err)
 		return -1, internal.ErrInternalServerError
 	}
 	return l.ID, nil
+}
+
+func (pls *PostgresListingService) ReportListing(ctx context.Context, lr ListingReport) error {
+	tx, err := pls.DB.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		log.Printf("listing_service -> ReportListing: failed to start transaction: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(pls.DB).WithTx(tx)
+	err = repo.InsertReport(ctx, repository.InsertReportParams{
+		ListingID:    lr.ListingID,
+		ReporterID:   lr.ReporterID,
+		ReportReason: pgtype.Text{String: lr.ReportReason, Valid: true},
+		AdditionalDetail: pgtype.Text{
+			String: lr.AdditionalDetail,
+			Valid:  strings.TrimSpace(lr.AdditionalDetail) != "",
+		},
+	})
+	if err != nil {
+		log.Printf("listing_service -> ReportListing: failed to insert report: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	if err = tx.Commit(ctx); err != nil {
+		log.Printf("listing_service -> ReportListing: failed to commit: %v\n", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
 }

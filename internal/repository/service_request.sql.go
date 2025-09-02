@@ -353,3 +353,19 @@ func (q *Queries) UpdateServiceRequestCompletion(ctx context.Context, arg Update
 	)
 	return err
 }
+
+const updateUserRating = `-- name: UpdateUserRating :exec
+UPDATE ratings
+SET total_ratings = total_ratings + $1, rating_count = rating_count + 1
+WHERE user_id = $2
+`
+
+type UpdateUserRatingParams struct {
+	TotalRatings int32  `json:"total_ratings"`
+	UserID       string `json:"user_id"`
+}
+
+func (q *Queries) UpdateUserRating(ctx context.Context, arg UpdateUserRatingParams) error {
+	_, err := q.db.Exec(ctx, updateUserRating, arg.TotalRatings, arg.UserID)
+	return err
+}

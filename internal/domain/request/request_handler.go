@@ -3,6 +3,7 @@ package request
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -144,11 +145,15 @@ func (rh *RequestHandler) HandleSubmitReview(w http.ResponseWriter, r *http.Requ
 		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
 		return
 	}
+
 	review := Review{}
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&review)
 	review.ReviewerID = userID
 	review.RequestID = int32(requestID)
+
+	fmt.Println("From user: ", review)
+
 	reviewID, err := rh.RequestService.InsertRequestReview(r.Context(), review)
 	if err != nil {
 		helpers.WriteServerError(w, nil)

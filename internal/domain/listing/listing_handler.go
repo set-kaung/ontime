@@ -105,3 +105,47 @@ func (lh *ListingHandler) HandleUpdateListing(w http.ResponseWriter, r *http.Req
 	}
 	helpers.WriteData(w, http.StatusOK, map[string]int32{"id": lid}, nil)
 }
+
+func (lh *ListingHandler) HandleReportListing(w http.ResponseWriter, r *http.Request) {
+	pathID := r.PathValue("id")
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	listingID, err := strconv.ParseInt(pathID, 10, 32)
+	if err != nil {
+		log.Printf("listing_handler -> HandleReportListing: failed to parse integer %v\n", err)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		return
+	}
+	listingReport := ListingReport{}
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&listingReport)
+	if err != nil {
+		log.Printf("listing_handler -> HandleUpdateListing: failed to decode json: %v\n", err)
+		helpers.WriteError(w, http.StatusBadRequest, "bad request", nil)
+		return
+	}
+	listingReport.ReporterID = userID
+	listingReport.ListingID = int32(listingID)
+	err = lh.ListingService.ReportListing(r.Context(), listingReport)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "report submitted successfully", nil)
+}
+
+func (lh *ListingHandler) HandleDeleteListing(w http.ResponseWriter, r *http.Request) {
+	pathID := r.PathValue("id")
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	listingID, err := strconv.ParseInt(pathID, 10, 32)
+	if err != nil {
+		log.Printf("listing_handler -> HandleDeleteListing: failed to parse integer %v\n", err)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		return
+	}
+	err = lh.ListingService.DeleteListing(r.Context(), int32(listingID), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "report submitted successfully", nil)
+}

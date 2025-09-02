@@ -323,12 +323,13 @@ type RedeemedReward struct {
 }
 
 type Report struct {
-	ID           int32       `json:"id"`
-	ListingID    int32       `json:"listing_id"`
-	ReporterID   string      `json:"reporter_id"`
-	Datetime     time.Time   `json:"datetime"`
-	ReportReason pgtype.Text `json:"report_reason"`
-	Status       string      `json:"status"`
+	ID               int32       `json:"id"`
+	ListingID        int32       `json:"listing_id"`
+	ReporterID       string      `json:"reporter_id"`
+	Datetime         time.Time   `json:"datetime"`
+	ReportReason     pgtype.Text `json:"report_reason"`
+	Status           string      `json:"status"`
+	AdditionalDetail pgtype.Text `json:"additional_detail"`
 }
 
 type Review struct {

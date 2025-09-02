@@ -39,7 +39,6 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.ServicesProvided = uint32(repoUser.ServicesProvided)
 	user.ServicesReceived = uint32(repoUser.ServicesReceived)
 	user.Rating = float32(repoUser.TotalRatings.Int32) / max(1.0, float32(repoUser.RatingCount.Int32))
-
 	return user, err
 }
 
