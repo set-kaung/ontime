@@ -29,6 +29,7 @@ type Request struct {
 	RequesterCompleted bool            `json:"requester_completed"`
 	IsProvider         bool            `json:"is_provider"`
 	Review             Review          `json:"review"`
+	Events             []Event         `json:"events"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {
@@ -42,4 +43,10 @@ type Review struct {
 	RevieweeID string `json:"reviewee_id"`
 	Comment    string `json:"comment"`
 	Rating     int32  `json:"rating"`
+}
+
+type Event struct {
+	ID                int32     `json:"id"`
+	Timestamp         time.Time `json:"timestamp"`
+	ActionDescription string    `jons:"description"`
 }

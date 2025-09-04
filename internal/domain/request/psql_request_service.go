@@ -79,8 +79,9 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 	}
 
 	eID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-		TargetID: request.SrID,
-		Type:     domain.REQUEST_EVENT,
+		TargetID:    request.SrID,
+		Type:        domain.REQUEST_EVENT,
+		Description: domain.INITIATE_REQUEST,
 	})
 
 	if err != nil {
@@ -151,6 +152,32 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		TokenReward:        dbRequest.SrTokenReward,
 		ProviderCompleted:  dbRequest.ProviderCompleted,
 		RequesterCompleted: dbRequest.RequesterCompleted,
+		Events:             []Event{},
+	}
+	events, err := repo.GetAllEventOfARequest(ctx, rid)
+	if err != nil {
+		log.Printf("GetRequestByID: failed to get request events : %v\n", err)
+		return Request{}, internal.ErrInternalServerError
+	}
+	for _, e := range events {
+		actionUserName := ""
+		if e.ActionUserID == r.Requester.ID {
+			actionUserName = r.Requester.FullName
+		} else {
+			actionUserName = r.Provider.FullName
+		}
+		actionDescription := ""
+		switch e.Description {
+		case domain.INITIATE_REQUEST:
+			actionDescription = fmt.Sprintf("%s initiated request.", actionUserName)
+		case domain.ACCEPT_REQUEST:
+			actionDescription = fmt.Sprintf("%s accepted request.", actionUserName)
+		case domain.CONFIRM_COMPLETION:
+			actionDescription = fmt.Sprintf("%s confirmed completion.", actionUserName)
+		case domain.DECLINE_REQUEST:
+			actionDescription = fmt.Sprintf("%s declined request.", actionUserName)
+		}
+		r.Events = append(r.Events, Event{ID: int32(e.ID), Timestamp: e.CreatedAt, ActionDescription: actionDescription})
 	}
 	return r, nil
 }
@@ -224,8 +251,9 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 	}
 
 	eID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-		TargetID: repoRequest.SrID,
-		Type:     domain.REQUEST_EVENT,
+		TargetID:    repoRequest.SrID,
+		Type:        domain.REQUEST_EVENT,
+		Description: domain.ACCEPT_REQUEST,
 	})
 
 	if err != nil {
@@ -322,8 +350,9 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 	}
 
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-		TargetID: repoRequest.SrID,
-		Type:     domain.REQUEST_EVENT,
+		TargetID:    repoRequest.SrID,
+		Type:        domain.REQUEST_EVENT,
+		Description: domain.DECLINE_REQUEST,
 	})
 
 	if err != nil {
@@ -446,8 +475,9 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 	}
 
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-		TargetID: request.SrID,
-		Type:     domain.REQUEST_EVENT,
+		TargetID:    request.SrID,
+		Type:        domain.REQUEST_EVENT,
+		Description: domain.CONFIRM_COMPLETION,
 	})
 	if err != nil {
 		log.Println("CompleteServiceRequest: failed to insert event: ", err)

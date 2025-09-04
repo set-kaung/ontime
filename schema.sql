@@ -133,14 +133,15 @@ ALTER SEQUENCE public.ads_watching_history_id_seq OWNED BY public.ads_watching_h
 
 
 --
--- Name: notification_events; Type: TABLE; Schema: public; Owner: -
+-- Name: events; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.notification_events (
+CREATE TABLE public.events (
     type character varying NOT NULL,
     target_id integer NOT NULL,
     created_at timestamptz NOT NULL,
-    id bigint NOT NULL
+    id bigint NOT NULL,
+    description text NOT NULL
 );
 
 
@@ -148,7 +149,7 @@ CREATE TABLE public.notification_events (
 -- Name: notification_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-ALTER TABLE public.notification_events ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+ALTER TABLE public.events ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.notification_events_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -617,10 +618,10 @@ ALTER TABLE ONLY public.ads_watching_history
 
 
 --
--- Name: notification_events notification_events_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: events notification_events_pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notification_events
+ALTER TABLE ONLY public.events
     ADD CONSTRAINT notification_events_pk PRIMARY KEY (id);
 
 
@@ -749,7 +750,7 @@ ALTER TABLE ONLY public.ads_watching_history
 --
 
 ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_notification_events_fk FOREIGN KEY (event_id) REFERENCES public.notification_events(id) ON DELETE CASCADE;
+    ADD CONSTRAINT notifications_notification_events_fk FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
 
 
 --

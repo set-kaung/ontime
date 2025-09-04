@@ -12,9 +12,53 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const getAllEventOfARequest = `-- name: GetAllEventOfARequest :many
+SELECT e.type, e.target_id, e.created_at, e.id, e.description, n.action_user_id FROM events e
+JOIN notifications n
+ON n.event_id = e.id
+WHERE target_id = $1 AND type = 'request'
+ORDER BY created_at DESC
+`
+
+type GetAllEventOfARequestRow struct {
+	Type         string    `json:"type"`
+	TargetID     int32     `json:"target_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	ID           int64     `json:"id"`
+	Description  string    `json:"description"`
+	ActionUserID string    `json:"action_user_id"`
+}
+
+func (q *Queries) GetAllEventOfARequest(ctx context.Context, targetID int32) ([]GetAllEventOfARequestRow, error) {
+	rows, err := q.db.Query(ctx, getAllEventOfARequest, targetID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllEventOfARequestRow
+	for rows.Next() {
+		var i GetAllEventOfARequestRow
+		if err := rows.Scan(
+			&i.Type,
+			&i.TargetID,
+			&i.CreatedAt,
+			&i.ID,
+			&i.Description,
+			&i.ActionUserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getNotifications = `-- name: GetNotifications :many
-SELECT n.id, message, recipient_user_id, action_user_id, is_read, event_id, type, target_id, created_at, ne.id FROM notifications n
-JOIN notification_events ne ON ne.id = n.event_id
+SELECT n.id, message, recipient_user_id, action_user_id, is_read, event_id, type, target_id, created_at, ne.id, description FROM notifications n
+JOIN events ne ON ne.id = n.event_id
 WHERE recipient_user_id = $1
 `
 
@@ -29,6 +73,7 @@ type GetNotificationsRow struct {
 	TargetID        int32     `json:"target_id"`
 	CreatedAt       time.Time `json:"created_at"`
 	ID_2            int64     `json:"id_2"`
+	Description     string    `json:"description"`
 }
 
 func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) ([]GetNotificationsRow, error) {
@@ -51,6 +96,7 @@ func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) 
 			&i.TargetID,
 			&i.CreatedAt,
 			&i.ID_2,
+			&i.Description,
 		); err != nil {
 			return nil, err
 		}
@@ -75,18 +121,19 @@ func (q *Queries) GetUnreadNotificationsCount(ctx context.Context, recipientUser
 }
 
 const insertEvent = `-- name: InsertEvent :one
-INSERT INTO notification_events (target_id,"type",created_at)
-VALUES ($1,$2,NOW())
+INSERT INTO events (target_id,"type",created_at,description)
+VALUES ($1,$2,NOW(),$3)
 RETURNING id
 `
 
 type InsertEventParams struct {
-	TargetID int32  `json:"target_id"`
-	Type     string `json:"type"`
+	TargetID    int32  `json:"target_id"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }
 
 func (q *Queries) InsertEvent(ctx context.Context, arg InsertEventParams) (int64, error) {
-	row := q.db.QueryRow(ctx, insertEvent, arg.TargetID, arg.Type)
+	row := q.db.QueryRow(ctx, insertEvent, arg.TargetID, arg.Type, arg.Description)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
@@ -118,7 +165,7 @@ UPDATE notifications
 SET is_read = true
 WHERE recipient_user_id = $1
   AND event_id IN (
-    SELECT id FROM notification_events
+    SELECT id FROM events
     WHERE created_at < $2
   )
 `

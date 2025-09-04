@@ -87,6 +87,11 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 		log.Printf("UserService -> InsertUser: error adding user tokens: %s\n", err)
 		return internal.ErrInternalServerError
 	}
+	err = repo.InsertNewUserRating(ctx, user.ID)
+	if err != nil {
+		log.Printf("UserService -> InsertUser: error adding user ratings: %s\n", err)
+		return internal.ErrInternalServerError
+	}
 	err = tx.Commit(ctx)
 	if err != nil {
 		log.Printf("UserService -> InsertUser: error commiting transaction: %s\n", err)
