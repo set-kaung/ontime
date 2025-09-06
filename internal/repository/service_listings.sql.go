@@ -125,6 +125,53 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 	return i, err
 }
 
+const getListingReviews = `-- name: GetListingReviews :many
+select r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,sr.listing_id from reviews r
+JOIN service_requests sr
+ON sr.id = r.request_id
+WHERE listing_id = $1
+`
+
+type GetListingReviewsRow struct {
+	ID         int32       `json:"id"`
+	RequestID  int32       `json:"request_id"`
+	ReviewerID string      `json:"reviewer_id"`
+	RevieweeID string      `json:"reviewee_id"`
+	Rating     int32       `json:"rating"`
+	Comment    pgtype.Text `json:"comment"`
+	DateTime   time.Time   `json:"date_time"`
+	ListingID  int32       `json:"listing_id"`
+}
+
+func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]GetListingReviewsRow, error) {
+	rows, err := q.db.Query(ctx, getListingReviews, listingID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetListingReviewsRow
+	for rows.Next() {
+		var i GetListingReviewsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RequestID,
+			&i.ReviewerID,
+			&i.RevieweeID,
+			&i.Rating,
+			&i.Comment,
+			&i.DateTime,
+			&i.ListingID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserListings = `-- name: GetUserListings :many
 SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url FROM service_listings
 WHERE posted_by = $1

@@ -149,3 +149,19 @@ func (lh *ListingHandler) HandleDeleteListing(w http.ResponseWriter, r *http.Req
 	}
 	helpers.WriteSuccess(w, http.StatusOK, "report submitted successfully", nil)
 }
+
+func (lh *ListingHandler) HandleGetListingReviews(w http.ResponseWriter, r *http.Request) {
+	listingPathID := r.PathValue("id")
+	listingID, err := strconv.ParseInt(listingPathID, 10, 32)
+	if err != nil {
+		log.Printf("HandleGetListingReviews: failed to parse integer %v\n", err)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		return
+	}
+	reviews, err := lh.ListingService.GetListingReviews(r.Context(), int32(listingID))
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, reviews, nil)
+}

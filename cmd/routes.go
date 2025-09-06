@@ -61,6 +61,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("PUT /services/update/{id}", protected.Chain(a.listingHandler.HandleUpdateListing))
 	mux.Handle("POST /services/report/{id}", protected.Chain(a.listingHandler.HandleReportListing))
 	mux.Handle("DELETE /services/delete/{id}", protected.Chain(a.listingHandler.HandleDeleteListing))
+	mux.Handle("GET /services/{id}/reviews", protected.Chain(a.listingHandler.HandleGetListingReviews))
 
 	mux.Handle("POST /requests/create/{id}", protected.Chain(a.requestHandler.HandleCreateRequest))
 	mux.Handle("POST /requests/accept/{id}", protected.Chain(a.requestHandler.HandleAcceptServiceRequest))

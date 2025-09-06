@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
+	"github.com/set-kaung/senior_project_1/internal/domain/review"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/repository"
 )
@@ -205,8 +206,31 @@ func (pls *PostgresListingService) ReportListing(ctx context.Context, lr Listing
 		return internal.ErrInternalServerError
 	}
 	if err = tx.Commit(ctx); err != nil {
-		log.Printf("listing_service -> ReportListing: failed to commit: %v\n", err)
+		log.Printf("ReportListing: failed to commit: %v\n", err)
 		return internal.ErrInternalServerError
 	}
 	return nil
+}
+
+func (p *PostgresListingService) GetListingReviews(ctx context.Context, listingID int32) ([]review.Review, error) {
+	repo := repository.New(p.DB)
+	dbReviews, err := repo.GetListingReviews(ctx, listingID)
+	if err != nil {
+		log.Printf("GetListingReviews: failed to get listing reviews: %s\n", err)
+		return nil, internal.ErrInternalServerError
+	}
+	reviews := make([]review.Review, 0, len(dbReviews))
+	for _, dbr := range dbReviews {
+		reviews = append(reviews,
+			review.Review{
+				ID:         dbr.ID,
+				RequestID:  dbr.RequestID,
+				ReviewerID: dbr.ReviewerID,
+				RevieweeID: dbr.RevieweeID,
+				Comment:    dbr.Comment.String,
+				Rating:     dbr.Rating,
+			},
+		)
+	}
+	return reviews, nil
 }
