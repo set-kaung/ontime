@@ -162,16 +162,31 @@ SELECT
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
 
-  src.requester_completed,
-  src.provider_completed
-
+  sc.requester_completed,
+  sc.provider_completed,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'event_id', e.id,
+        'event_time', e.created_at,
+        'event_description', e.description,
+        'event_owner', n.action_user_id
+      )
+      ORDER BY e.created_at
+    ) FILTER (WHERE e.id IS NOT NULL),
+    '[]'::json
+  )::json AS events
 FROM service_requests sr
 JOIN service_listings sl ON sr.listing_id = sl.id
 JOIN users ru ON sr.requester_id = ru.id
 JOIN users pu ON sr.provider_id = pu.id
-JOIN service_request_completion src ON sr.id = src.request_id
-
+JOIN service_request_completion sc ON sr.id = sc.request_id
+LEFT JOIN events e ON e.target_id = sr.id
+JOIN notifications n
+ON n.event_id = e.id
 WHERE sr.id = $1
+GROUP BY 
+  sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed
 `
 
 type GetRequestByIDRow struct {
@@ -196,6 +211,7 @@ type GetRequestByIDRow struct {
 	ProviderJoinedAt   time.Time            `json:"provider_joined_at"`
 	RequesterCompleted bool                 `json:"requester_completed"`
 	ProviderCompleted  bool                 `json:"provider_completed"`
+	Events             []byte               `json:"events"`
 }
 
 func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDRow, error) {
@@ -223,6 +239,7 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 		&i.ProviderJoinedAt,
 		&i.RequesterCompleted,
 		&i.ProviderCompleted,
+		&i.Events,
 	)
 	return i, err
 }

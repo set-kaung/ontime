@@ -1,6 +1,9 @@
 package request
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
@@ -38,7 +41,41 @@ func CreateClientServiceRequest(listingID int32, requesterID string) Request {
 }
 
 type Event struct {
-	ID                int32     `json:"id"`
-	Timestamp         time.Time `json:"timestamp"`
-	ActionDescription string    `jons:"description"`
+	ID          int       `json:"event_id"`
+	Time        time.Time `json:"event_time"`
+	Description string    `json:"event_description"`
+	By          string    `json:"by"`
+	EventOwner  string    `json:"event_owner"`
+}
+
+func (e *Event) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("cannot convert %T to Event", value)
+	}
+	return json.Unmarshal(bytes, e)
+}
+
+func (e Event) Value() (driver.Value, error) {
+	return json.Marshal(e)
+}
+
+type Events []Event
+
+func (e *Events) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("cannot convert %T to Events", value)
+	}
+	return json.Unmarshal(bytes, e)
+}
+
+func (e Events) Value() (driver.Value, error) {
+	return json.Marshal(e)
 }

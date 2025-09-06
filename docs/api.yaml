@@ -696,34 +696,40 @@ components:
       type: object
       properties:
         id:
-          type: string
+          type: integer
         title:
           type: string
         description:
           type: string
-        price:
-          type: number
-        category:
-          type: string
-        userId:
-          type: string
-        createdAt:
+        token_reward:
+          type: integer
+        posted_at:
           type: string
           format: date-time
+        category:
+          type: string
+        image_url:
+          type: string
+        provider:
+          $ref: '#/components/schemas/User'
+        has_already_taken:
+          type: boolean
+        taken_request_id:
+          type: integer
 
     CreateServiceListing:
       type: object
       required:
         - title
         - description
-        - price
+        - token_reward
       properties:
         title:
           type: string
         description:
           type: string
-        price:
-          type: number
+        token_reward:
+          type: integer
         category:
           type: string
 
@@ -734,8 +740,8 @@ components:
           type: string
         description:
           type: string
-        price:
-          type: number
+        token_reward:
+          type: integer
         category:
           type: string
 
@@ -743,29 +749,64 @@ components:
       type: object
       properties:
         id:
+          type: integer
+        listing:
+          $ref: '#/components/schemas/ServiceListing'
+        requester:
+          $ref: '#/components/schemas/User'
+        provider:
+          $ref: '#/components/schemas/User'
+        activity:
           type: string
-        serviceId:
+          description: High-level activity state (active/inactive)
+        status_detail:
           type: string
-        requesterId:
-          type: string
-        providerId:
-          type: string
-        status:
-          type: string
-          enum: [pending, accepted, declined, completed]
-        message:
-          type: string
-        createdAt:
+          description: Detailed lifecycle status (pending, in_progress, declined, completed)
+        created_at:
           type: string
           format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        token_reward:
+          type: integer
+        type:
+          type: string
+          enum: [OUTGOING, INCOMING]
+        provider_completed:
+          type: boolean
+        requester_completed:
+          type: boolean
+        is_provider:
+          type: boolean
+          description: Whether the authenticated user is the provider in this request
+        review:
+          $ref: '#/components/schemas/Review'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
 
     CreateServiceRequest:
       type: object
-      required:
-        - message
+      description: This endpoint does not currently accept a JSON body; path parameter identifies the listing.
+
+    Event:
+      type: object
       properties:
-        message:
+        event_id:
+          type: integer
+        event_time:
           type: string
+          format: date-time
+        event_description:
+          type: string
+        by:
+          type: string
+          description: Derived actor role (requester/provider)
+        event_owner:
+          type: string
+          description: User ID of the event owner
 
     Notification:
       type: object

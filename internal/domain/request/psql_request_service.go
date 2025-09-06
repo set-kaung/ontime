@@ -2,6 +2,7 @@ package request
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -126,6 +127,38 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		log.Println("GetRequestByID: failed to retrieve from db: ", err)
 		return Request{}, internal.ErrInternalServerError
 	}
+
+	var events []Event
+	if len(dbRequest.Events) > 0 {
+
+		var rawEvents []Event
+		if err := json.Unmarshal(dbRequest.Events, &rawEvents); err != nil {
+			log.Println("GetRequestByID: failed to unmarshal events JSON: ", err)
+			events = []Event{}
+		} else {
+
+			events = make([]Event, len(rawEvents))
+			for i, rawEvent := range rawEvents {
+				switch rawEvent.Description {
+				case domain.INITIATE_REQUEST:
+					rawEvent.By = "requester"
+				case domain.ACCEPT_REQUEST:
+					rawEvent.By = "provider"
+				case domain.CONFIRM_COMPLETION:
+					if rawEvent.EventOwner == dbRequest.RequesterID {
+						rawEvent.By = "requester"
+					} else {
+						rawEvent.By = "provider"
+					}
+				case domain.DECLINE_REQUEST:
+					rawEvent.By = "provider"
+				}
+
+				events[i] = rawEvent
+			}
+		}
+	}
+
 	r := Request{
 		ID: dbRequest.SrID,
 		Listing: listing.Listing{
@@ -150,33 +183,9 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		TokenReward:        dbRequest.SrTokenReward,
 		ProviderCompleted:  dbRequest.ProviderCompleted,
 		RequesterCompleted: dbRequest.RequesterCompleted,
-		Events:             []Event{},
+		Events:             events,
 	}
-	events, err := repo.GetAllEventOfARequest(ctx, rid)
-	if err != nil {
-		log.Printf("GetRequestByID: failed to get request events : %v\n", err)
-		return Request{}, internal.ErrInternalServerError
-	}
-	for _, e := range events {
-		actionUserName := ""
-		if e.ActionUserID == r.Requester.ID {
-			actionUserName = r.Requester.FullName
-		} else {
-			actionUserName = r.Provider.FullName
-		}
-		actionDescription := ""
-		switch e.Description {
-		case domain.INITIATE_REQUEST:
-			actionDescription = fmt.Sprintf("%s initiated request.", actionUserName)
-		case domain.ACCEPT_REQUEST:
-			actionDescription = fmt.Sprintf("%s accepted request.", actionUserName)
-		case domain.CONFIRM_COMPLETION:
-			actionDescription = fmt.Sprintf("%s confirmed completion.", actionUserName)
-		case domain.DECLINE_REQUEST:
-			actionDescription = fmt.Sprintf("%s declined request.", actionUserName)
-		}
-		r.Events = append(r.Events, Event{ID: int32(e.ID), Timestamp: e.CreatedAt, ActionDescription: actionDescription})
-	}
+
 	return r, nil
 }
 
@@ -326,6 +335,10 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		TokenBalance: paymentHolding.AmountTokens,
 		ID:           repoRequest.RequesterID,
 	})
+	if err != nil {
+		log.Println("DeclineServiceRequest: failed to add user tokens: ", err)
+		return -1, internal.ErrInternalServerError
+	}
 
 	err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 		UserID:    repoRequest.RequesterID,
@@ -440,6 +453,10 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 			TokenBalance: paymentHolding.AmountTokens,
 			ID:           request.ProviderID,
 		})
+		if err != nil {
+			log.Println("CompleteServiceRequest: failed to add user tokens: ", err)
+			return -1, internal.ErrInternalServerError
+		}
 		err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
 			UserID:    request.ProviderID,
 			Type:      domain.ADDITION_TRANS,

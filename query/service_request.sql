@@ -40,16 +40,31 @@ SELECT
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
 
-  src.requester_completed,
-  src.provider_completed
-
+  sc.requester_completed,
+  sc.provider_completed,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'event_id', e.id,
+        'event_time', e.created_at,
+        'event_description', e.description,
+        'event_owner', n.action_user_id
+      )
+      ORDER BY e.created_at
+    ) FILTER (WHERE e.id IS NOT NULL),
+    '[]'::json
+  )::json AS events
 FROM service_requests sr
 JOIN service_listings sl ON sr.listing_id = sl.id
 JOIN users ru ON sr.requester_id = ru.id
 JOIN users pu ON sr.provider_id = pu.id
-JOIN service_request_completion src ON sr.id = src.request_id
-
-WHERE sr.id = $1;
+JOIN service_request_completion sc ON sr.id = sc.request_id
+LEFT JOIN events e ON e.target_id = sr.id
+JOIN notifications n
+ON n.event_id = e.id
+WHERE sr.id = $1
+GROUP BY 
+  sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed;
 
 -- name: InsertPendingServiceRequest :one
 INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at,token_reward)
@@ -96,3 +111,5 @@ JOIN users provider  ON sr.provider_id = provider.id
 JOIN service_listings l on sr.listing_id  = l.id
 WHERE
     (sr.provider_id = sqlc.arg(user_id) OR sr.requester_id = sqlc.arg(user_id));
+
+

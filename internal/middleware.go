@@ -2,7 +2,6 @@ package internal
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"os"
 
@@ -14,8 +13,6 @@ import (
 type ctxKey string
 
 const UserIDContextKey ctxKey = "authenticatedUserID"
-
-var logger *slog.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 func LogMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
