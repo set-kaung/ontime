@@ -355,6 +355,33 @@ paths:
         '200':
           description: Service listing deleted successfully
 
+  /services/{id}/reviews:
+    get:
+      summary: Get reviews for a service listing
+      description: Retrieve all reviews associated with a specific service listing
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Service listing ID
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /requests/create/{id}:
     post:
       summary: Create service request
