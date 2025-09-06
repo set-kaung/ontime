@@ -174,13 +174,12 @@ INSERT INTO users (
     zip_postal_code,
     country,
     joined_at,
-    email,
-    rating
+    email
 )
 VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
-    $11, NOW(), $12, 0
+  $11, NOW(), $12
 )
 RETURNING id
 `

@@ -31,8 +31,12 @@ UPDATE service_listings
 SET title = $1, description = $2, token_reward = $3, category=$4, image_url = $5
 WHERE id = $6 AND posted_by = $7;
 
--- name: GetListingReviews :manys
-select r.*,sr.listing_id from reviews r
+-- name: GetListingReviews :many
+select r.*,sr.listing_id,reviewer_user.full_name as reviewer_full_name,reviewee_user.full_name as reviewee_full_name from reviews r
 JOIN service_requests sr
 ON sr.id = r.request_id
+JOIN users reviewer_user
+ON reviewer_user.id = r.reviewer_id
+JOIN users reviewee_user
+ON reviwee_user.id = r.reviewee_id
 WHERE listing_id = $1;

@@ -223,12 +223,14 @@ func (p *PostgresListingService) GetListingReviews(ctx context.Context, listingI
 	for _, dbr := range dbReviews {
 		reviews = append(reviews,
 			review.Review{
-				ID:         dbr.ID,
-				RequestID:  dbr.RequestID,
-				ReviewerID: dbr.ReviewerID,
-				RevieweeID: dbr.RevieweeID,
-				Comment:    dbr.Comment.String,
-				Rating:     dbr.Rating,
+				ID:               dbr.ID,
+				RequestID:        dbr.RequestID,
+				ReviewerID:       dbr.ReviewerID,
+				ReviewerFullName: dbr.ReviewerFullName,
+				RevieweeFullName: dbr.RevieweeFullName,
+				RevieweeID:       dbr.RevieweeID,
+				Comment:          dbr.Comment.String,
+				Rating:           dbr.Rating,
 			},
 		)
 	}

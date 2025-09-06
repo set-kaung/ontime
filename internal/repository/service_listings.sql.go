@@ -126,21 +126,27 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 }
 
 const getListingReviews = `-- name: GetListingReviews :many
-select r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,sr.listing_id from reviews r
+select r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,sr.listing_id,reviewer_user.full_name as reviewer_full_name,reviewee_user.full_name as reviewee_full_name from reviews r
 JOIN service_requests sr
 ON sr.id = r.request_id
+JOIN users reviewer_user
+ON reviewer_user.id = r.reviewer_id
+JOIN users reviewee_user
+ON reviwee_user.id = r.reviewee_id
 WHERE listing_id = $1
 `
 
 type GetListingReviewsRow struct {
-	ID         int32       `json:"id"`
-	RequestID  int32       `json:"request_id"`
-	ReviewerID string      `json:"reviewer_id"`
-	RevieweeID string      `json:"reviewee_id"`
-	Rating     int32       `json:"rating"`
-	Comment    pgtype.Text `json:"comment"`
-	DateTime   time.Time   `json:"date_time"`
-	ListingID  int32       `json:"listing_id"`
+	ID               int32       `json:"id"`
+	RequestID        int32       `json:"request_id"`
+	ReviewerID       string      `json:"reviewer_id"`
+	RevieweeID       string      `json:"reviewee_id"`
+	Rating           int32       `json:"rating"`
+	Comment          pgtype.Text `json:"comment"`
+	DateTime         time.Time   `json:"date_time"`
+	ListingID        int32       `json:"listing_id"`
+	ReviewerFullName string      `json:"reviewer_full_name"`
+	RevieweeFullName string      `json:"reviewee_full_name"`
 }
 
 func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]GetListingReviewsRow, error) {
@@ -161,6 +167,8 @@ func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]Get
 			&i.Comment,
 			&i.DateTime,
 			&i.ListingID,
+			&i.ReviewerFullName,
+			&i.RevieweeFullName,
 		); err != nil {
 			return nil, err
 		}
