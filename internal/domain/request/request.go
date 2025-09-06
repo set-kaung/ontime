@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+	"github.com/set-kaung/senior_project_1/internal/domain/review"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 )
 
@@ -28,21 +29,12 @@ type Request struct {
 	ProviderCompleted  bool            `json:"provider_completed"`
 	RequesterCompleted bool            `json:"requester_completed"`
 	IsProvider         bool            `json:"is_provider"`
-	Review             Review          `json:"review"`
+	Review             review.Review   `json:"review"`
 	Events             []Event         `json:"events"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {
 	return Request{Listing: listing.Listing{ID: listingID}, Requester: user.User{ID: requesterID}}
-}
-
-type Review struct {
-	ID         int32  `json:"id"`
-	RequestID  int32  `json:"request_id"`
-	ReviewerID string `json:"reviewer_id"`
-	RevieweeID string `json:"reviewee_id"`
-	Comment    string `json:"comment"`
-	Rating     int32  `json:"rating"`
 }
 
 type Event struct {

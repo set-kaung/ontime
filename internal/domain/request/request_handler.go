@@ -1,9 +1,7 @@
 package request
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -134,30 +132,4 @@ func (rh *RequestHandler) HandleCompleteServiceRequest(w http.ResponseWriter, r 
 	}
 
 	helpers.WriteData(w, http.StatusOK, map[string]int32{"request_id": rid}, nil)
-}
-
-func (rh *RequestHandler) HandleSubmitReview(w http.ResponseWriter, r *http.Request) {
-	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
-	pathID := r.PathValue("id")
-	requestID, err := strconv.ParseInt(pathID, 10, 32)
-	if err != nil {
-		log.Println("request_handler -> HandleAcceptServiceRequest: err: ", err)
-		helpers.WriteError(w, http.StatusBadRequest, "invalid id", nil)
-		return
-	}
-
-	review := Review{}
-	decoder := json.NewDecoder(r.Body)
-	decoder.Decode(&review)
-	review.ReviewerID = userID
-	review.RequestID = int32(requestID)
-
-	fmt.Println("From user: ", review)
-
-	reviewID, err := rh.RequestService.InsertRequestReview(r.Context(), review)
-	if err != nil {
-		helpers.WriteServerError(w, nil)
-		return
-	}
-	helpers.WriteData(w, http.StatusOK, map[string]int32{"review_id": reviewID}, nil)
 }

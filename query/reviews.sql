@@ -12,3 +12,8 @@ WHERE user_id = $2;
 -- name: InsertNewUserRating :exec
 INSERT INTO ratings (user_id,total_ratings, rating_count)
 VALUES ($1,0,0);
+
+
+-- name: GetReviewByID :one
+SELECT * FROM reviews
+WHERE id = $1;

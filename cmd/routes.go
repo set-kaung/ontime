@@ -67,7 +67,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("POST /requests/complete/{id}", protected.Chain(a.requestHandler.HandleCompleteServiceRequest))
 	mux.Handle("GET /requests/{id}", protected.Chain(a.requestHandler.HandleGetRequestByID))
 	mux.Handle("GET /requests/all", protected.Chain(a.requestHandler.HandleGetAllUserRequests))
-	mux.Handle("POST /requests/review/{id}", protected.Chain(a.requestHandler.HandleSubmitReview))
+	mux.Handle("POST /requests/review/{id}", protected.Chain(a.reviewHandler.HandleSubmitReview))
 
 	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
 	mux.Handle("GET /ads/watched", protected.Chain(a.userHandler.HandleGetAdsWatched))
@@ -75,5 +75,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /rewards", protected.Chain(a.rewardHandler.HandleGetAllRewards))
 	mux.Handle("GET /rewards/{id}", protected.Chain(a.rewardHandler.HandleRewardByID))
 	mux.Handle("POST /rewards/redeem/{id}", protected.Chain(a.rewardHandler.HandleRedeemReward))
+
+	mux.Handle("GET /reviews/{id}", protected.Chain(a.reviewHandler.HandleGetReviewByID))
 	return internal.CORS(mux)
 }
