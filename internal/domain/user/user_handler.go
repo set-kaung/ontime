@@ -61,7 +61,6 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Request) {
-
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	dbUser, err := h.UserService.GetUserByID(r.Context(), userID)
 	if err != nil {

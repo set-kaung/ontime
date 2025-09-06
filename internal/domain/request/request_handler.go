@@ -133,3 +133,20 @@ func (rh *RequestHandler) HandleCompleteServiceRequest(w http.ResponseWriter, r 
 
 	helpers.WriteData(w, http.StatusOK, map[string]int32{"request_id": rid}, nil)
 }
+
+func (rh *RequestHandler) GetCompletedTransaction(w http.ResponseWriter, r *http.Request) {
+
+	requestPathValue := r.PathValue("requestId")
+	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
+	if err != nil {
+		log.Printf("GetCompletedTransaction: %s \n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessible entity", nil)
+		return
+	}
+	request, err := rh.RequestService.GetRequestByID(r.Context(), int32(requestID))
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, request, nil)
+}

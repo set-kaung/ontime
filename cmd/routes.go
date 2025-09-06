@@ -54,6 +54,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /users/me/history", protected.Chain(a.userHandler.HandleGetAllHistories))
 	mux.Handle("GET /users/me/redeemed-rewards/{redemptionId}", protected.Chain(a.rewardHandler.HandleGetRedeemedRewardByID))
 	mux.Handle("PUT /notifications/mark-all-read", protected.Chain(a.userHandler.HandleMarkAllAsRead))
+	mux.Handle("GET /users/me/completed-transactions/{requestId}", protected.Chain(a.requestHandler.GetCompletedTransaction))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))
