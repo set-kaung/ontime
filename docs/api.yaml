@@ -802,15 +802,18 @@ components:
     InteractionHistory:
       type: object
       properties:
-        interactionType:
+        interaction_type:
           type: string
           description: Type of interaction (e.g., request, ad_watch, reward_redemption)
         description:
           type: string
           description: Human readable description of the interaction
-        isIncoming:
+        is_incoming:
           type: boolean
           description: Whether the interaction was initiated by another user towards the authenticated user
+        target_id:
+          type: integer
+          description: ID of the target entity (request, reward, etc.) if applicable
         amount:
           type: integer
           description: Token amount associated with the interaction (if any)
