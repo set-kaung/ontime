@@ -485,6 +485,27 @@ paths:
                   review_id:
                     type: integer
 
+  /reviews/{id}:
+    get:
+      summary: Get review by ID
+      description: Retrieve a specific review by its ID
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Review ID
+      responses:
+        '200':
+          description: Review retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+
   /ads/complete:
     post:
       summary: Mark ad as watched
@@ -759,6 +780,22 @@ components:
           type: string
           format: date-time
           description: Time the interaction occurred
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+        request_id:
+          type: integer
+        reviewer_id:
+          type: string
+        reviewee_id:
+          type: string
+        comment:
+          type: string
+        rating:
+          type: integer
 
   responses:
     BadRequest:
