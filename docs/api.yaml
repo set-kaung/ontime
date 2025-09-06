@@ -1,0 +1,830 @@
+openapi: 3.0.3
+info:
+  title: SeniorProject1 API
+  description: A Go-based web application API with user management, service listings, requests, and rewards system
+  version: 1.0.0
+  contact:
+    name: Set Kaung Lwin
+servers:
+  - url: http://localhost:4096
+    description: Development server
+  - url: https://api.yourapp.com
+    description: Production server
+
+security:
+  - ClerkAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Check if the API is running
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+  /users/me:
+    get:
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      tags:
+        - Users
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me/services:
+    get:
+      summary: Get user's own service listings
+      description: Retrieve all service listings created by the authenticated user
+      tags:
+        - Users
+        - Services
+      responses:
+        '200':
+          description: User's service listings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceListing'
+
+  /update-profile-metadata:
+    post:
+      summary: Update profile metadata
+      description: Insert or update user profile metadata
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdate'
+      responses:
+        '200':
+          description: Profile metadata updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /users/me/update:
+    post:
+      summary: Update user profile
+      description: Update the authenticated user's profile information
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdate'
+      responses:
+        '200':
+          description: User profile updated successfully
+
+  /users/me/change-name:
+    patch:
+      summary: Change user's full name
+      description: Update the authenticated user's full name
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+      responses:
+        '200':
+          description: Name updated successfully
+
+  /users/me/delete:
+    delete:
+      summary: Delete user account
+      description: Delete the authenticated user's account
+      tags:
+        - Users
+      responses:
+        '200':
+          description: User account deleted successfully
+
+  /notifications:
+    get:
+      summary: Get user notifications
+      description: Retrieve notifications for the authenticated user (rate limited)
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+
+  /read-notification:
+    put:
+      summary: Mark notification as read
+      description: Update the read status of a specific notification (query param id required)
+      tags:
+        - Notifications
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Notification ID
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /notifications/mark-all-read:
+    put:
+      summary: Mark all notifications as read
+      description: Mark all user notifications as read
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /users/me/rewards:
+    get:
+      summary: Get user's redeemed rewards
+      description: Retrieve all rewards redeemed by the authenticated user
+      tags:
+        - Users
+        - Rewards
+      responses:
+        '200':
+          description: User's redeemed rewards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RedeemedReward'
+
+  /users/me/history:
+    get:
+      summary: Get user interaction history
+      description: Retrieve combined interaction history (requests, ads watched, rewards) for the authenticated user
+      tags:
+        - Users
+      responses:
+        '200':
+          description: Interaction history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InteractionHistory'
+
+  /services:
+    get:
+      summary: Get all service listings
+      description: Retrieve all available service listings
+      tags:
+        - Services
+      responses:
+        '200':
+          description: Service listings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceListing'
+
+  /services/{id}:
+    get:
+      summary: Get service listing by ID
+      description: Retrieve a specific service listing by its ID
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Service listing ID
+      responses:
+        '200':
+          description: Service listing retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceListing'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /services/create:
+    post:
+      summary: Create a new service listing
+      description: Create a new service listing
+      tags:
+        - Services
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceListing'
+      responses:
+        '201':
+          description: Service listing created successfully
+
+  /services/update/{id}:
+    put:
+      summary: Update service listing
+      description: Update an existing service listing
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateServiceListing'
+      responses:
+        '200':
+          description: Service listing updated successfully
+
+  /services/report/{id}:
+    post:
+      summary: Report a service listing
+      description: Report a service listing for inappropriate or incorrect content
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Service listing ID
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Optional reason for the report
+      responses:
+        '200':
+          description: Service listing reported successfully
+
+  /services/delete/{id}:
+    delete:
+      summary: Delete service listing
+      description: Delete an existing service listing owned by the authenticated user
+      tags:
+        - Services
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Service listing ID
+      responses:
+        '200':
+          description: Service listing deleted successfully
+
+  /requests/create/{id}:
+    post:
+      summary: Create service request
+      description: Create a new service request for a specific listing
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Service listing ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+      responses:
+        '200':
+          description: Service request created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requestID:
+                    type: integer
+
+  /requests/accept/{id}:
+    post:
+      summary: Accept service request
+      description: Accept a pending service request
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Request ID
+      responses:
+        '200':
+          description: Service request accepted successfully
+
+  /requests/decline/{id}:
+    post:
+      summary: Decline service request
+      description: Decline a pending service request
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Request ID
+      responses:
+        '200':
+          description: Service request declined successfully
+
+  /requests/complete/{id}:
+    post:
+      summary: Complete service request
+      description: Mark a service request as completed
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Request ID
+      responses:
+        '200':
+          description: Service request completed successfully
+
+  /requests/{id}:
+    get:
+      summary: Get service request by ID
+      description: Retrieve a specific service request by its ID
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Request ID
+      responses:
+        '200':
+          description: Service request retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+
+  /requests/all:
+    get:
+      summary: Get all user requests
+      description: Retrieve all service requests for the authenticated user
+      tags:
+        - Requests
+      responses:
+        '200':
+          description: User requests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceRequest'
+
+  /requests/review/{id}:
+    post:
+      summary: Submit review for request
+      description: Submit a review for a completed service request
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Request ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment:
+                  type: string
+                rating:
+                  type: integer
+              required:
+                - comment
+                - rating
+      responses:
+        '200':
+          description: Review submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  review_id:
+                    type: integer
+
+  /ads/complete:
+    post:
+      summary: Mark ad as watched
+      description: Mark an advertisement as watched by the user
+      tags:
+        - Advertisements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adId:
+                  type: string
+      responses:
+        '200':
+          description: Ad marked as watched successfully
+
+  /ads/watched:
+    get:
+      summary: Get watched ads count
+      description: Get the number of ads watched by the user today
+      tags:
+        - Advertisements
+      responses:
+        '200':
+          description: Watched ads count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  watchedToday:
+                    type: integer
+                  dailyLimit:
+                    type: integer
+
+  /rewards:
+    get:
+      summary: Get all available rewards
+      description: Retrieve all available rewards in the system
+      tags:
+        - Rewards
+      responses:
+        '200':
+          description: Rewards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reward'
+
+  /rewards/{id}:
+    get:
+      summary: Get reward by ID
+      description: Retrieve a specific reward by its ID
+      tags:
+        - Rewards
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Reward ID
+      responses:
+        '200':
+          description: Reward retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reward'
+
+  /rewards/redeem/{id}:
+    post:
+      summary: Redeem reward
+      description: Redeem a specific reward using user tokens
+      tags:
+        - Rewards
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Reward ID
+      responses:
+        '200':
+          description: Reward redeemed successfully
+
+components:
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk authentication token
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+
+    ServiceListing:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        userId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateServiceListing:
+      type: object
+      required:
+        - title
+        - description
+        - price
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+
+    UpdateServiceListing:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+
+    ServiceRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        serviceId:
+          type: string
+        requesterId:
+          type: string
+        providerId:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, declined, completed]
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateServiceRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Reward:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        cost:
+          type: integer
+        available:
+          type: boolean
+
+    RedeemedReward:
+      type: object
+      properties:
+        id:
+          type: string
+        rewardId:
+          type: string
+        userId:
+          type: string
+        redeemedAt:
+          type: string
+          format: date-time
+
+    InteractionHistory:
+      type: object
+      properties:
+        interactionType:
+          type: string
+          description: Type of interaction (e.g., request, ad_watch, reward_redemption)
+        description:
+          type: string
+          description: Human readable description of the interaction
+        isIncoming:
+          type: boolean
+          description: Whether the interaction was initiated by another user towards the authenticated user
+        amount:
+          type: integer
+          description: Token amount associated with the interaction (if any)
+        status:
+          type: string
+          description: Status of the interaction when applicable
+        timestamp:
+          type: string
+          format: date-time
+          description: Time the interaction occurred
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+              message:
+                type: string
+                example: "Authentication required"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Not Found"
+              message:
+                type: string
+                example: "Resource not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal Server Error"
+              message:
+                type: string
+                example: "An unexpected error occurred"
+
+tags:
+  - name: Users
+    description: User management operations
+  - name: Services
+    description: Service listing operations
+  - name: Requests
+    description: Service request operations
+  - name: Notifications
+    description: User notification operations
+  - name: Advertisements
+    description: Advertisement tracking operations
+  - name: Rewards
+    description: Reward system operations
