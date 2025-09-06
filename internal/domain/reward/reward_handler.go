@@ -70,3 +70,18 @@ func (rh *RewardHandler) HandleRedeemReward(w http.ResponseWriter, r *http.Reque
 	}
 	helpers.WriteData(w, http.StatusOK, map[string]string{"coupon_code": couponCode}, nil)
 }
+
+func (rh *RewardHandler) HandleGetRedeemedRewardByID(w http.ResponseWriter, r *http.Request) {
+	pathID := r.PathValue("redemptionId")
+	redeemedRewardID, err := strconv.ParseInt(pathID, 10, 32)
+	if err != nil {
+		helpers.WriteError(w, http.StatusBadRequest, "invalid reward id", nil)
+		return
+	}
+	rr, err := rh.RewardService.GetRedeemedRewardByID(r.Context(), int32(redeemedRewardID))
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, rr, nil)
+}

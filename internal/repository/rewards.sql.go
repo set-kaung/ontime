@@ -70,7 +70,7 @@ func (q *Queries) GetAllRewards(ctx context.Context) ([]GetAllRewardsRow, error)
 }
 
 const getAllUserRedeemdRewards = `-- name: GetAllUserRedeemdRewards :many
-SELECT rr.id,rr.reward_id,rr.user_id,rr.redeemed_at,rr.cost as redeemed_cost,r.title FROM redeemed_rewards rr
+SELECT rr.id,rr.reward_id,rr.user_id,rr.redeemed_at,rr.cost as redeemed_cost,r.title,r.description,r.image_url,r.coupon_code FROM redeemed_rewards rr
 LEFT JOIN rewards r
 ON r.id = rr.reward_id
 WHERE rr.user_id = $1
@@ -83,6 +83,9 @@ type GetAllUserRedeemdRewardsRow struct {
 	RedeemedAt   time.Time   `json:"redeemed_at"`
 	RedeemedCost int32       `json:"redeemed_cost"`
 	Title        pgtype.Text `json:"title"`
+	Description  pgtype.Text `json:"description"`
+	ImageUrl     pgtype.Text `json:"image_url"`
+	CouponCode   pgtype.Text `json:"coupon_code"`
 }
 
 func (q *Queries) GetAllUserRedeemdRewards(ctx context.Context, userID string) ([]GetAllUserRedeemdRewardsRow, error) {
@@ -101,6 +104,9 @@ func (q *Queries) GetAllUserRedeemdRewards(ctx context.Context, userID string) (
 			&i.RedeemedAt,
 			&i.RedeemedCost,
 			&i.Title,
+			&i.Description,
+			&i.ImageUrl,
+			&i.CouponCode,
 		); err != nil {
 			return nil, err
 		}
@@ -110,6 +116,50 @@ func (q *Queries) GetAllUserRedeemdRewards(ctx context.Context, userID string) (
 		return nil, err
 	}
 	return items, nil
+}
+
+const getRedeemedRewardByID = `-- name: GetRedeemedRewardByID :one
+SELECT rr.id, reward_id, user_id, redeemed_at, rr.cost, r.id, title, description, r.cost, available_amount, image_url, created_date, coupon_code FROM redeemed_rewards rr
+JOIN rewards r
+ON r.id = rr.reward_id
+WHERE rr.id = $1
+`
+
+type GetRedeemedRewardByIDRow struct {
+	ID              int32       `json:"id"`
+	RewardID        int32       `json:"reward_id"`
+	UserID          string      `json:"user_id"`
+	RedeemedAt      time.Time   `json:"redeemed_at"`
+	Cost            int32       `json:"cost"`
+	ID_2            int32       `json:"id_2"`
+	Title           string      `json:"title"`
+	Description     string      `json:"description"`
+	Cost_2          int32       `json:"cost_2"`
+	AvailableAmount int32       `json:"available_amount"`
+	ImageUrl        pgtype.Text `json:"image_url"`
+	CreatedDate     time.Time   `json:"created_date"`
+	CouponCode      string      `json:"coupon_code"`
+}
+
+func (q *Queries) GetRedeemedRewardByID(ctx context.Context, id int32) (GetRedeemedRewardByIDRow, error) {
+	row := q.db.QueryRow(ctx, getRedeemedRewardByID, id)
+	var i GetRedeemedRewardByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.RewardID,
+		&i.UserID,
+		&i.RedeemedAt,
+		&i.Cost,
+		&i.ID_2,
+		&i.Title,
+		&i.Description,
+		&i.Cost_2,
+		&i.AvailableAmount,
+		&i.ImageUrl,
+		&i.CreatedDate,
+		&i.CouponCode,
+	)
+	return i, err
 }
 
 const getRewardByID = `-- name: GetRewardByID :one

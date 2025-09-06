@@ -50,9 +50,12 @@ func (prs *PostgresRewardService) GetAllUserRedeemedRewards(ctx context.Context,
 		redeemedRewards[i] = RedeemedReward{
 			RewardID:           rr.RewardID,
 			RewardTitle:        rr.Title.String,
+			RewardDescription:  rr.Description.String,
 			RedeemedAt:         rr.RedeemedAt,
 			RedeemedUserID:     rr.UserID,
 			CostAtRedeemedTime: rr.RedeemedCost,
+			ImageURL:           rr.ImageUrl.String,
+			CouponCode:         rr.CouponCode.String,
 		}
 	}
 	return redeemedRewards, err
@@ -122,4 +125,24 @@ func (prs *PostgresRewardService) InsertRedeemedReward(ctx context.Context, rewa
 		return "", internal.ErrInternalServerError
 	}
 	return couponCode, nil
+}
+
+func (p *PostgresRewardService) GetRedeemedRewardByID(ctx context.Context, redeemedRewardID int32) (RedeemedReward, error) {
+	repo := repository.New(p.DB)
+	dbRR, err := repo.GetRedeemedRewardByID(ctx, redeemedRewardID)
+	var rr RedeemedReward
+	if err != nil {
+		log.Printf("GetRedeemedRewardByID: failed to get redeemed reward: %s\n", err)
+		return rr, internal.ErrInternalServerError
+	}
+	rr.ID = dbRR.ID
+	rr.CostAtRedeemedTime = dbRR.Cost
+	rr.RedeemedAt = dbRR.RedeemedAt
+	rr.RewardID = dbRR.RewardID
+	rr.RedeemedUserID = dbRR.UserID
+	rr.RewardTitle = dbRR.Title
+	rr.RewardDescription = dbRR.Description
+	rr.ImageURL = dbRR.ImageUrl.String
+	rr.CouponCode = dbRR.CouponCode
+	return rr, nil
 }

@@ -38,6 +38,7 @@ type InteractionHistory struct {
 	InteractionType string    `json:"interaction_type"`
 	Description     string    `json:"description"`
 	IsIncoming      bool      `json:"is_incoming"`
+	TargetID        int32     `json:"target_id"`
 	Amount          int32     `json:"amount"`
 	Status          string    `json:"status"`
 	Timestamp       time.Time `json:"timestamp"`

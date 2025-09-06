@@ -52,6 +52,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("PUT /read-notification", protected.Chain(a.userHandler.HandleUpdateNotificationStatus))
 	mux.Handle("GET /users/me/rewards", protected.Chain(a.rewardHandler.HandleGetAllUserRedeemdRewards))
 	mux.Handle("GET /users/me/history", protected.Chain(a.userHandler.HandleGetAllHistories))
+	mux.Handle("GET /users/me/redeemed-rewards/{redemptionId}", protected.Chain(a.rewardHandler.HandleGetRedeemedRewardByID))
 	mux.Handle("PUT /notifications/mark-all-read", protected.Chain(a.userHandler.HandleMarkAllAsRead))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))

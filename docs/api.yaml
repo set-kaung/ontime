@@ -208,6 +208,32 @@ paths:
                 items:
                   $ref: '#/components/schemas/InteractionHistory'
 
+  /users/me/redeemed-rewards/{redemptionId}:
+    get:
+      summary: Get redeemed reward by ID
+      description: Retrieve a specific redeemed reward belonging to the authenticated user by its redemption ID
+      tags:
+        - Users
+        - Rewards
+      parameters:
+        - name: redemptionId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Redeemed reward ID
+      responses:
+        '200':
+          description: Redeemed reward retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RedeemedReward'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /services:
     get:
       summary: Get all service listings
@@ -735,28 +761,43 @@ components:
       type: object
       properties:
         id:
-          type: string
-        name:
+          type: integer
+        title:
           type: string
         description:
           type: string
         cost:
           type: integer
-        available:
-          type: boolean
+        available_amount:
+          type: integer
+        image_url:
+          type: string
+        created_date:
+          type: string
+          format: date-time
 
     RedeemedReward:
       type: object
       properties:
         id:
+          type: integer
+        reward_id:
+          type: integer
+        reward_title:
           type: string
-        rewardId:
+        description:
           type: string
-        userId:
-          type: string
-        redeemedAt:
+        redeemed_at:
           type: string
           format: date-time
+        reedemed_user_id:
+          type: string
+        cost_at_redeemed_time:
+          type: integer
+        image_url:
+          type: string
+        coupon_code:
+          type: string
 
     InteractionHistory:
       type: object
