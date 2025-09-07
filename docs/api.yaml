@@ -175,6 +175,32 @@ paths:
         '200':
           description: All notifications marked as read
 
+  /users/me/completed-transactions/{requestId}:
+    get:
+      summary: Get completed transaction (service request details)
+      description: Retrieve the details of a (completed) service request by its ID. Returns the same structure as Get Request By ID.
+      tags:
+        - Requests
+        - Users
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Service request ID
+      responses:
+        '200':
+          description: Service request retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /users/me/rewards:
     get:
       summary: Get user's redeemed rewards
@@ -518,15 +544,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                comment:
-                  type: string
-                rating:
-                  type: integer
-              required:
-                - comment
-                - rating
+              $ref: '#/components/schemas/CreateReview'
       responses:
         '200':
           description: Review submitted successfully
@@ -908,6 +926,27 @@ components:
           type: string
         rating:
           type: integer
+        reviwer_full_name:
+          type: string
+          description: Full name of the reviewer (typo maintained as in API payload)
+        reviwee_full_name:
+          type: string
+          description: Full name of the reviewee (typo maintained as in API payload)
+      description: Review left on a completed service request. Name field keys contain legacy misspellings.
+
+    CreateReview:
+      type: object
+      required:
+        - rating
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          description: Optional textual feedback
+      description: Payload to create a review; comment is optional, rating required.
 
   responses:
     BadRequest:
