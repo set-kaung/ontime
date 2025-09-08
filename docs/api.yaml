@@ -94,7 +94,7 @@ paths:
             schema:
               $ref: '#/components/schemas/UserInsert'
       responses:
-        '200':
+        '201':
           description: Profile metadata inserted successfully (empty success envelope)
           content:
             application/json:
@@ -385,7 +385,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateServiceListing'
       responses:
-        '200':
+        '201':
           description: Service listing created successfully (no response body)
 
   /services/update/{id}:
@@ -516,7 +516,7 @@ paths:
             type: integer
           description: Service listing ID
       responses:
-        '200':
+        '201':
           description: Service request created successfully
           content:
             application/json:
@@ -685,7 +685,7 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateReview'
       responses:
-        '200':
+        '201':
           description: Review submitted successfully
           content:
             application/json:

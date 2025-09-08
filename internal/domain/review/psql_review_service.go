@@ -80,6 +80,9 @@ func (prs *PostgresReviewService) InsertReview(ctx context.Context, r Review) (i
 		return -1, internal.ErrInternalServerError
 	}
 	err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", insertedData.RevieweeID), "new-notifications", nil)
+	if err != nil {
+		log.Printf("failed to trigger pusher notification: %s\n", err)
+	}
 	return insertedData.ID, nil
 }
 
