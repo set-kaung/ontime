@@ -33,6 +33,7 @@ func (lh *ListingHandler) HandleCreateListing(w http.ResponseWriter, r *http.Req
 		helpers.WriteError(w, http.StatusInternalServerError, "error creating listing", nil)
 		return
 	}
+	helpers.WriteSuccess(w, http.StatusCreated, "listing created successfully", nil)
 }
 
 func (lh *ListingHandler) HandleGetListingByID(w http.ResponseWriter, r *http.Request) {

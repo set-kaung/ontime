@@ -58,6 +58,7 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("failed to update Clerk user metadata:", err)
 	}
+	helpers.WriteSuccess(w, http.StatusCreated, "singup succesful", nil)
 }
 
 func (h *UserHandler) HandleViewOwnProfile(w http.ResponseWriter, r *http.Request) {
