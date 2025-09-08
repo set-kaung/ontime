@@ -38,7 +38,7 @@ func (rh *ReviewHandler) HandleSubmitReview(w http.ResponseWriter, r *http.Reque
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteData(w, http.StatusOK, map[string]int32{"review_id": reviewID}, nil)
+	helpers.WriteData(w, http.StatusCreated, map[string]int32{"review_id": reviewID}, nil)
 }
 
 func (rh *ReviewHandler) HandleGetReviewByID(w http.ResponseWriter, r *http.Request) {
