@@ -104,7 +104,7 @@ func (prs *PostgresRewardService) InsertRedeemedReward(ctx context.Context, rewa
 		return "", internal.ErrInternalServerError
 	}
 	if len(couponCodes) < 1 {
-		log.Printf("InsertRedeemedReward: fatal: invalid couponCodes len %v\n")
+		log.Printf("InsertRedeemedReward: fatal: invalid couponCodes len\n")
 		return "", internal.ErrInternalServerError
 	}
 	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
