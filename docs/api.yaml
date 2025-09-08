@@ -1,13 +1,15 @@
 openapi: 3.0.3
 info:
   title: SeniorProject1 API
-  description: A Go-based web application API with user management, service listings, requests, and rewards system
-  version: 1.0.0
+  description: >-
+    API for user management, service listings, requests, reviews, notifications,
+    advertisements, and rewards. Spec synchronized with code as of 2025-09-08.
+  version: 1.0.1
   contact:
     name: Set Kaung Lwin
 servers:
-  - url: http://localhost:4096
-    description: Development server
+  - url: http://localhost:8080
+    description: Local development (default if PORT unset)
   - url: https://api.yourapp.com
     description: Production server
 
@@ -26,11 +28,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "healthy"
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                ok:
+                  value:
+                    status: success
+                    data:
+                      status: healthy
 
   /users/me:
     get:
@@ -44,7 +48,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -63,14 +72,19 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ServiceListing'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServiceListing'
 
   /update-profile-metadata:
     post:
-      summary: Update profile metadata
-      description: Insert or update user profile metadata
+      summary: Insert user profile (initial metadata)
+      description: Inserts a new user profile record and updates Clerk public metadata (profileComplete=true).
       tags:
         - Users
       requestBody:
@@ -78,17 +92,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserProfileUpdate'
+              $ref: '#/components/schemas/UserInsert'
       responses:
         '200':
-          description: Profile metadata updated successfully
+          description: Profile metadata inserted successfully (empty success envelope)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
         '400':
           $ref: '#/components/responses/BadRequest'
 
   /users/me/update:
     post:
       summary: Update user profile
-      description: Update the authenticated user's profile information
+      description: Update mutable user profile attributes.
       tags:
         - Users
       requestBody:
@@ -96,15 +114,19 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserProfileUpdate'
+              $ref: '#/components/schemas/UserUpdate'
       responses:
         '200':
           description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /users/me/change-name:
     patch:
       summary: Change user's full name
-      description: Update the authenticated user's full name
+      description: "Update the authenticated user's full name (field: full_name)."
       tags:
         - Users
       requestBody:
@@ -113,29 +135,37 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - full_name
               properties:
-                firstName:
-                  type: string
-                lastName:
+                full_name:
                   type: string
       responses:
         '200':
           description: Name updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /users/me/delete:
     delete:
       summary: Delete user account
-      description: Delete the authenticated user's account
+      description: Delete the authenticated user's account (Clerk + DB record).
       tags:
         - Users
       responses:
         '200':
           description: User account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /notifications:
     get:
       summary: Get user notifications
-      description: Retrieve notifications for the authenticated user (rate limited)
+      description: Retrieve notifications for the authenticated user (rate limited 20 req / 10s window as per server).
       tags:
         - Notifications
       responses:
@@ -144,9 +174,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Notification'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
 
   /read-notification:
     put:
@@ -164,6 +199,10 @@ paths:
       responses:
         '200':
           description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /notifications/mark-all-read:
     put:
@@ -174,6 +213,10 @@ paths:
       responses:
         '200':
           description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /users/me/completed-transactions/{requestId}:
     get:
@@ -195,7 +238,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceRequest'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ServiceRequest'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -214,14 +262,19 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RedeemedReward'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RedeemedReward'
 
   /users/me/history:
     get:
       summary: Get user interaction history
-      description: Retrieve combined interaction history (requests, ads watched, rewards) for the authenticated user
+      description: Combined interaction history (requests, ads watched, rewards) for the authenticated user
       tags:
         - Users
       responses:
@@ -230,9 +283,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InteractionHistory'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InteractionHistory'
 
   /users/me/redeemed-rewards/{redemptionId}:
     get:
@@ -246,7 +304,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Redeemed reward ID
       responses:
         '200':
@@ -254,7 +312,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RedeemedReward'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RedeemedReward'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -272,9 +335,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ServiceListing'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServiceListing'
 
   /services/{id}:
     get:
@@ -287,7 +355,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Service listing ID
       responses:
         '200':
@@ -295,7 +363,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceListing'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ServiceListing'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -312,8 +385,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateServiceListing'
       responses:
-        '201':
-          description: Service listing created successfully
+        '200':
+          description: Service listing created successfully (no response body)
 
   /services/update/{id}:
     put:
@@ -326,7 +399,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
       requestBody:
         required: true
         content:
@@ -336,6 +409,18 @@ paths:
       responses:
         '200':
           description: Service listing updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
 
   /services/report/{id}:
     post:
@@ -348,21 +433,21 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Service listing ID
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                reason:
-                  type: string
-                  description: Optional reason for the report
+              $ref: '#/components/schemas/CreateListingReport'
       responses:
         '200':
           description: Service listing reported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /services/delete/{id}:
     delete:
@@ -375,11 +460,15 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Service listing ID
       responses:
         '200':
           description: Service listing deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /services/{id}/reviews:
     get:
@@ -392,7 +481,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Service listing ID
       responses:
         '200':
@@ -400,9 +489,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Review'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Review'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -411,7 +505,7 @@ paths:
   /requests/create/{id}:
     post:
       summary: Create service request
-      description: Create a new service request for a specific listing
+      description: Create a new service request for a specific listing (no JSON body required)
       tags:
         - Requests
       parameters:
@@ -419,24 +513,23 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Service listing ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateServiceRequest'
       responses:
         '200':
           description: Service request created successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  requestID:
-                    type: integer
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          requestID:
+                            type: integer
 
   /requests/accept/{id}:
     post:
@@ -449,11 +542,23 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Request ID
       responses:
         '200':
           description: Service request accepted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          request_id:
+                            type: integer
 
   /requests/decline/{id}:
     post:
@@ -466,11 +571,23 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Request ID
       responses:
         '200':
           description: Service request declined successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          request_id:
+                            type: integer
 
   /requests/complete/{id}:
     post:
@@ -483,11 +600,23 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Request ID
       responses:
         '200':
           description: Service request completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          request_id:
+                            type: integer
 
   /requests/{id}:
     get:
@@ -500,7 +629,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Request ID
       responses:
         '200':
@@ -508,12 +637,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ServiceRequest'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ServiceRequest'
 
   /requests/all:
     get:
-      summary: Get all user requests
-      description: Retrieve all service requests for the authenticated user
+      summary: Get all user active requests
+      description: Retrieve all active service requests for the authenticated user
       tags:
         - Requests
       responses:
@@ -522,9 +656,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ServiceRequest'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServiceRequest'
 
   /requests/review/{id}:
     post:
@@ -537,7 +676,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Request ID
       requestBody:
         required: true
@@ -551,10 +690,15 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  review_id:
-                    type: integer
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          review_id:
+                            type: integer
 
   /reviews/{id}:
     get:
@@ -567,7 +711,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Review ID
       responses:
         '200':
@@ -575,31 +719,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Review'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Review'
 
   /ads/complete:
     post:
       summary: Mark ad as watched
-      description: Mark an advertisement as watched by the user
+      description: Mark an advertisement as watched by the user (no request body)
       tags:
         - Advertisements
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                adId:
-                  type: string
       responses:
         '200':
           description: Ad marked as watched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
 
   /ads/watched:
     get:
       summary: Get watched ads count
-      description: Get the number of ads watched by the user today
+      description: Get ads watched count and limit status for the user
       tags:
         - Advertisements
       responses:
@@ -608,12 +752,17 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  watchedToday:
-                    type: integer
-                  dailyLimit:
-                    type: integer
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                          is_at_limit:
+                            type: boolean
 
   /rewards:
     get:
@@ -627,9 +776,14 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Reward'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Reward'
 
   /rewards/{id}:
     get:
@@ -642,7 +796,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Reward ID
       responses:
         '200':
@@ -650,7 +804,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Reward'
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Reward'
 
   /rewards/redeem/{id}:
     post:
@@ -663,11 +822,23 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            type: integer
           description: Reward ID
       responses:
         '200':
           description: Reward redeemed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          coupon_code:
+                            type: string
 
 components:
   securitySchemes:
@@ -678,275 +849,200 @@ components:
       description: Clerk authentication token
 
   schemas:
+    Envelope:
+      type: object
+      description: Standard response envelope used by all endpoints.
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+          nullable: true
+        data:
+          description: Payload (present on success)
+          nullable: true
+      example:
+        status: success
+        data: {}
+
     User:
       type: object
       properties:
-        id:
-          type: string
-        firstName:
-          type: string
-        lastName:
-          type: string
-        email:
-          type: string
-        status:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        id: { type: string }
+        full_name: { type: string }
+        phone: { type: string }
+        token_balance: { type: integer }
+        status: { type: string }
+        address_line_1: { type: string }
+        address_line_2: { type: string }
+        city: { type: string }
+        state_province: { type: string }
+        zip_postal_code: { type: string }
+        country: { type: string }
+        joined_at: { type: string, format: date-time }
+        email: { type: boolean }
+        services_received: { type: integer }
+        services_provided: { type: integer }
+        paid: { type: boolean }
+        rating: { type: number, format: float }
 
-    UserProfileUpdate:
+    UserInsert:
+      allOf:
+        - $ref: '#/components/schemas/User'
+      description: Payload for inserting a new user profile (subset accepted; unspecified fields ignored).
+
+    UserUpdate:
       type: object
+      description: Fields accepted for updating an existing user profile (partial allowed).
       properties:
-        firstName:
-          type: string
-        lastName:
-          type: string
-        bio:
-          type: string
-        location:
-          type: string
+        full_name: { type: string }
+        phone: { type: string }
+        address_line_1: { type: string }
+        address_line_2: { type: string }
+        city: { type: string }
+        state_province: { type: string }
+        zip_postal_code: { type: string }
+        country: { type: string }
+        email: { type: boolean }
 
     ServiceListing:
       type: object
       properties:
-        id:
-          type: integer
-        title:
-          type: string
-        description:
-          type: string
-        token_reward:
-          type: integer
-        posted_at:
-          type: string
-          format: date-time
-        category:
-          type: string
-        image_url:
-          type: string
-        provider:
-          $ref: '#/components/schemas/User'
-        has_already_taken:
-          type: boolean
-        taken_request_id:
-          type: integer
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        token_reward: { type: integer }
+        posted_at: { type: string, format: date-time }
+        category: { type: string }
+        image_url: { type: string }
+        provider: { $ref: '#/components/schemas/User' }
+        has_already_taken: { type: boolean }
+        taken_request_id: { type: integer }
 
     CreateServiceListing:
       type: object
-      required:
-        - title
-        - description
-        - token_reward
+      required: [title, description, token_reward]
       properties:
-        title:
-          type: string
-        description:
-          type: string
-        token_reward:
-          type: integer
-        category:
-          type: string
+        title: { type: string }
+        description: { type: string }
+        token_reward: { type: integer }
+        category: { type: string }
+        image_url: { type: string }
 
     UpdateServiceListing:
       type: object
       properties:
-        title:
-          type: string
-        description:
-          type: string
-        token_reward:
-          type: integer
-        category:
-          type: string
+        title: { type: string }
+        description: { type: string }
+        token_reward: { type: integer }
+        category: { type: string }
+        image_url: { type: string }
+
+    CreateListingReport:
+      type: object
+      required: [report_reason]
+      properties:
+        report_reason: { type: string }
+        additional_detail: { type: string }
 
     ServiceRequest:
       type: object
       properties:
-        id:
-          type: integer
-        listing:
-          $ref: '#/components/schemas/ServiceListing'
-        requester:
-          $ref: '#/components/schemas/User'
-        provider:
-          $ref: '#/components/schemas/User'
-        activity:
-          type: string
-          description: High-level activity state (active/inactive)
-        status_detail:
-          type: string
-          description: Detailed lifecycle status (pending, in_progress, declined, completed)
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-        token_reward:
-          type: integer
-        type:
-          type: string
-          enum: [OUTGOING, INCOMING]
-        provider_completed:
-          type: boolean
-        requester_completed:
-          type: boolean
-        is_provider:
-          type: boolean
-          description: Whether the authenticated user is the provider in this request
-        review:
-          $ref: '#/components/schemas/Review'
+        id: { type: integer }
+        listing: { $ref: '#/components/schemas/ServiceListing' }
+        requester: { $ref: '#/components/schemas/User' }
+        provider: { $ref: '#/components/schemas/User' }
+        activity: { type: string, description: High-level activity state }
+        status_detail: { type: string, description: Detailed lifecycle status }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        token_reward: { type: integer }
+        type: { type: string, enum: [OUTGOING, INCOMING] }
+        provider_completed: { type: boolean }
+        requester_completed: { type: boolean }
+        is_provider: { type: boolean }
+        review: { $ref: '#/components/schemas/Review' }
         events:
           type: array
-          items:
-            $ref: '#/components/schemas/Event'
-
-    CreateServiceRequest:
-      type: object
-      description: This endpoint does not currently accept a JSON body; path parameter identifies the listing.
+          items: { $ref: '#/components/schemas/Event' }
 
     Event:
       type: object
       properties:
-        event_id:
-          type: integer
-        event_time:
-          type: string
-          format: date-time
-        event_description:
-          type: string
-        by:
-          type: string
-          description: Derived actor role (requester/provider)
-        event_owner:
-          type: string
-          description: User ID of the event owner
+        event_id: { type: integer }
+        event_time: { type: string, format: date-time }
+        event_description: { type: string }
+        by: { type: string }
+        event_owner: { type: string }
 
     Notification:
       type: object
       properties:
-        id:
-          type: string
-        userId:
-          type: string
-        title:
-          type: string
-        message:
-          type: string
-        isRead:
-          type: boolean
-        createdAt:
-          type: string
-          format: date-time
+        id: { type: integer }
+        message: { type: string }
+        recipient_user_id: { type: string }
+        action_user_id: { type: string }
+        is_read: { type: boolean }
+        event_id: { type: integer }
+        created_at: { type: string, format: date-time }
+        event_type: { type: string }
+        event_target_id: { type: integer }
 
     Reward:
       type: object
       properties:
-        id:
-          type: integer
-        title:
-          type: string
-        description:
-          type: string
-        cost:
-          type: integer
-        available_amount:
-          type: integer
-        image_url:
-          type: string
-        created_date:
-          type: string
-          format: date-time
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        cost: { type: integer }
+        available_amount: { type: integer }
+        image_url: { type: string }
+        created_date: { type: string, format: date-time }
 
     RedeemedReward:
       type: object
       properties:
-        id:
-          type: integer
-        reward_id:
-          type: integer
-        reward_title:
-          type: string
-        description:
-          type: string
-        redeemed_at:
-          type: string
-          format: date-time
-        reedemed_user_id:
-          type: string
-        cost_at_redeemed_time:
-          type: integer
-        image_url:
-          type: string
-        coupon_code:
-          type: string
+        id: { type: integer }
+        reward_id: { type: integer }
+        reward_title: { type: string }
+        description: { type: string }
+        redeemed_at: { type: string, format: date-time }
+        reedemed_user_id: { type: string }
+        cost_at_redeemed_time: { type: integer }
+        image_url: { type: string }
+        coupon_code: { type: string }
 
     InteractionHistory:
       type: object
       properties:
-        interaction_type:
-          type: string
-          description: Type of interaction (e.g., request, ad_watch, reward_redemption)
-        description:
-          type: string
-          description: Human readable description of the interaction
-        is_incoming:
-          type: boolean
-          description: Whether the interaction was initiated by another user towards the authenticated user
-        target_id:
-          type: integer
-          description: ID of the target entity (request, reward, etc.) if applicable
-        amount:
-          type: integer
-          description: Token amount associated with the interaction (if any)
-        status:
-          type: string
-          description: Status of the interaction when applicable
-        timestamp:
-          type: string
-          format: date-time
-          description: Time the interaction occurred
+        interaction_type: { type: string }
+        description: { type: string }
+        is_incoming: { type: boolean }
+        target_id: { type: integer }
+        amount: { type: integer }
+        status: { type: string }
+        timestamp: { type: string, format: date-time }
 
     Review:
       type: object
       properties:
-        id:
-          type: integer
-        request_id:
-          type: integer
-        reviewer_id:
-          type: string
-        reviewee_id:
-          type: string
-        comment:
-          type: string
-        rating:
-          type: integer
-        reviwer_full_name:
-          type: string
-          description: Full name of the reviewer (typo maintained as in API payload)
-        reviwee_full_name:
-          type: string
-          description: Full name of the reviewee (typo maintained as in API payload)
-      description: Review left on a completed service request. Name field keys contain legacy misspellings.
+        id: { type: integer }
+        request_id: { type: integer }
+        reviewer_id: { type: string }
+        reviwer_full_name: { type: string, description: Typo preserved }
+        reviwee_full_name: { type: string, description: Typo preserved }
+        reviewee_id: { type: string }
+        comment: { type: string }
+        rating: { type: integer }
+      description: Review left on a completed service request (legacy misspelled keys preserved).
 
     CreateReview:
       type: object
-      required:
-        - rating
+      required: [rating]
       properties:
-        rating:
-          type: integer
-          minimum: 1
-          maximum: 5
-        comment:
-          type: string
-          description: Optional textual feedback
-      description: Payload to create a review; comment is optional, rating required.
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
 
   responses:
     BadRequest:
@@ -954,54 +1050,25 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-              message:
-                type: string
-
+            $ref: '#/components/schemas/Envelope'
     Unauthorized:
       description: Unauthorized
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "Unauthorized"
-              message:
-                type: string
-                example: "Authentication required"
-
+            $ref: '#/components/schemas/Envelope'
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "Not Found"
-              message:
-                type: string
-                example: "Resource not found"
-
+            $ref: '#/components/schemas/Envelope'
     InternalServerError:
       description: Internal server error
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              error:
-                type: string
-                example: "Internal Server Error"
-              message:
-                type: string
-                example: "An unexpected error occurred"
+            $ref: '#/components/schemas/Envelope'
 
 tags:
   - name: Users
