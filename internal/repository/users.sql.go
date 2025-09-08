@@ -29,20 +29,20 @@ func (q *Queries) AddTokens(ctx context.Context, arg AddTokensParams) error {
 	return err
 }
 
-const deductRewardTokens = `-- name: DeductRewardTokens :exec
+const deductRewardTokensFromUser = `-- name: DeductRewardTokensFromUser :exec
 UPDATE users
 SET token_balance = token_balance - r.cost
 FROM rewards r
 WHERE users.id = $1 AND r.id = $2 AND users.token_balance >= r.cost
 `
 
-type DeductRewardTokensParams struct {
+type DeductRewardTokensFromUserParams struct {
 	UserID   string `json:"user_id"`
 	RewardID int32  `json:"reward_id"`
 }
 
-func (q *Queries) DeductRewardTokens(ctx context.Context, arg DeductRewardTokensParams) error {
-	_, err := q.db.Exec(ctx, deductRewardTokens, arg.UserID, arg.RewardID)
+func (q *Queries) DeductRewardTokensFromUser(ctx context.Context, arg DeductRewardTokensFromUserParams) error {
+	_, err := q.db.Exec(ctx, deductRewardTokensFromUser, arg.UserID, arg.RewardID)
 	return err
 }
 

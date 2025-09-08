@@ -71,18 +71,25 @@ func (q *Queries) InsertServiceRequestReview(ctx context.Context, arg InsertServ
 	return i, err
 }
 
-const updateUserRating = `-- name: UpdateUserRating :exec
+const updateUserRating = `-- name: UpdateUserRating :one
 UPDATE ratings
-SET total_ratings = total_ratings + $1, rating_count = rating_count + 1
-WHERE user_id = $2
+SET total_ratings = total_ratings + $1,
+    rating_count  = rating_count + 1
+WHERE user_id = (
+    SELECT provider_id FROM service_requests
+    WHERE id = $2
+)
+RETURNING user_id, total_ratings, rating_count
 `
 
 type UpdateUserRatingParams struct {
-	TotalRatings int32  `json:"total_ratings"`
-	UserID       string `json:"user_id"`
+	TotalRatings int32 `json:"total_ratings"`
+	RequestID    int32 `json:"request_id"`
 }
 
-func (q *Queries) UpdateUserRating(ctx context.Context, arg UpdateUserRatingParams) error {
-	_, err := q.db.Exec(ctx, updateUserRating, arg.TotalRatings, arg.UserID)
-	return err
+func (q *Queries) UpdateUserRating(ctx context.Context, arg UpdateUserRatingParams) (Rating, error) {
+	row := q.db.QueryRow(ctx, updateUserRating, arg.TotalRatings, arg.RequestID)
+	var i Rating
+	err := row.Scan(&i.UserID, &i.TotalRatings, &i.RatingCount)
+	return i, err
 }

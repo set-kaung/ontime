@@ -133,6 +133,38 @@ ALTER SEQUENCE public.ads_watching_history_id_seq OWNED BY public.ads_watching_h
 
 
 --
+-- Name: coupon_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.coupon_codes (
+    id integer NOT NULL,
+    coupon_code text NOT NULL,
+    reward_id integer NOT NULL,
+    is_claimed boolean NOT NULL
+);
+
+
+--
+-- Name: coupon_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.coupon_codes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: coupon_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.coupon_codes_id_seq OWNED BY public.coupon_codes.id;
+
+
+--
 -- Name: events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -242,7 +274,8 @@ CREATE TABLE public.redeemed_rewards (
     reward_id integer NOT NULL,
     user_id text NOT NULL,
     redeemed_at timestamptz NOT NULL,
-    cost integer NOT NULL
+    cost integer NOT NULL,
+    coupon_code_id integer NOT NULL
 );
 
 
@@ -376,10 +409,8 @@ CREATE TABLE public.rewards (
     title text NOT NULL,
     description text NOT NULL,
     cost integer NOT NULL,
-    available_amount integer NOT NULL,
     image_url character varying,
-    created_date timestamptz NOT NULL,
-    coupon_code character varying NOT NULL
+    created_date timestamptz NOT NULL
 );
 
 
@@ -554,6 +585,13 @@ ALTER TABLE ONLY public.ads_watching_history ALTER COLUMN id SET DEFAULT nextval
 
 
 --
+-- Name: coupon_codes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coupon_codes ALTER COLUMN id SET DEFAULT nextval('public.coupon_codes_id_seq'::regclass);
+
+
+--
 -- Name: payments id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -615,6 +653,14 @@ ALTER TABLE ONLY public.transactions ALTER COLUMN id SET DEFAULT nextval('public
 
 ALTER TABLE ONLY public.ads_watching_history
     ADD CONSTRAINT ads_watching_history_pk PRIMARY KEY (id);
+
+
+--
+-- Name: coupon_codes coupon_codes_pk; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coupon_codes
+    ADD CONSTRAINT coupon_codes_pk PRIMARY KEY (id);
 
 
 --
@@ -738,11 +784,61 @@ ALTER TABLE ONLY public.users
 
 
 --
+-- Name: idx_events_target_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_events_target_id ON public.events USING btree (target_id);
+
+
+--
+-- Name: idx_service_completion_request_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_service_completion_request_id ON public.service_request_completion USING btree (request_id);
+
+
+--
+-- Name: idx_service_requests_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_service_requests_id ON public.service_requests USING btree (id);
+
+
+--
+-- Name: idx_service_requests_listing_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_service_requests_listing_id ON public.service_requests USING btree (listing_id);
+
+
+--
+-- Name: idx_service_requests_provider_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_service_requests_provider_id ON public.service_requests USING btree (provider_id);
+
+
+--
+-- Name: idx_service_requests_requester_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_service_requests_requester_id ON public.service_requests USING btree (requester_id);
+
+
+--
 -- Name: ads_watching_history ads_watching_history_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.ads_watching_history
     ADD CONSTRAINT ads_watching_history_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: coupon_codes coupon_codes_rewards_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.coupon_codes
+    ADD CONSTRAINT coupon_codes_rewards_fk FOREIGN KEY (reward_id) REFERENCES public.rewards(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -786,11 +882,19 @@ ALTER TABLE ONLY public.payments
 
 
 --
--- Name: ratings ratings_ratings_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: ratings ratings_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.ratings
-    ADD CONSTRAINT ratings_ratings_fk FOREIGN KEY (user_id) REFERENCES public.ratings(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT ratings_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: redeemed_rewards redeemed_rewards_coupon_codes_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.redeemed_rewards
+    ADD CONSTRAINT redeemed_rewards_coupon_codes_fk FOREIGN KEY (coupon_code_id) REFERENCES public.coupon_codes(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

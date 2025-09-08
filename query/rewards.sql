@@ -1,44 +1,58 @@
 -- name: GetAllRewards :many
-SELECT id,title,description,cost,available_amount,image_url,created_date FROM rewards
-WHERE available_amount > 0;
+SELECT r.*,COUNT(cc.id) as available_amount FROM rewards r
+JOIN coupon_codes cc
+ON cc.reward_id = r.id
+WHERE cc.is_claimed = FALSE
+GROUP BY r.id;
 
 
 -- name: GetAllUserRedeemdRewards :many
-SELECT rr.id,rr.reward_id,rr.user_id,rr.redeemed_at,rr.cost as redeemed_cost,r.title,r.description,r.image_url,r.coupon_code FROM redeemed_rewards rr
-LEFT JOIN rewards r
+SELECT rr.id,rr.reward_id,rr.user_id,rr.redeemed_at,rr.cost as redeemed_cost,r.title,r.description,r.image_url,cc.coupon_code FROM redeemed_rewards rr
+JOIN rewards r
 ON r.id = rr.reward_id
+JOIN coupon_codes cc
+ON cc.id = rr.coupon_code_id
 WHERE rr.user_id = $1;
 
 
 -- name: GetRewardByID :one
-SELECT * FROM rewards
-WHERE id = $1;
+SELECT r.*,COUNT(cc.id) as available_amount FROM rewards r
+JOIN coupon_codes cc
+ON cc.reward_id = r.id
+WHERE r.id = $1
+GROUP BY r.id;
 
 
--- name: InsertRedeemedReward :one
-WITH inserted AS (
-    INSERT INTO redeemed_rewards (reward_id, user_id, redeemed_at, cost)
+-- name: InsertRedeemedReward :execrows
+INSERT INTO redeemed_rewards (reward_id, user_id, redeemed_at, cost,coupon_code_id)
     SELECT
         $1,
         $2,
         NOW(),
-        r.cost
-    FROM rewards r
-    JOIN users u ON u.id = $2
-    WHERE r.id = $1 AND u.token_balance > 0
-    RETURNING reward_id
-)
-SELECT r.coupon_code
-FROM inserted i
-JOIN rewards r ON r.id = i.reward_id;
+        r.cost,
+        $3
+FROM rewards r
+JOIN users u ON u.id = $2
+WHERE r.id = $1 AND u.token_balance >= r.cost;
 
--- name: DeductRewardAmount :execrows
-UPDATE rewards
-SET available_amount = available_amount - 1
-WHERE id = $1 AND available_amount > 0;
+-- name: UpdateCouponCodeStatus :execrows
+UPDATE coupon_codes
+SET is_claimed = TRUE
+WHERE id = $1;
+
+-- name: GetAllCouponCodes :many
+SELECT * FROM coupon_codes
+WHERE reward_id = $1;
+
 
 -- name: GetRedeemedRewardByID :one
-SELECT * FROM redeemed_rewards rr
+SELECT
+  rr.id as redeemed_id,rr.reward_id,rr.redeemed_at,rr.user_id,rr.cost,
+  r.title,r.description,cc.coupon_code,r.image_url,
+  cc.coupon_code
+FROM redeemed_rewards rr
 JOIN rewards r
 ON r.id = rr.reward_id
+JOIN coupon_codes cc
+ON cc.id = rr.coupon_code_id
 WHERE rr.id = $1;

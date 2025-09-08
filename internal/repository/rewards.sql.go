@@ -12,23 +12,42 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deductRewardAmount = `-- name: DeductRewardAmount :execrows
-UPDATE rewards
-SET available_amount = available_amount - 1
-WHERE id = $1 AND available_amount > 0
+const getAllCouponCodes = `-- name: GetAllCouponCodes :many
+SELECT id, coupon_code, reward_id, is_claimed FROM coupon_codes
+WHERE reward_id = $1
 `
 
-func (q *Queries) DeductRewardAmount(ctx context.Context, id int32) (int64, error) {
-	result, err := q.db.Exec(ctx, deductRewardAmount, id)
+func (q *Queries) GetAllCouponCodes(ctx context.Context, rewardID int32) ([]CouponCode, error) {
+	rows, err := q.db.Query(ctx, getAllCouponCodes, rewardID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return result.RowsAffected(), nil
+	defer rows.Close()
+	var items []CouponCode
+	for rows.Next() {
+		var i CouponCode
+		if err := rows.Scan(
+			&i.ID,
+			&i.CouponCode,
+			&i.RewardID,
+			&i.IsClaimed,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getAllRewards = `-- name: GetAllRewards :many
-SELECT id,title,description,cost,available_amount,image_url,created_date FROM rewards
-WHERE available_amount > 0
+SELECT r.id, r.title, r.description, r.cost, r.image_url, r.created_date,COUNT(cc.id) as available_amount FROM rewards r
+JOIN coupon_codes cc
+ON cc.reward_id = r.id
+WHERE cc.is_claimed = FALSE
+GROUP BY r.id
 `
 
 type GetAllRewardsRow struct {
@@ -36,9 +55,9 @@ type GetAllRewardsRow struct {
 	Title           string      `json:"title"`
 	Description     string      `json:"description"`
 	Cost            int32       `json:"cost"`
-	AvailableAmount int32       `json:"available_amount"`
 	ImageUrl        pgtype.Text `json:"image_url"`
 	CreatedDate     time.Time   `json:"created_date"`
+	AvailableAmount int64       `json:"available_amount"`
 }
 
 func (q *Queries) GetAllRewards(ctx context.Context) ([]GetAllRewardsRow, error) {
@@ -55,9 +74,9 @@ func (q *Queries) GetAllRewards(ctx context.Context) ([]GetAllRewardsRow, error)
 			&i.Title,
 			&i.Description,
 			&i.Cost,
-			&i.AvailableAmount,
 			&i.ImageUrl,
 			&i.CreatedDate,
+			&i.AvailableAmount,
 		); err != nil {
 			return nil, err
 		}
@@ -70,9 +89,11 @@ func (q *Queries) GetAllRewards(ctx context.Context) ([]GetAllRewardsRow, error)
 }
 
 const getAllUserRedeemdRewards = `-- name: GetAllUserRedeemdRewards :many
-SELECT rr.id,rr.reward_id,rr.user_id,rr.redeemed_at,rr.cost as redeemed_cost,r.title,r.description,r.image_url,r.coupon_code FROM redeemed_rewards rr
-LEFT JOIN rewards r
+SELECT rr.id,rr.reward_id,rr.user_id,rr.redeemed_at,rr.cost as redeemed_cost,r.title,r.description,r.image_url,cc.coupon_code FROM redeemed_rewards rr
+JOIN rewards r
 ON r.id = rr.reward_id
+JOIN coupon_codes cc
+ON cc.id = rr.coupon_code_id
 WHERE rr.user_id = $1
 `
 
@@ -82,10 +103,10 @@ type GetAllUserRedeemdRewardsRow struct {
 	UserID       string      `json:"user_id"`
 	RedeemedAt   time.Time   `json:"redeemed_at"`
 	RedeemedCost int32       `json:"redeemed_cost"`
-	Title        pgtype.Text `json:"title"`
-	Description  pgtype.Text `json:"description"`
+	Title        string      `json:"title"`
+	Description  string      `json:"description"`
 	ImageUrl     pgtype.Text `json:"image_url"`
-	CouponCode   pgtype.Text `json:"coupon_code"`
+	CouponCode   string      `json:"coupon_code"`
 }
 
 func (q *Queries) GetAllUserRedeemdRewards(ctx context.Context, userID string) ([]GetAllUserRedeemdRewardsRow, error) {
@@ -119,96 +140,119 @@ func (q *Queries) GetAllUserRedeemdRewards(ctx context.Context, userID string) (
 }
 
 const getRedeemedRewardByID = `-- name: GetRedeemedRewardByID :one
-SELECT rr.id, reward_id, user_id, redeemed_at, rr.cost, r.id, title, description, r.cost, available_amount, image_url, created_date, coupon_code FROM redeemed_rewards rr
+SELECT
+  rr.id as redeemed_id,rr.reward_id,rr.redeemed_at,rr.user_id,rr.cost,
+  r.title,r.description,cc.coupon_code,r.image_url,
+  cc.coupon_code
+FROM redeemed_rewards rr
 JOIN rewards r
 ON r.id = rr.reward_id
+JOIN coupon_codes cc
+ON cc.id = rr.coupon_code_id
 WHERE rr.id = $1
 `
 
 type GetRedeemedRewardByIDRow struct {
-	ID              int32       `json:"id"`
-	RewardID        int32       `json:"reward_id"`
-	UserID          string      `json:"user_id"`
-	RedeemedAt      time.Time   `json:"redeemed_at"`
-	Cost            int32       `json:"cost"`
-	ID_2            int32       `json:"id_2"`
-	Title           string      `json:"title"`
-	Description     string      `json:"description"`
-	Cost_2          int32       `json:"cost_2"`
-	AvailableAmount int32       `json:"available_amount"`
-	ImageUrl        pgtype.Text `json:"image_url"`
-	CreatedDate     time.Time   `json:"created_date"`
-	CouponCode      string      `json:"coupon_code"`
+	RedeemedID   int32       `json:"redeemed_id"`
+	RewardID     int32       `json:"reward_id"`
+	RedeemedAt   time.Time   `json:"redeemed_at"`
+	UserID       string      `json:"user_id"`
+	Cost         int32       `json:"cost"`
+	Title        string      `json:"title"`
+	Description  string      `json:"description"`
+	CouponCode   string      `json:"coupon_code"`
+	ImageUrl     pgtype.Text `json:"image_url"`
+	CouponCode_2 string      `json:"coupon_code_2"`
 }
 
 func (q *Queries) GetRedeemedRewardByID(ctx context.Context, id int32) (GetRedeemedRewardByIDRow, error) {
 	row := q.db.QueryRow(ctx, getRedeemedRewardByID, id)
 	var i GetRedeemedRewardByIDRow
 	err := row.Scan(
-		&i.ID,
+		&i.RedeemedID,
 		&i.RewardID,
-		&i.UserID,
 		&i.RedeemedAt,
+		&i.UserID,
 		&i.Cost,
-		&i.ID_2,
 		&i.Title,
 		&i.Description,
-		&i.Cost_2,
-		&i.AvailableAmount,
-		&i.ImageUrl,
-		&i.CreatedDate,
 		&i.CouponCode,
+		&i.ImageUrl,
+		&i.CouponCode_2,
 	)
 	return i, err
 }
 
 const getRewardByID = `-- name: GetRewardByID :one
-SELECT id, title, description, cost, available_amount, image_url, created_date, coupon_code FROM rewards
-WHERE id = $1
+SELECT r.id, r.title, r.description, r.cost, r.image_url, r.created_date,COUNT(cc.id) as available_amount FROM rewards r
+JOIN coupon_codes cc
+ON cc.reward_id = r.id
+WHERE r.id = $1
+GROUP BY r.id
 `
 
-func (q *Queries) GetRewardByID(ctx context.Context, id int32) (Reward, error) {
+type GetRewardByIDRow struct {
+	ID              int32       `json:"id"`
+	Title           string      `json:"title"`
+	Description     string      `json:"description"`
+	Cost            int32       `json:"cost"`
+	ImageUrl        pgtype.Text `json:"image_url"`
+	CreatedDate     time.Time   `json:"created_date"`
+	AvailableAmount int64       `json:"available_amount"`
+}
+
+func (q *Queries) GetRewardByID(ctx context.Context, id int32) (GetRewardByIDRow, error) {
 	row := q.db.QueryRow(ctx, getRewardByID, id)
-	var i Reward
+	var i GetRewardByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Title,
 		&i.Description,
 		&i.Cost,
-		&i.AvailableAmount,
 		&i.ImageUrl,
 		&i.CreatedDate,
-		&i.CouponCode,
+		&i.AvailableAmount,
 	)
 	return i, err
 }
 
-const insertRedeemedReward = `-- name: InsertRedeemedReward :one
-WITH inserted AS (
-    INSERT INTO redeemed_rewards (reward_id, user_id, redeemed_at, cost)
+const insertRedeemedReward = `-- name: InsertRedeemedReward :execrows
+INSERT INTO redeemed_rewards (reward_id, user_id, redeemed_at, cost,coupon_code_id)
     SELECT
         $1,
         $2,
         NOW(),
-        r.cost
-    FROM rewards r
-    JOIN users u ON u.id = $2
-    WHERE r.id = $1 AND u.token_balance > 0
-    RETURNING reward_id
-)
-SELECT r.coupon_code
-FROM inserted i
-JOIN rewards r ON r.id = i.reward_id
+        r.cost,
+        $3
+FROM rewards r
+JOIN users u ON u.id = $2
+WHERE r.id = $1 AND u.token_balance >= r.cost
 `
 
 type InsertRedeemedRewardParams struct {
-	RewardID int32  `json:"reward_id"`
-	UserID   string `json:"user_id"`
+	RewardID     int32  `json:"reward_id"`
+	UserID       string `json:"user_id"`
+	CouponCodeID int32  `json:"coupon_code_id"`
 }
 
-func (q *Queries) InsertRedeemedReward(ctx context.Context, arg InsertRedeemedRewardParams) (string, error) {
-	row := q.db.QueryRow(ctx, insertRedeemedReward, arg.RewardID, arg.UserID)
-	var coupon_code string
-	err := row.Scan(&coupon_code)
-	return coupon_code, err
+func (q *Queries) InsertRedeemedReward(ctx context.Context, arg InsertRedeemedRewardParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertRedeemedReward, arg.RewardID, arg.UserID, arg.CouponCodeID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const updateCouponCodeStatus = `-- name: UpdateCouponCodeStatus :execrows
+UPDATE coupon_codes
+SET is_claimed = TRUE
+WHERE id = $1
+`
+
+func (q *Queries) UpdateCouponCodeStatus(ctx context.Context, id int32) (int64, error) {
+	result, err := q.db.Exec(ctx, updateCouponCodeStatus, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

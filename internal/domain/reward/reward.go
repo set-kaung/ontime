@@ -7,7 +7,7 @@ type Reward struct {
 	Title           string    `json:"title"`
 	Description     string    `json:"description"`
 	Cost            int32     `json:"cost"`
-	AvailableAmount int32     `json:"available_amount"`
+	AvailableAmount int64     `json:"available_amount"`
 	ImageURL        string    `json:"image_url"`
 	CreatedDate     time.Time `json:"created_date"`
 }

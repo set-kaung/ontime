@@ -282,6 +282,13 @@ type AdsWatchingHistory struct {
 	DateTime time.Time `json:"date_time"`
 }
 
+type CouponCode struct {
+	ID         int32  `json:"id"`
+	CouponCode string `json:"coupon_code"`
+	RewardID   int32  `json:"reward_id"`
+	IsClaimed  bool   `json:"is_claimed"`
+}
+
 type Event struct {
 	Type        string    `json:"type"`
 	TargetID    int32     `json:"target_id"`
@@ -316,11 +323,12 @@ type Rating struct {
 }
 
 type RedeemedReward struct {
-	ID         int32     `json:"id"`
-	RewardID   int32     `json:"reward_id"`
-	UserID     string    `json:"user_id"`
-	RedeemedAt time.Time `json:"redeemed_at"`
-	Cost       int32     `json:"cost"`
+	ID           int32     `json:"id"`
+	RewardID     int32     `json:"reward_id"`
+	UserID       string    `json:"user_id"`
+	RedeemedAt   time.Time `json:"redeemed_at"`
+	Cost         int32     `json:"cost"`
+	CouponCodeID int32     `json:"coupon_code_id"`
 }
 
 type Report struct {
@@ -344,14 +352,12 @@ type Review struct {
 }
 
 type Reward struct {
-	ID              int32       `json:"id"`
-	Title           string      `json:"title"`
-	Description     string      `json:"description"`
-	Cost            int32       `json:"cost"`
-	AvailableAmount int32       `json:"available_amount"`
-	ImageUrl        pgtype.Text `json:"image_url"`
-	CreatedDate     time.Time   `json:"created_date"`
-	CouponCode      string      `json:"coupon_code"`
+	ID          int32       `json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Cost        int32       `json:"cost"`
+	ImageUrl    pgtype.Text `json:"image_url"`
+	CreatedDate time.Time   `json:"created_date"`
 }
 
 type ServiceListing struct {
