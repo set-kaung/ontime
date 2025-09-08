@@ -85,7 +85,7 @@ func (lh *ListingHandler) HandleUpdateListing(w http.ResponseWriter, r *http.Req
 	id, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
 		log.Printf("listing_handler -> HandleUpdateListing: failed to parse integer %v\n", err)
-		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessable entity", nil)
 		return
 	}
 	decoder := json.NewDecoder(r.Body)
@@ -113,7 +113,7 @@ func (lh *ListingHandler) HandleReportListing(w http.ResponseWriter, r *http.Req
 	listingID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
 		log.Printf("listing_handler -> HandleReportListing: failed to parse integer %v\n", err)
-		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessable entity", nil)
 		return
 	}
 	listingReport := ListingReport{}
@@ -140,7 +140,7 @@ func (lh *ListingHandler) HandleDeleteListing(w http.ResponseWriter, r *http.Req
 	listingID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
 		log.Printf("listing_handler -> HandleDeleteListing: failed to parse integer %v\n", err)
-		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessable entity", nil)
 		return
 	}
 	err = lh.ListingService.DeleteListing(r.Context(), int32(listingID), userID)
@@ -156,7 +156,7 @@ func (lh *ListingHandler) HandleGetListingReviews(w http.ResponseWriter, r *http
 	listingID, err := strconv.ParseInt(listingPathID, 10, 32)
 	if err != nil {
 		log.Printf("HandleGetListingReviews: failed to parse integer %v\n", err)
-		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessable entity", nil)
 		return
 	}
 	reviews, err := lh.ListingService.GetListingReviews(r.Context(), int32(listingID))

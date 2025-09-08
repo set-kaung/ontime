@@ -1008,7 +1008,7 @@ components:
         reward_title: { type: string }
         description: { type: string }
         redeemed_at: { type: string, format: date-time }
-        reedemed_user_id: { type: string }
+        redeemed_user_id: { type: string }
         cost_at_redeemed_time: { type: integer }
         image_url: { type: string }
         coupon_code: { type: string }
@@ -1030,8 +1030,8 @@ components:
         id: { type: integer }
         request_id: { type: integer }
         reviewer_id: { type: string }
-        reviwer_full_name: { type: string, description: Typo preserved }
-        reviwee_full_name: { type: string, description: Typo preserved }
+        reviewer_full_name: { type: string, description: Typo preserved }
+        reviewee_full_name: { type: string, description: Typo preserved }
         reviewee_id: { type: string }
         comment: { type: string }
         rating: { type: integer }

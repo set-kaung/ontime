@@ -49,7 +49,7 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 	requestID, err := strconv.ParseInt(pathID, 10, 32)
 	if err != nil {
 		log.Println("request_handler -> HandleGetRequestByID: err: ", err)
-		helpers.WriteError(w, http.StatusBadRequest, "unprocessible entity", nil)
+		helpers.WriteError(w, http.StatusBadRequest, "unprocessable entity", nil)
 		return
 	}
 	request, err := rh.RequestService.GetRequestByID(r.Context(), int32(requestID))
@@ -140,7 +140,7 @@ func (rh *RequestHandler) GetCompletedTransaction(w http.ResponseWriter, r *http
 	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
 	if err != nil {
 		log.Printf("GetCompletedTransaction: %s \n", err)
-		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessible entity", nil)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessable entity", nil)
 		return
 	}
 	request, err := rh.RequestService.GetRequestByID(r.Context(), int32(requestID))
