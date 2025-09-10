@@ -162,8 +162,8 @@ SELECT
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
 
-  sc.requester_completed,
-  sc.provider_completed,
+  COALESCE(sc.requester_completed,false),
+  COALESCE(sc.provider_completed,false),
   COALESCE(
     json_agg(
       json_build_object(
@@ -180,9 +180,9 @@ FROM service_requests sr
 JOIN service_listings sl ON sr.listing_id = sl.id
 JOIN users ru ON sr.requester_id = ru.id
 JOIN users pu ON sr.provider_id = pu.id
-JOIN service_request_completion sc ON sr.id = sc.request_id
+LEFT JOIN service_request_completion sc ON sr.id = sc.request_id
 LEFT JOIN events e ON e.target_id = sr.id
-JOIN notifications n
+LEFT JOIN notifications n
 ON n.event_id = e.id
 WHERE sr.id = $1
 GROUP BY 
