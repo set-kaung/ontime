@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -38,7 +39,8 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.Email = repoUser.Email
 	user.ServicesProvided = uint32(repoUser.ServicesProvided)
 	user.ServicesReceived = uint32(repoUser.ServicesReceived)
-	user.Rating = float32(repoUser.TotalRatings.Int32) / max(1.0, float32(repoUser.RatingCount.Int32))
+	rating := float32(repoUser.TotalRatings.Int32) / max(1.0, float32(repoUser.RatingCount.Int32))
+	user.Rating = float32(math.Round(float64(rating)*100) / 100)
 	return user, err
 }
 
