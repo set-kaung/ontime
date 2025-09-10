@@ -58,7 +58,7 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 	request.IsProvider = userID == request.Provider.ID
-	helpers.WriteData(w, http.StatusCreated, request, nil)
+	helpers.WriteData(w, http.StatusOK, request, nil)
 }
 
 func (rh *RequestHandler) HandleGetAllUserRequests(w http.ResponseWriter, r *http.Request) {
