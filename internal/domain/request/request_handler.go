@@ -134,7 +134,7 @@ func (rh *RequestHandler) HandleCompleteServiceRequest(w http.ResponseWriter, r 
 	helpers.WriteData(w, http.StatusOK, map[string]int32{"request_id": rid}, nil)
 }
 
-func (rh *RequestHandler) GetCompletedTransaction(w http.ResponseWriter, r *http.Request) {
+func (rh *RequestHandler) HandleGetCompletedTransaction(w http.ResponseWriter, r *http.Request) {
 
 	requestPathValue := r.PathValue("requestId")
 	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
@@ -149,4 +149,21 @@ func (rh *RequestHandler) GetCompletedTransaction(w http.ResponseWriter, r *http
 		return
 	}
 	helpers.WriteData(w, http.StatusOK, request, nil)
+}
+
+func (rh *RequestHandler) HandleCreateRequestReport(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	requestPathValue := r.PathValue("requestId")
+	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
+	if err != nil {
+		log.Printf("HandleCreateRequestReport: %s \n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessable entity", nil)
+		return
+	}
+	ticketID, err := rh.RequestService.CreateRequestReport(r.Context(), int32(requestID), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusCreated, map[string]string{"ticket_id": ticketID}, nil)
 }

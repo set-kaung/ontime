@@ -64,7 +64,7 @@ LEFT JOIN events e ON e.target_id = sr.id
 LEFT JOIN notifications n
 ON n.event_id = e.id
 WHERE sr.id = $1
-GROUP BY 
+GROUP BY
   sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed;
 
 -- name: InsertPendingServiceRequest :one
@@ -114,3 +114,14 @@ WHERE
     (sr.provider_id = sqlc.arg(user_id) OR sr.requester_id = sqlc.arg(user_id));
 
 
+
+
+-- name: InsertRequestReport :one
+INSERT INTO request_reports (user_id, request_id, ticket_id, created_at)
+VALUES ($1, $2, '', NOW())
+RETURNING id, created_at;
+
+-- name: UpdateRequestReportWithTicketID :one
+UPDATE request_reports
+SET ticket_id = $1
+RETURNING ticket_id;

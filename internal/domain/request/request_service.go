@@ -9,4 +9,5 @@ type RequestService interface {
 	AcceptServiceRequest(context.Context, int32, string) (int32, error)
 	DeclineServiceRequest(context.Context, int32, string) (int32, error)
 	CompleteServiceRequest(context.Context, int32, string) (int32, error)
+	CreateRequestReport(ctx context.Context, requestID int32, userID string) (string, error)
 }

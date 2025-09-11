@@ -79,3 +79,10 @@ func (e *Events) Scan(value interface{}) error {
 func (e Events) Value() (driver.Value, error) {
 	return json.Marshal(e)
 }
+
+type RequestReport struct {
+	ID        int32  `json:"id"`
+	UserID    string `json:"user_id"`
+	RequestID int32  `json:"request_id"`
+	TicketID  string `json:"ticket_id"`
+}

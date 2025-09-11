@@ -10,6 +10,7 @@ import (
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+	"github.com/set-kaung/senior_project_1/internal/util"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/repository"
@@ -535,4 +536,34 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 		log.Println("CompleteServiceRequest: failed to send notification: ", err)
 	}
 	return rid, nil
+}
+
+func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requestID int32, userID string) (string, error) {
+	tx, err := prs.DB.Begin(ctx)
+	if err != nil {
+		log.Println("InsertRequestReport: failed to create db transaction: ", err)
+		return "", internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+
+	repo := repository.New(prs.DB).WithTx(tx)
+	dbReport, err := repo.InsertRequestReport(ctx, repository.InsertRequestReportParams{
+		UserID:    userID,
+		RequestID: requestID,
+	})
+	if err != nil {
+		log.Println("InsertRequestReport: failed to insert request report: ", err)
+		return "", internal.ErrInternalServerError
+	}
+	ticketID, err := util.GenerateTicket(int64(dbReport.ID), dbReport.CreatedAt)
+	dbTicketID, err := repo.UpdateRequestReportWithTicketID(ctx, ticketID)
+	if ticketID != dbTicketID {
+		log.Println("InsertRequestReport: should not happened")
+		return "", internal.ErrInternalServerError
+	}
+	if err := tx.Commit(ctx); err != nil {
+		log.Println("InsertRequestReport: failed to commit transaction: ", err)
+		return "", internal.ErrInternalServerError
+	}
+	return dbTicketID, nil
 }
