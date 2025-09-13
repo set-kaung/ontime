@@ -231,6 +231,7 @@ func (p *PostgresListingService) GetListingReviews(ctx context.Context, listingI
 				RevieweeID:       dbr.RevieweeID,
 				Comment:          dbr.Comment.String,
 				Rating:           dbr.Rating,
+				CreatedAt:        dbr.DateTime,
 			},
 		)
 	}

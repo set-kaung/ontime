@@ -31,6 +31,26 @@ func (q *Queries) GetReviewByID(ctx context.Context, id int32) (Review, error) {
 	return i, err
 }
 
+const getReviewByRequestID = `-- name: GetReviewByRequestID :one
+SELECT id, request_id, reviewer_id, reviewee_id, rating, comment, date_time FROM reviews
+WHERE request_id = $1
+`
+
+func (q *Queries) GetReviewByRequestID(ctx context.Context, requestID int32) (Review, error) {
+	row := q.db.QueryRow(ctx, getReviewByRequestID, requestID)
+	var i Review
+	err := row.Scan(
+		&i.ID,
+		&i.RequestID,
+		&i.ReviewerID,
+		&i.RevieweeID,
+		&i.Rating,
+		&i.Comment,
+		&i.DateTime,
+	)
+	return i, err
+}
+
 const insertNewUserRating = `-- name: InsertNewUserRating :exec
 INSERT INTO ratings (user_id,total_ratings, rating_count)
 VALUES ($1,0,0)

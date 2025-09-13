@@ -22,3 +22,8 @@ VALUES ($1,0,0);
 -- name: GetReviewByID :one
 SELECT * FROM reviews
 WHERE id = $1;
+
+
+-- name: GetReviewByRequestID :one
+SELECT * FROM reviews
+WHERE request_id = $1;
