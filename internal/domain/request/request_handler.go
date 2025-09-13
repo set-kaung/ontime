@@ -40,7 +40,7 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteData(w, http.StatusOK, map[string]int32{"requestID": requestID}, nil)
+	helpers.WriteData(w, http.StatusCreated, map[string]int32{"requestID": requestID}, nil)
 }
 
 func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +174,7 @@ func (rh *RequestHandler) HandleCreateRequestReport(w http.ResponseWriter, r *ht
 }
 
 func (rh *RequestHandler) HandleGetReviewByRequestID(w http.ResponseWriter, r *http.Request) {
-	requestPathValue := r.PathValue("requestId")
+	requestPathValue := r.PathValue("id")
 	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
 	if err != nil {
 		log.Printf("HandleGetReviewByRequestID: %s \n", err)

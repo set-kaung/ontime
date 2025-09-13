@@ -80,6 +80,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/ServiceListing'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /update-profile-metadata:
     post:
@@ -102,6 +104,8 @@ paths:
                 $ref: '#/components/schemas/Envelope'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /users/me/update:
     post:
@@ -112,8 +116,6 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
-            schema:
               $ref: '#/components/schemas/UserUpdate'
       responses:
         '200':
@@ -122,6 +124,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /users/me/change-name:
     patch:
@@ -147,6 +151,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /users/me/delete:
     delete:
@@ -161,6 +169,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /notifications:
     get:
@@ -182,6 +192,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Notification'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /read-notification:
     put:
@@ -203,6 +215,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /notifications/mark-all-read:
     put:
@@ -217,6 +233,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /users/me/completed-transactions/{requestId}:
     get:
@@ -244,8 +262,8 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/ServiceRequest'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -270,6 +288,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/RedeemedReward'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /users/me/history:
     get:
@@ -291,6 +311,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/InteractionHistory'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /users/me/redeemed-rewards/{redemptionId}:
     get:
@@ -320,8 +342,8 @@ paths:
                         $ref: '#/components/schemas/RedeemedReward'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /services:
     get:
@@ -343,6 +365,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/ServiceListing'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /services/{id}:
     get:
@@ -369,6 +393,10 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/ServiceListing'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -386,7 +414,15 @@ paths:
               $ref: '#/components/schemas/CreateServiceListing'
       responses:
         '201':
-          description: Service listing created successfully (no response body)
+          description: Service listing created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /services/update/{id}:
     put:
@@ -421,6 +457,10 @@ paths:
                         properties:
                           id:
                             type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /services/report/{id}:
     post:
@@ -448,6 +488,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /services/delete/{id}:
     delete:
@@ -469,6 +513,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /services/{id}/reviews:
     get:
@@ -530,6 +578,10 @@ paths:
                         properties:
                           requestID:
                             type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /requests/accept/{id}:
     post:
@@ -559,6 +611,10 @@ paths:
                         properties:
                           request_id:
                             type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /requests/decline/{id}:
     post:
@@ -588,6 +644,10 @@ paths:
                         properties:
                           request_id:
                             type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /requests/complete/{id}:
     post:
@@ -617,6 +677,12 @@ paths:
                         properties:
                           request_id:
                             type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /requests/{id}:
     get:
@@ -643,6 +709,10 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/ServiceRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /requests/all:
     get:
@@ -664,6 +734,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/ServiceRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /requests/review/{id}:
     post:
@@ -699,6 +771,39 @@ paths:
                         properties:
                           review_id:
                             type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      summary: Get review by request ID
+      description: Retrieve the review associated with the specified service request ID
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Request ID
+      responses:
+        '200':
+          description: Review retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Review'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /reviews/{id}:
     get:
@@ -725,6 +830,10 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /ads/complete:
     post:
@@ -739,6 +848,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /ads/watched:
     get:
@@ -763,6 +874,8 @@ paths:
                             type: integer
                           is_at_limit:
                             type: boolean
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /rewards:
     get:
@@ -784,6 +897,8 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/Reward'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /rewards/{id}:
     get:
@@ -810,6 +925,10 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Reward'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /rewards/redeem/{id}:
     post:
@@ -839,6 +958,43 @@ paths:
                         properties:
                           coupon_code:
                             type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /requests/report/{id}:
+    post:
+      summary: Report a service request
+      description: Create a report ticket for a specific service request
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Request ID
+      responses:
+        '201':
+          description: Report ticket created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          ticket_id:
+                            type: string
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   securitySchemes:
@@ -953,8 +1109,8 @@ components:
         listing: { $ref: '#/components/schemas/ServiceListing' }
         requester: { $ref: '#/components/schemas/User' }
         provider: { $ref: '#/components/schemas/User' }
-        activity: { type: string, description: High-level activity state }
-        status_detail: { type: string, description: Detailed lifecycle status }
+        activity: { type: string, description: 'High-level activity state' }
+        status_detail: { type: string, description: 'Detailed lifecycle status' }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         token_reward: { type: integer }
@@ -1030,12 +1186,13 @@ components:
         id: { type: integer }
         request_id: { type: integer }
         reviewer_id: { type: string }
-        reviewer_full_name: { type: string, description: Typo preserved }
-        reviewee_full_name: { type: string, description: Typo preserved }
+        reviewer_full_name: { type: string }
+        reviewee_full_name: { type: string }
         reviewee_id: { type: string }
         comment: { type: string }
         rating: { type: integer }
-      description: Review left on a completed service request (legacy misspelled keys preserved).
+        created_at: { type: string, format: date-time }
+      description: Review left on a completed service request.
 
     CreateReview:
       type: object
@@ -1059,6 +1216,12 @@ components:
             $ref: '#/components/schemas/Envelope'
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Envelope'
+    UnprocessableEntity:
+      description: Unprocessable entity
       content:
         application/json:
           schema:
