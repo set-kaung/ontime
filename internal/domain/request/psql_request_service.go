@@ -137,7 +137,6 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 			log.Println("GetRequestByID: failed to unmarshal events JSON: ", err)
 			events = []Event{}
 		} else {
-
 			events = make([]Event, len(rawEvents))
 			for i, rawEvent := range rawEvents {
 				switch rawEvent.Description {
@@ -154,7 +153,6 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 				case domain.DECLINE_REQUEST:
 					rawEvent.By = "provider"
 				}
-
 				events[i] = rawEvent
 			}
 		}

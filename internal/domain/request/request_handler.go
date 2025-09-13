@@ -58,6 +58,11 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 	request.IsProvider = userID == request.Provider.ID
+	if request.Provider.ID == userID {
+		request.Type = "INCOMING"
+	} else {
+		request.Type = "OUTGOING"
+	}
 	helpers.WriteData(w, http.StatusOK, request, nil)
 }
 
