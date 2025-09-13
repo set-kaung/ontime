@@ -10,6 +10,7 @@ import (
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+	"github.com/set-kaung/senior_project_1/internal/domain/review"
 	"github.com/set-kaung/senior_project_1/internal/util"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
@@ -564,4 +565,24 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 		return "", internal.ErrInternalServerError
 	}
 	return dbTicketID, nil
+}
+func (prs *PostgresRequestService) GetRequestReview(ctx context.Context, requestID int32) (review.Review, error) {
+	repo := repository.New(prs.DB)
+	dbReview, err := repo.GetReviewByRequestID(ctx, requestID)
+	r := review.Review{}
+	if err != nil {
+		log.Printf("GetRequestReview: failed to get review by request ID:%s\n", err)
+		return r, internal.ErrInternalServerError
+	}
+	r.ID = dbReview.ID
+	r.Rating = dbReview.Rating
+	r.RequestID = dbReview.RequestID
+	r.RevieweeID = dbReview.RevieweeID
+	r.ReviewerID = dbReview.ReviewerID
+	r.RevieweeFullName = dbReview.RevieweeFullName
+	r.ReviewerFullName = dbReview.ReviewerFullName
+	r.Comment = dbReview.Comment.String
+	r.CreatedAt = dbReview.DateTime
+
+	return r, nil
 }

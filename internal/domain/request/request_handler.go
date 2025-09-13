@@ -172,3 +172,19 @@ func (rh *RequestHandler) HandleCreateRequestReport(w http.ResponseWriter, r *ht
 	}
 	helpers.WriteData(w, http.StatusCreated, map[string]string{"ticket_id": ticketID}, nil)
 }
+
+func (rh *RequestHandler) HandleGetReviewByRequestID(w http.ResponseWriter, r *http.Request) {
+	requestPathValue := r.PathValue("requestId")
+	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
+	if err != nil {
+		log.Printf("HandleGetReviewByRequestID: %s \n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessable entity", nil)
+		return
+	}
+	review, err := rh.RequestService.GetRequestReview(r.Context(), int32(requestID))
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, review, nil)
+}

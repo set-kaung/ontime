@@ -71,6 +71,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /requests/{id}", protected.Chain(a.requestHandler.HandleGetRequestByID))
 	mux.Handle("GET /requests/all", protected.Chain(a.requestHandler.HandleGetAllUserRequests))
 	mux.Handle("POST /requests/review/{id}", protected.Chain(a.reviewHandler.HandleSubmitReview))
+	mux.Handle("GET /requests/review/{id}", protected.Chain(a.requestHandler.HandleGetReviewByRequestID))
 	mux.Handle("POST /requests/report/{id}", protected.Chain(a.requestHandler.HandleCreateRequestReport))
 
 	mux.Handle("POST /ads/complete", protected.Chain(a.userHandler.HandleAdWatched))
