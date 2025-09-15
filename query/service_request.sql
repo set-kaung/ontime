@@ -117,7 +117,7 @@ WHERE
 
 
 -- name: InsertRequestReport :one
-INSERT INTO request_reports (user_id, request_id, ticket_id, created_at)
+INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at)
 VALUES ($1, $2, '', NOW())
 RETURNING id, created_at;
 
@@ -125,3 +125,8 @@ RETURNING id, created_at;
 UPDATE request_reports
 SET ticket_id = $1
 RETURNING ticket_id;
+
+
+-- name: GetRequestReport :one
+SELECT * FROM request_reports
+WHERE request_id = $1 AND reporter_id = $2;

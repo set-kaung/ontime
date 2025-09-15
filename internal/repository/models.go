@@ -342,11 +342,11 @@ type Report struct {
 }
 
 type RequestReport struct {
-	ID        int32     `json:"id"`
-	UserID    string    `json:"user_id"`
-	RequestID int32     `json:"request_id"`
-	TicketID  string    `json:"ticket_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         int32     `json:"id"`
+	ReporterID string    `json:"reporter_id"`
+	RequestID  int32     `json:"request_id"`
+	TicketID   string    `json:"ticket_id"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type Review struct {

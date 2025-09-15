@@ -14,5 +14,6 @@ type RequestService interface {
 	DeclineServiceRequest(context.Context, int32, string) (int32, error)
 	CompleteServiceRequest(context.Context, int32, string) (int32, error)
 	CreateRequestReport(ctx context.Context, requestID int32, userID string) (string, error)
+	GetRequestReport(ctx context.Context, requestID int32, reporterID string) (RequestReport, error)
 	GetRequestReview(ctx context.Context, requestID int32) (review.Review, error)
 }

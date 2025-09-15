@@ -244,6 +244,29 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 	return i, err
 }
 
+const getRequestReport = `-- name: GetRequestReport :one
+SELECT id, reporter_id, request_id, ticket_id, created_at FROM request_reports
+WHERE request_id = $1 AND reporter_id = $2
+`
+
+type GetRequestReportParams struct {
+	RequestID  int32  `json:"request_id"`
+	ReporterID string `json:"reporter_id"`
+}
+
+func (q *Queries) GetRequestReport(ctx context.Context, arg GetRequestReportParams) (RequestReport, error) {
+	row := q.db.QueryRow(ctx, getRequestReport, arg.RequestID, arg.ReporterID)
+	var i RequestReport
+	err := row.Scan(
+		&i.ID,
+		&i.ReporterID,
+		&i.RequestID,
+		&i.TicketID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getServiceRequestCompletion = `-- name: GetServiceRequestCompletion :one
 SELECT id, request_id, requester_completed, provider_completed, is_active FROM service_request_completion
 WHERE request_id = $1
@@ -287,14 +310,14 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 }
 
 const insertRequestReport = `-- name: InsertRequestReport :one
-INSERT INTO request_reports (user_id, request_id, ticket_id, created_at)
+INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at)
 VALUES ($1, $2, '', NOW())
 RETURNING id, created_at
 `
 
 type InsertRequestReportParams struct {
-	UserID    string `json:"user_id"`
-	RequestID int32  `json:"request_id"`
+	ReporterID string `json:"reporter_id"`
+	RequestID  int32  `json:"request_id"`
 }
 
 type InsertRequestReportRow struct {
@@ -303,7 +326,7 @@ type InsertRequestReportRow struct {
 }
 
 func (q *Queries) InsertRequestReport(ctx context.Context, arg InsertRequestReportParams) (InsertRequestReportRow, error) {
-	row := q.db.QueryRow(ctx, insertRequestReport, arg.UserID, arg.RequestID)
+	row := q.db.QueryRow(ctx, insertRequestReport, arg.ReporterID, arg.RequestID)
 	var i InsertRequestReportRow
 	err := row.Scan(&i.ID, &i.CreatedAt)
 	return i, err

@@ -93,8 +93,8 @@ func (q *Queries) GetReviewByID(ctx context.Context, id int32) (Review, error) {
 
 const getReviewByRequestID = `-- name: GetReviewByRequestID :one
 SELECT r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,
-reviewer_user.full_name AS reviewer_full_name,
-reviewee_user.full_name AS reviewee_full_name
+    reviewer_user.full_name AS reviewer_full_name,
+    reviewee_user.full_name AS reviewee_full_name
 FROM reviews r
 JOIN users reviewer_user
   ON reviewer_user.id = r.reviewer_id

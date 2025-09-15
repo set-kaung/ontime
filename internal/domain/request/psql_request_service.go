@@ -2,7 +2,9 @@ package request
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 
@@ -547,8 +549,8 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 
 	repo := repository.New(prs.DB).WithTx(tx)
 	dbReport, err := repo.InsertRequestReport(ctx, repository.InsertRequestReportParams{
-		UserID:    userID,
-		RequestID: requestID,
+		ReporterID: userID,
+		RequestID:  requestID,
 	})
 	if err != nil {
 		log.Println("InsertRequestReport: failed to insert request report: ", err)
@@ -585,4 +587,25 @@ func (prs *PostgresRequestService) GetRequestReview(ctx context.Context, request
 	r.CreatedAt = dbReview.DateTime
 
 	return r, nil
+}
+
+func (prs *PostgresRequestService) GetRequestReport(ctx context.Context, requestID int32, reporterID string) (RequestReport, error) {
+	repo := repository.New(prs.DB)
+	dbReport, err := repo.GetRequestReport(ctx, repository.GetRequestReportParams{
+		RequestID:  requestID,
+		ReporterID: reporterID,
+	})
+	report := RequestReport{}
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return report, internal.ErrNoRecord
+		}
+		log.Printf("GetRequestReport: failed to get report: %s\n", err)
+		return report, internal.ErrInternalServerError
+	}
+	report.ID = dbReport.ID
+	report.RequestID = dbReport.RequestID
+	report.TicketID = dbReport.TicketID
+	report.UserID = dbReport.ReporterID
+	return report, nil
 }
