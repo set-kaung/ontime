@@ -3,8 +3,8 @@ info:
   title: SeniorProject1 API
   description: >-
     API for user management, service listings, requests, reviews, notifications,
-    advertisements, and rewards. Spec synchronized with code as of 2025-09-08.
-  version: 1.0.1
+    advertisements, and rewards. Spec synchronized with code as of 2025-09-15.
+  version: 1.0.2
   contact:
     name: Set Kaung Lwin
 servers:
@@ -116,6 +116,8 @@ paths:
       requestBody:
         required: true
         content:
+          application/json:
+            schema:
               $ref: '#/components/schemas/UserUpdate'
       responses:
         '200':
@@ -996,6 +998,37 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+    get:
+      summary: Get a request report
+      description: Retrieve a previously created report for the specified service request, belonging to the authenticated user.
+      tags:
+        - Requests
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Request ID
+      responses:
+        '200':
+          description: Request report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RequestReport'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     ClerkAuth:
@@ -1075,6 +1108,7 @@ components:
         provider: { $ref: '#/components/schemas/User' }
         has_already_taken: { type: boolean }
         taken_request_id: { type: integer }
+        status: { type: string }
 
     CreateServiceListing:
       type: object
@@ -1200,6 +1234,15 @@ components:
       properties:
         rating: { type: integer, minimum: 1, maximum: 5 }
         comment: { type: string }
+
+    RequestReport:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: string }
+        request_id: { type: integer }
+        ticket_id: { type: string }
+        status: { type: string }
 
   responses:
     BadRequest:
