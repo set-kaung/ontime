@@ -245,7 +245,7 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 }
 
 const getRequestReport = `-- name: GetRequestReport :one
-SELECT id, reporter_id, request_id, ticket_id, created_at FROM request_reports
+SELECT id, reporter_id, request_id, ticket_id, created_at, status FROM request_reports
 WHERE request_id = $1 AND reporter_id = $2
 `
 
@@ -263,6 +263,7 @@ func (q *Queries) GetRequestReport(ctx context.Context, arg GetRequestReportPara
 		&i.RequestID,
 		&i.TicketID,
 		&i.CreatedAt,
+		&i.Status,
 	)
 	return i, err
 }
@@ -310,8 +311,8 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 }
 
 const insertRequestReport = `-- name: InsertRequestReport :one
-INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at)
-VALUES ($1, $2, '', NOW())
+INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at,"status")
+VALUES ($1, $2, '', NOW(),"ongoing")
 RETURNING id, created_at
 `
 

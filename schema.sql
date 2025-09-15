@@ -337,7 +337,8 @@ CREATE TABLE public.request_reports (
     reporter_id text NOT NULL,
     request_id integer NOT NULL,
     ticket_id text NOT NULL,
-    created_at timestamptz NOT NULL
+    created_at timestamptz NOT NULL,
+    status text NOT NULL
 );
 
 
@@ -1076,3 +1077,5 @@ ALTER TABLE ONLY public.transactions
 --
 -- PostgreSQL database dump complete
 --
+
+

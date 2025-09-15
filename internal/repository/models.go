@@ -347,6 +347,7 @@ type RequestReport struct {
 	RequestID  int32     `json:"request_id"`
 	TicketID   string    `json:"ticket_id"`
 	CreatedAt  time.Time `json:"created_at"`
+	Status     string    `json:"status"`
 }
 
 type Review struct {

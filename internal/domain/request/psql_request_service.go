@@ -607,5 +607,6 @@ func (prs *PostgresRequestService) GetRequestReport(ctx context.Context, request
 	report.RequestID = dbReport.RequestID
 	report.TicketID = dbReport.TicketID
 	report.UserID = dbReport.ReporterID
+	report.Status = dbReport.Status
 	return report, nil
 }
