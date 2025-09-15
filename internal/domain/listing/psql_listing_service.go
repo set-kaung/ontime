@@ -41,6 +41,7 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 				FullName: dbListing.FullName,
 			},
 			ImageURL: dbListing.ImageUrl.String,
+			Status:   dbListing.Status,
 		}
 	}
 	return listings, nil
@@ -93,6 +94,7 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 			Category:    dbListing.Category,
 			PostedAt:    dbListing.PostedAt,
 			ImageURL:    dbListing.ImageUrl.String,
+			Status:      dbListing.Status,
 		}
 	}
 	return listings, nil
@@ -122,6 +124,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 		Rating:   float32(dbListing.TotalRatings.Int32) / max(1.0, float32(dbListing.RatingCount.Int32))}
 	listing.ImageURL = dbListing.ImageUrl.String
 	listing.TakenRequestID = -1
+	listing.Status = dbListing.Status
 
 	if dbListing.RequestID.Valid {
 		listing.TakenRequestID = dbListing.RequestID.Int32

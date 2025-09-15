@@ -480,7 +480,8 @@ CREATE TABLE public.service_listings (
     posted_by text NOT NULL,
     posted_at timestamptz NOT NULL,
     category text NOT NULL,
-    image_url text
+    image_url text,
+    status text NOT NULL
 );
 
 
@@ -1077,5 +1078,3 @@ ALTER TABLE ONLY public.transactions
 --
 -- PostgreSQL database dump complete
 --
-
-

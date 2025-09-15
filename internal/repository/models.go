@@ -378,6 +378,7 @@ type ServiceListing struct {
 	PostedAt    time.Time   `json:"posted_at"`
 	Category    string      `json:"category"`
 	ImageUrl    pgtype.Text `json:"image_url"`
+	Status      string      `json:"status"`
 }
 
 type ServiceRequest struct {
