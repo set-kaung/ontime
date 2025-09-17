@@ -3,8 +3,8 @@ info:
   title: SeniorProject1 API
   description: >-
     API for user management, service listings, requests, reviews, notifications,
-    advertisements, and rewards. Spec synchronized with code as of 2025-09-15.
-  version: 1.0.2
+    advertisements, and rewards. Spec synchronized with code as of 2025-09-17.
+  version: 1.0.3
   contact:
     name: Set Kaung Lwin
 servers:
@@ -484,8 +484,8 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateListingReport'
       responses:
-        '200':
-          description: Service listing reported successfully
+        '201':
+          description: Service listing report created successfully
           content:
             application/json:
               schema:
@@ -844,8 +844,8 @@ paths:
       tags:
         - Advertisements
       responses:
-        '200':
-          description: Ad marked as watched successfully
+        '201':
+          description: Ad watch recorded successfully
           content:
             application/json:
               schema:
@@ -946,8 +946,8 @@ paths:
             type: integer
           description: Reward ID
       responses:
-        '200':
-          description: Reward redeemed successfully
+        '201':
+          description: Reward redemption created successfully
           content:
             application/json:
               schema:
