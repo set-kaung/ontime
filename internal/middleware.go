@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
@@ -51,8 +52,20 @@ func AuthMiddleware(next http.Handler) http.Handler {
 }
 
 func CORS(next http.Handler) http.Handler {
+	allowedOrigins := strings.Split(os.Getenv("REMOTE_ORIGINS"), ",")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("REMOTE_ORIGIN"))
+		origin := r.Header.Get("Origin")
+
+		// Check if the request Origin is in the allowed list
+		for _, o := range allowedOrigins {
+			if strings.TrimSpace(o) == origin {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Vary", "Origin") // avoid caching issues
+				break
+			}
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
