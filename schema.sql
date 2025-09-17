@@ -3,7 +3,7 @@
 --
 
 
--- Dumped from database version 17.5 (1b53132)
+-- Dumped from database version 17.5 (a42a079)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
 SET statement_timeout = 0;
@@ -363,6 +363,18 @@ ALTER SEQUENCE public.request_issues_id_seq OWNED BY public.request_reports.id;
 
 
 --
+-- Name: requests_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.requests_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
 -- Name: reviews; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -375,43 +387,6 @@ CREATE TABLE public.reviews (
     comment text,
     date_time timestamptz NOT NULL
 );
-
-
---
--- Name: service_requests; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.service_requests (
-    id integer NOT NULL,
-    listing_id integer NOT NULL,
-    requester_id text NOT NULL,
-    provider_id text NOT NULL,
-    status_detail public.service_request_status NOT NULL,
-    activity public.service_activity NOT NULL,
-    created_at timestamptz NOT NULL,
-    updated_at timestamptz NOT NULL,
-    token_reward integer NOT NULL
-);
-
-
---
--- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.reviews_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.reviews_id_seq OWNED BY public.service_requests.id;
 
 
 --
@@ -519,6 +494,23 @@ CREATE TABLE public.service_request_completion (
 
 
 --
+-- Name: service_requests; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.service_requests (
+    id integer DEFAULT nextval('public.requests_id_seq'::regclass) NOT NULL,
+    listing_id integer NOT NULL,
+    requester_id text NOT NULL,
+    provider_id text NOT NULL,
+    status_detail public.service_request_status NOT NULL,
+    activity public.service_activity NOT NULL,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL,
+    token_reward integer NOT NULL
+);
+
+
+--
 -- Name: services_request_completion_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -587,8 +579,9 @@ CREATE TABLE public.users (
     zip_postal_code text NOT NULL,
     country text NOT NULL,
     joined_at timestamptz NOT NULL,
-    email boolean NOT NULL,
-    full_name text NOT NULL
+    is_email_signedup boolean NOT NULL,
+    full_name text NOT NULL,
+    is_paid boolean NOT NULL
 );
 
 
@@ -673,13 +666,6 @@ ALTER TABLE ONLY public.service_listings ALTER COLUMN id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.service_request_completion ALTER COLUMN id SET DEFAULT nextval('public.services_request_completion_id_seq'::regclass);
-
-
---
--- Name: service_requests id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.service_requests ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
 
 
 --
@@ -896,7 +882,7 @@ CREATE INDEX idx_service_requests_requester_id ON public.service_requests USING 
 --
 
 ALTER TABLE ONLY public.ads_watching_history
-    ADD CONSTRAINT ads_watching_history_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT ads_watching_history_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -928,7 +914,7 @@ ALTER TABLE ONLY public.notifications
 --
 
 ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_users_recipient_fk FOREIGN KEY (recipient_user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT notifications_users_recipient_fk FOREIGN KEY (recipient_user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -944,7 +930,7 @@ ALTER TABLE ONLY public.payments
 --
 
 ALTER TABLE ONLY public.payments
-    ADD CONSTRAINT payments_users_fk FOREIGN KEY (payer_id) REFERENCES public.users(id);
+    ADD CONSTRAINT payments_users_fk FOREIGN KEY (payer_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -952,7 +938,7 @@ ALTER TABLE ONLY public.payments
 --
 
 ALTER TABLE ONLY public.ratings
-    ADD CONSTRAINT ratings_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT ratings_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -984,7 +970,7 @@ ALTER TABLE ONLY public.redeemed_rewards
 --
 
 ALTER TABLE ONLY public.reports
-    ADD CONSTRAINT reports_service_listings_fk_1 FOREIGN KEY (listing_id) REFERENCES public.service_listings(id);
+    ADD CONSTRAINT reports_service_listings_fk_1 FOREIGN KEY (listing_id) REFERENCES public.service_listings(id) ON DELETE CASCADE;
 
 
 --
@@ -1016,7 +1002,7 @@ ALTER TABLE ONLY public.request_reports
 --
 
 ALTER TABLE ONLY public.reviews
-    ADD CONSTRAINT reviews_service_requests_fk FOREIGN KEY (request_id) REFERENCES public.service_requests(id);
+    ADD CONSTRAINT reviews_service_requests_fk FOREIGN KEY (request_id) REFERENCES public.service_requests(id) ON DELETE CASCADE;
 
 
 --
@@ -1024,7 +1010,7 @@ ALTER TABLE ONLY public.reviews
 --
 
 ALTER TABLE ONLY public.reviews
-    ADD CONSTRAINT reviews_users_fk FOREIGN KEY (reviewer_id) REFERENCES public.users(id);
+    ADD CONSTRAINT reviews_users_fk FOREIGN KEY (reviewer_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -1032,7 +1018,7 @@ ALTER TABLE ONLY public.reviews
 --
 
 ALTER TABLE ONLY public.reviews
-    ADD CONSTRAINT reviews_users_fk_1 FOREIGN KEY (reviewee_id) REFERENCES public.users(id);
+    ADD CONSTRAINT reviews_users_fk_1 FOREIGN KEY (reviewee_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -1048,7 +1034,7 @@ ALTER TABLE ONLY public.service_listings
 --
 
 ALTER TABLE ONLY public.service_requests
-    ADD CONSTRAINT service_requests_users_fk FOREIGN KEY (provider_id) REFERENCES public.users(id);
+    ADD CONSTRAINT service_requests_users_fk FOREIGN KEY (provider_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -1056,7 +1042,7 @@ ALTER TABLE ONLY public.service_requests
 --
 
 ALTER TABLE ONLY public.service_requests
-    ADD CONSTRAINT service_requests_users_fk_1 FOREIGN KEY (requester_id) REFERENCES public.users(id);
+    ADD CONSTRAINT service_requests_users_fk_1 FOREIGN KEY (requester_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -1072,7 +1058,7 @@ ALTER TABLE ONLY public.service_request_completion
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id);
+    ADD CONSTRAINT transactions_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --

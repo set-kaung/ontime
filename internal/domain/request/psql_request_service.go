@@ -333,7 +333,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		return -1, internal.ErrInternalServerError
 	}
 
-	err = repo.AddTokens(ctx, repository.AddTokensParams{
+	_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 		TokenBalance: paymentHolding.AmountTokens,
 		ID:           repoRequest.RequesterID,
 	})
@@ -451,7 +451,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 			log.Println("CompleteServiceRequest: failed to get payment holding: ", err)
 			return -1, internal.ErrInternalServerError
 		}
-		err = repo.AddTokens(ctx, repository.AddTokensParams{
+		_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 			TokenBalance: paymentHolding.AmountTokens,
 			ID:           request.ProviderID,
 		})

@@ -17,4 +17,5 @@ type UserService interface {
 	UpdateFullName(ctx context.Context, newName string, userID string) error
 	MarkAllNotificationsRead(context.Context, string, time.Time) error
 	GetAllHistory(ctx context.Context, userID string) ([]InteractionHistory, error)
+	UpdateOneTimePaid(ctx context.Context, userID string) (int32, error)
 }

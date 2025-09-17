@@ -39,6 +39,7 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 	}
 	dbUser.ID = userID
 	dbUser.Status = "active"
+	log.Println(dbUser)
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {
 		if errors.Is(err, internal.ErrDuplicateID) {
@@ -213,4 +214,15 @@ func (uh *UserHandler) HandleGetAllHistories(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	helpers.WriteData(w, http.StatusOK, histories, nil)
+}
+
+func (uh *UserHandler) HandleUpdateSignupPaymentStatus(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	_, err := uh.UserService.UpdateOneTimePaid(r.Context(), userID)
+	log.Println("called")
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "updated", nil)
 }
