@@ -2,6 +2,7 @@ package user
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -40,6 +41,10 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 	dbUser.Status = "active"
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {
+		if errors.Is(err, internal.ErrDuplicateID) {
+			helpers.WriteError(w, http.StatusConflict, "User Already Signed Up", nil)
+			return
+		}
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}

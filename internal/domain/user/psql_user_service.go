@@ -70,12 +70,13 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 	repo := repository.New(pus.DB).WithTx(tx)
 	_, err = repo.InsertUser(ctx, insertUserParams)
 	if err != nil {
-		log.Println(err)
 		if pgerr, ok := err.(*pgconn.PgError); ok {
 			if pgerr.Code == "23505" {
+				log.Printf("InsertUser: failed to insert user: %v\n", err)
 				return internal.ErrDuplicateID
 			}
 		}
+		log.Printf("InsertUser: failed to insert user: %v\n", err)
 		return internal.ErrInternalServerError
 	}
 	tokenReward := os.Getenv("ONETIME_PAYMENT_TOKENS")
