@@ -68,7 +68,7 @@ func (rh *RewardHandler) HandleRedeemReward(w http.ResponseWriter, r *http.Reque
 		helpers.WriteError(w, http.StatusBadRequest, "invalid rewards", nil)
 		return
 	}
-	helpers.WriteData(w, http.StatusOK, map[string]string{"coupon_code": couponCode}, nil)
+	helpers.WriteData(w, http.StatusCreated, map[string]string{"coupon_code": couponCode}, nil)
 }
 
 func (rh *RewardHandler) HandleGetRedeemedRewardByID(w http.ResponseWriter, r *http.Request) {

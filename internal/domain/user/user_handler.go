@@ -122,7 +122,7 @@ func (uh *UserHandler) HandleAdWatched(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "ad watched", nil)
+	helpers.WriteSuccess(w, http.StatusCreated, "ad watched", nil)
 }
 
 func (uh *UserHandler) HandleGetAdsWatched(w http.ResponseWriter, r *http.Request) {
