@@ -39,7 +39,6 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 	}
 	dbUser.ID = userID
 	dbUser.Status = "active"
-	log.Println(dbUser)
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {
 		if errors.Is(err, internal.ErrDuplicateID) {
