@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
@@ -205,6 +206,12 @@ func (pls *PostgresListingService) ReportListing(ctx context.Context, lr Listing
 		},
 	})
 	if err != nil {
+		if pgerr, ok := err.(*pgconn.PgError); ok {
+			if pgerr.Code == "23505" {
+				log.Printf("InsertUser: failed to listing report: %v\n", err)
+				return internal.ErrDuplicateID
+			}
+		}
 		log.Printf("listing_service -> ReportListing: failed to insert report: %s\n", err)
 		return internal.ErrInternalServerError
 	}

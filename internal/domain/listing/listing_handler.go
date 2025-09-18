@@ -2,6 +2,7 @@ package listing
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -128,6 +129,10 @@ func (lh *ListingHandler) HandleReportListing(w http.ResponseWriter, r *http.Req
 	listingReport.ListingID = int32(listingID)
 	err = lh.ListingService.ReportListing(r.Context(), listingReport)
 	if err != nil {
+		if errors.Is(err, internal.ErrDuplicateID) {
+			helpers.WriteError(w, http.StatusConflict, "you have already reported this listing", nil)
+			return
+		}
 		helpers.WriteServerError(w, nil)
 		return
 	}
