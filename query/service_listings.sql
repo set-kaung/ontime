@@ -25,7 +25,7 @@ WHERE sl.id = $1;
 SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,sl.status,u.id uid,u.full_name FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
-WHERE posted_by != $1;
+WHERE posted_by != $1 AND sl.status = 'active';
 
 -- name: UpdateListing :execrows
 UPDATE service_listings
