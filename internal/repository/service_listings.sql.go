@@ -85,7 +85,7 @@ JOIN users u
 ON u.id = sl.posted_by
 LEFT JOIN service_requests sr ON sr.listing_id = sl.id AND sr.activity = 'active' AND sr.requester_id = $2
 LEFT JOIN ratings r ON r.user_id = sl.posted_by
-WHERE sl.id = $1
+WHERE sl.id = $1 and sl.status = 'active'
 `
 
 type GetListingByIDParams struct {
