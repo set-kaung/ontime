@@ -1,6 +1,6 @@
 -- name: GetUserListings :many
 SELECT * FROM service_listings
-WHERE posted_by = $1;
+WHERE posted_by = $1 AND status = 'active';
 
 -- name: InsertListing :one
 INSERT INTO service_listings (title,"description",token_reward,posted_by,category,image_url,posted_at,status)

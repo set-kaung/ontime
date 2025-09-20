@@ -132,7 +132,7 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 
 const getUserListings = `-- name: GetUserListings :many
 SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url, status FROM service_listings
-WHERE posted_by = $1
+WHERE posted_by = $1 AND status = 'active'
 `
 
 func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]ServiceListing, error) {
