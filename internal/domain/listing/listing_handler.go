@@ -153,7 +153,7 @@ func (lh *ListingHandler) HandleDeleteListing(w http.ResponseWriter, r *http.Req
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "report submitted successfully", nil)
+	helpers.WriteSuccess(w, http.StatusOK, "listing deleted successfully", nil)
 }
 
 func (lh *ListingHandler) HandleGetListingReviews(w http.ResponseWriter, r *http.Request) {
