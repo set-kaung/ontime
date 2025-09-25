@@ -112,6 +112,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 		log.Println("psql_listing_service -> GetListingByID: err getting listing by id: ", err)
 		return Listing{}, err
 	}
+
 	listing := Listing{}
 	listing.ID = dbListing.ID
 	listing.Title = dbListing.Title
@@ -126,7 +127,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 	listing.ImageURL = dbListing.ImageUrl.String
 	listing.TakenRequestID = -1
 	listing.Status = dbListing.Status
-
+	log.Printf("%q\n", listing.Description)
 	if dbListing.RequestID.Valid {
 		listing.TakenRequestID = dbListing.RequestID.Int32
 	}

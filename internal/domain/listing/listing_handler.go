@@ -28,6 +28,7 @@ func (lh *ListingHandler) HandleCreateListing(w http.ResponseWriter, r *http.Req
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 
 	listingRequest.Provider = user.User{ID: userID}
+	log.Printf("%q\n", listingRequest.Description)
 	_, err = lh.ListingService.CreateListing(r.Context(), listingRequest)
 	if err != nil {
 		log.Println("listing_handler -> HandleViewOwnProfile: ", err)
@@ -50,6 +51,7 @@ func (lh *ListingHandler) HandleGetListingByID(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
+	log.Printf("%q\n", listing.Description)
 	err = helpers.WriteData(w, http.StatusOK, listing, nil)
 	if err != nil {
 		log.Println("listing_handler -> HandleGetListingByID: ", err)
