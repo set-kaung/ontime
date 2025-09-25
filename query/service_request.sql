@@ -125,3 +125,18 @@ RETURNING id, created_at;
 UPDATE request_reports
 SET ticket_id = $1
 RETURNING ticket_id;
+
+
+-- name: UpdateExpiredRequest :many
+WITH updated AS (
+    UPDATE service_requests
+    SET status_detail = 'expired',
+        activity = 'inactive'
+    WHERE status_detail = 'pending'
+      AND activity = 'active'
+      AND updated_at < NOW() - interval '36 hours'
+    RETURNING id, requester_id, listing_id
+)
+SELECT u.id, u.requester_id, sl.title
+FROM updated u
+JOIN service_listings sl ON sl.id = u.listing_id;

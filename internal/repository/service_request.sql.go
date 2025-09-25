@@ -319,6 +319,47 @@ func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID 
 	return err
 }
 
+const updateExpiredRequest = `-- name: UpdateExpiredRequest :many
+WITH updated AS (
+    UPDATE service_requests
+    SET status_detail = 'expired',
+        activity = 'inactive'
+    WHERE status_detail = 'pending'
+      AND activity = 'active'
+      AND updated_at < NOW() - interval '36 hours'
+    RETURNING id, requester_id, listing_id
+)
+SELECT u.id, u.requester_id, sl.title
+FROM updated u
+JOIN service_listings sl ON sl.id = u.listing_id
+`
+
+type UpdateExpiredRequestRow struct {
+	ID          int32  `json:"id"`
+	RequesterID string `json:"requester_id"`
+	Title       string `json:"title"`
+}
+
+func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequestRow, error) {
+	rows, err := q.db.Query(ctx, updateExpiredRequest)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UpdateExpiredRequestRow
+	for rows.Next() {
+		var i UpdateExpiredRequestRow
+		if err := rows.Scan(&i.ID, &i.RequesterID, &i.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateRequestReportWithTicketID = `-- name: UpdateRequestReportWithTicketID :one
 UPDATE request_reports
 SET ticket_id = $1

@@ -1,6 +1,8 @@
 package request
 
-import "context"
+import (
+	"context"
+)
 
 type RequestService interface {
 	CreateServiceRequest(context.Context, Request) (int32, error)
@@ -10,4 +12,5 @@ type RequestService interface {
 	DeclineServiceRequest(context.Context, int32, string) (int32, error)
 	CompleteServiceRequest(context.Context, int32, string) (int32, error)
 	CreateRequestReport(ctx context.Context, requestID int32, userID string) (string, error)
+	UpdateExpiredRequests(ctx context.Context) error
 }
