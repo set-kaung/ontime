@@ -15,6 +15,7 @@ import (
 	"github.com/set-kaung/senior_project_1/internal/domain/review"
 	"github.com/set-kaung/senior_project_1/internal/util"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/repository"
 )
@@ -609,4 +610,46 @@ func (prs *PostgresRequestService) GetRequestReport(ctx context.Context, request
 	report.UserID = dbReport.ReporterID
 	report.Status = dbReport.Status
 	return report, nil
+}
+
+func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) error {
+	tx, err := prs.DB.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		log.Printf(" UpdateExpiredRequests: failed to start transaction: %s\n", err)
+		return err
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(prs.DB).WithTx(tx)
+	requestersUpdated, err := repo.UpdateExpiredRequest(ctx)
+	if err != nil {
+		log.Printf(" UpdateExpiredRequests: failed to update expired request: %v\n", err)
+		return err
+	}
+	for _, row := range requestersUpdated {
+		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+			TargetID:    row.ID,
+			Type:        domain.SYSTEM_EVENT,
+			Description: domain.REQUEST_EXPIRED,
+		})
+		if err != nil {
+			log.Printf(" UpdateExpiredRequests: failed to insert events: %v\n", err)
+			return err
+		}
+		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+			Message:         fmt.Sprintf("Your request for \"%s\" has expired.", row.Title),
+			RecipientUserID: row.RequesterID,
+			ActionUserID:    "SYSTEM",
+			EventID:         eventID,
+		})
+		if err != nil {
+			log.Printf(" UpdateExpiredRequests: failed to insert notifications: %v\n", err)
+			return err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Println("UpdateExpiredRequests: failed to commit transaction: ", err)
+		return err
+	}
+	return nil
 }

@@ -16,4 +16,5 @@ type RequestService interface {
 	CreateRequestReport(ctx context.Context, requestID int32, userID string) (string, error)
 	GetRequestReport(ctx context.Context, requestID int32, reporterID string) (RequestReport, error)
 	GetRequestReview(ctx context.Context, requestID int32) (review.Review, error)
+	UpdateExpiredRequests(ctx context.Context) error
 }
