@@ -2,6 +2,7 @@ package user
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -40,6 +41,10 @@ func (h *UserHandler) HandleInsertUser(w http.ResponseWriter, r *http.Request) {
 	dbUser.Status = "active"
 	err = h.UserService.InsertUser(r.Context(), dbUser)
 	if err != nil {
+		if errors.Is(err, internal.ErrDuplicateID) {
+			helpers.WriteError(w, http.StatusConflict, "User Already Signed Up", nil)
+			return
+		}
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
@@ -117,7 +122,7 @@ func (uh *UserHandler) HandleAdWatched(w http.ResponseWriter, r *http.Request) {
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "ad watched", nil)
+	helpers.WriteSuccess(w, http.StatusCreated, "ad watched", nil)
 }
 
 func (uh *UserHandler) HandleGetAdsWatched(w http.ResponseWriter, r *http.Request) {
@@ -208,4 +213,15 @@ func (uh *UserHandler) HandleGetAllHistories(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	helpers.WriteData(w, http.StatusOK, histories, nil)
+}
+
+func (uh *UserHandler) HandleUpdateSignupPaymentStatus(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	_, err := uh.UserService.UpdateOneTimePaid(r.Context(), userID)
+	log.Println("called")
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "updated", nil)
 }

@@ -38,14 +38,17 @@ INSERT INTO users (
     zip_postal_code,
     country,
     joined_at,
-    email
+    is_email_signedup,
+    is_paid
 )
 VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
-  $11, NOW(), $12
+  $11, NOW(), $12,false
 )
 RETURNING id;
+
+
 
 
 
@@ -61,10 +64,20 @@ DELETE FROM users where id = $1;
 SELECT token_balance FROM users
 WHERE id = $1;
 
--- name: AddTokens :exec
+-- name: AddTokens :one
 UPDATE users
 SET token_balance = token_balance + $1
-WHERE id = $2;
+WHERE id = $2
+RETURNING token_balance;
+
+-- name: MarkSignupPaidAndAward :one
+UPDATE users
+SET
+  is_paid = true,
+  token_balance = token_balance + $2
+WHERE id = $1
+  AND is_paid = false
+RETURNING token_balance;
 
 
 

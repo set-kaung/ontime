@@ -7,9 +7,69 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getListingReviews = `-- name: GetListingReviews :many
+SELECT r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,
+       sr.listing_id,
+       reviewer_user.full_name AS reviewer_full_name,
+       reviewee_user.full_name AS reviewee_full_name
+FROM reviews r
+JOIN service_requests sr
+  ON sr.id = r.request_id
+JOIN users reviewer_user
+  ON reviewer_user.id = r.reviewer_id
+JOIN users reviewee_user
+  ON reviewee_user.id = r.reviewee_id
+WHERE sr.listing_id = $1
+`
+
+type GetListingReviewsRow struct {
+	ID               int32       `json:"id"`
+	RequestID        int32       `json:"request_id"`
+	ReviewerID       string      `json:"reviewer_id"`
+	RevieweeID       string      `json:"reviewee_id"`
+	Rating           int32       `json:"rating"`
+	Comment          pgtype.Text `json:"comment"`
+	DateTime         time.Time   `json:"date_time"`
+	ListingID        int32       `json:"listing_id"`
+	ReviewerFullName string      `json:"reviewer_full_name"`
+	RevieweeFullName string      `json:"reviewee_full_name"`
+}
+
+func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]GetListingReviewsRow, error) {
+	rows, err := q.db.Query(ctx, getListingReviews, listingID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetListingReviewsRow
+	for rows.Next() {
+		var i GetListingReviewsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.RequestID,
+			&i.ReviewerID,
+			&i.RevieweeID,
+			&i.Rating,
+			&i.Comment,
+			&i.DateTime,
+			&i.ListingID,
+			&i.ReviewerFullName,
+			&i.RevieweeFullName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const getReviewByID = `-- name: GetReviewByID :one
 SELECT id, request_id, reviewer_id, reviewee_id, rating, comment, date_time FROM reviews
@@ -27,6 +87,47 @@ func (q *Queries) GetReviewByID(ctx context.Context, id int32) (Review, error) {
 		&i.Rating,
 		&i.Comment,
 		&i.DateTime,
+	)
+	return i, err
+}
+
+const getReviewByRequestID = `-- name: GetReviewByRequestID :one
+SELECT r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,
+    reviewer_user.full_name AS reviewer_full_name,
+    reviewee_user.full_name AS reviewee_full_name
+FROM reviews r
+JOIN users reviewer_user
+  ON reviewer_user.id = r.reviewer_id
+JOIN users reviewee_user
+  ON reviewee_user.id = r.reviewee_id
+WHERE r.request_id = $1
+`
+
+type GetReviewByRequestIDRow struct {
+	ID               int32       `json:"id"`
+	RequestID        int32       `json:"request_id"`
+	ReviewerID       string      `json:"reviewer_id"`
+	RevieweeID       string      `json:"reviewee_id"`
+	Rating           int32       `json:"rating"`
+	Comment          pgtype.Text `json:"comment"`
+	DateTime         time.Time   `json:"date_time"`
+	ReviewerFullName string      `json:"reviewer_full_name"`
+	RevieweeFullName string      `json:"reviewee_full_name"`
+}
+
+func (q *Queries) GetReviewByRequestID(ctx context.Context, requestID int32) (GetReviewByRequestIDRow, error) {
+	row := q.db.QueryRow(ctx, getReviewByRequestID, requestID)
+	var i GetReviewByRequestIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.RequestID,
+		&i.ReviewerID,
+		&i.RevieweeID,
+		&i.Rating,
+		&i.Comment,
+		&i.DateTime,
+		&i.ReviewerFullName,
+		&i.RevieweeFullName,
 	)
 	return i, err
 }

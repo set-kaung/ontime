@@ -2,15 +2,17 @@ package request
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain"
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
+	"github.com/set-kaung/senior_project_1/internal/domain/review"
 	"github.com/set-kaung/senior_project_1/internal/util"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
@@ -138,7 +140,6 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 			log.Println("GetRequestByID: failed to unmarshal events JSON: ", err)
 			events = []Event{}
 		} else {
-
 			events = make([]Event, len(rawEvents))
 			for i, rawEvent := range rawEvents {
 				switch rawEvent.Description {
@@ -155,7 +156,6 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 				case domain.DECLINE_REQUEST:
 					rawEvent.By = "provider"
 				}
-
 				events[i] = rawEvent
 			}
 		}
@@ -333,7 +333,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 		return -1, internal.ErrInternalServerError
 	}
 
-	err = repo.AddTokens(ctx, repository.AddTokensParams{
+	_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 		TokenBalance: paymentHolding.AmountTokens,
 		ID:           repoRequest.RequesterID,
 	})
@@ -451,7 +451,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 			log.Println("CompleteServiceRequest: failed to get payment holding: ", err)
 			return -1, internal.ErrInternalServerError
 		}
-		err = repo.AddTokens(ctx, repository.AddTokensParams{
+		_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 			TokenBalance: paymentHolding.AmountTokens,
 			ID:           request.ProviderID,
 		})
@@ -549,8 +549,8 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 
 	repo := repository.New(prs.DB).WithTx(tx)
 	dbReport, err := repo.InsertRequestReport(ctx, repository.InsertRequestReportParams{
-		UserID:    userID,
-		RequestID: requestID,
+		ReporterID: userID,
+		RequestID:  requestID,
 	})
 	if err != nil {
 		log.Println("InsertRequestReport: failed to insert request report: ", err)
@@ -568,45 +568,45 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 	}
 	return dbTicketID, nil
 }
-
-func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) error {
-	tx, err := prs.DB.BeginTx(ctx, pgx.TxOptions{})
+func (prs *PostgresRequestService) GetRequestReview(ctx context.Context, requestID int32) (review.Review, error) {
+	repo := repository.New(prs.DB)
+	dbReview, err := repo.GetReviewByRequestID(ctx, requestID)
+	r := review.Review{}
 	if err != nil {
-		log.Printf(" UpdateExpiredRequests: failed to start transaction: %s\n", err)
-		return err
+		log.Printf("GetRequestReview: failed to get review by request ID:%s\n", err)
+		return r, internal.ErrInternalServerError
 	}
-	defer tx.Rollback(ctx)
-	repo := repository.New(prs.DB).WithTx(tx)
-	requestersUpdated, err := repo.UpdateExpiredRequest(ctx)
-	if err != nil {
-		log.Printf(" UpdateExpiredRequests: failed to update expired request: %v\n", err)
-		return err
-	}
-	for _, row := range requestersUpdated {
-		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-			TargetID:    row.ID,
-			Type:        domain.SYSTEM_EVENT,
-			Description: domain.REQUEST_EXPIRED,
-		})
-		if err != nil {
-			log.Printf(" UpdateExpiredRequests: failed to insert events: %v\n", err)
-			return err
-		}
-		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
-			Message:         fmt.Sprintf("Your request for \"%s\" has expired.", row.Title),
-			RecipientUserID: row.RequesterID,
-			ActionUserID:    "SYSTEM",
-			EventID:         eventID,
-		})
-		if err != nil {
-			log.Printf(" UpdateExpiredRequests: failed to insert notifications: %v\n", err)
-			return err
-		}
-	}
+	r.ID = dbReview.ID
+	r.Rating = dbReview.Rating
+	r.RequestID = dbReview.RequestID
+	r.RevieweeID = dbReview.RevieweeID
+	r.ReviewerID = dbReview.ReviewerID
+	r.RevieweeFullName = dbReview.RevieweeFullName
+	r.ReviewerFullName = dbReview.ReviewerFullName
+	r.Comment = dbReview.Comment.String
+	r.CreatedAt = dbReview.DateTime
 
-	if err := tx.Commit(ctx); err != nil {
-		log.Println("UpdateExpiredRequests: failed to commit transaction: ", err)
-		return err
+	return r, nil
+}
+
+func (prs *PostgresRequestService) GetRequestReport(ctx context.Context, requestID int32, reporterID string) (RequestReport, error) {
+	repo := repository.New(prs.DB)
+	dbReport, err := repo.GetRequestReport(ctx, repository.GetRequestReportParams{
+		RequestID:  requestID,
+		ReporterID: reporterID,
+	})
+	report := RequestReport{}
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return report, internal.ErrNoRecord
+		}
+		log.Printf("GetRequestReport: failed to get report: %s\n", err)
+		return report, internal.ErrInternalServerError
 	}
-	return nil
+	report.ID = dbReport.ID
+	report.RequestID = dbReport.RequestID
+	report.TicketID = dbReport.TicketID
+	report.UserID = dbReport.ReporterID
+	report.Status = dbReport.Status
+	return report, nil
 }

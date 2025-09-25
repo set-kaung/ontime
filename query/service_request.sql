@@ -117,8 +117,8 @@ WHERE
 
 
 -- name: InsertRequestReport :one
-INSERT INTO request_reports (user_id, request_id, ticket_id, created_at)
-VALUES ($1, $2, '', NOW())
+INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at,"status")
+VALUES ($1, $2, '', NOW(),"ongoing")
 RETURNING id, created_at;
 
 -- name: UpdateRequestReportWithTicketID :one
@@ -127,16 +127,6 @@ SET ticket_id = $1
 RETURNING ticket_id;
 
 
--- name: UpdateExpiredRequest :many
-WITH updated AS (
-    UPDATE service_requests
-    SET status_detail = 'expired',
-        activity = 'inactive'
-    WHERE status_detail = 'pending'
-      AND activity = 'active'
-      AND updated_at < NOW() - interval '36 hours'
-    RETURNING id, requester_id, listing_id
-)
-SELECT u.id, u.requester_id, sl.title
-FROM updated u
-JOIN service_listings sl ON sl.id = u.listing_id;
+-- name: GetRequestReport :one
+SELECT * FROM request_reports
+WHERE request_id = $1 AND reporter_id = $2;

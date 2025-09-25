@@ -40,7 +40,7 @@ func (rh *RequestHandler) HandleCreateRequest(w http.ResponseWriter, r *http.Req
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteData(w, http.StatusOK, map[string]int32{"requestID": requestID}, nil)
+	helpers.WriteData(w, http.StatusCreated, map[string]int32{"requestID": requestID}, nil)
 }
 
 func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +58,11 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 		return
 	}
 	request.IsProvider = userID == request.Provider.ID
+	if request.Provider.ID == userID {
+		request.Type = "INCOMING"
+	} else {
+		request.Type = "OUTGOING"
+	}
 	helpers.WriteData(w, http.StatusOK, request, nil)
 }
 
@@ -153,7 +158,7 @@ func (rh *RequestHandler) HandleGetCompletedTransaction(w http.ResponseWriter, r
 
 func (rh *RequestHandler) HandleCreateRequestReport(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
-	requestPathValue := r.PathValue("requestId")
+	requestPathValue := r.PathValue("id")
 	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
 	if err != nil {
 		log.Printf("HandleCreateRequestReport: %s \n", err)
@@ -166,4 +171,41 @@ func (rh *RequestHandler) HandleCreateRequestReport(w http.ResponseWriter, r *ht
 		return
 	}
 	helpers.WriteData(w, http.StatusCreated, map[string]string{"ticket_id": ticketID}, nil)
+}
+
+func (rh *RequestHandler) HandleGetReviewByRequestID(w http.ResponseWriter, r *http.Request) {
+	requestPathValue := r.PathValue("id")
+	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
+	if err != nil {
+		log.Printf("HandleGetReviewByRequestID: %s \n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessable entity", nil)
+		return
+	}
+	review, err := rh.RequestService.GetRequestReview(r.Context(), int32(requestID))
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, review, nil)
+}
+
+func (rh *RequestHandler) HandleGetRequestReport(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	requestPathValue := r.PathValue("id")
+	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
+	if err != nil {
+		log.Printf("HandleGetRequestReport: %s \n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessable entity", nil)
+		return
+	}
+	report, err := rh.RequestService.GetRequestReport(r.Context(), int32(requestID), userID)
+	if err != nil {
+		if errors.Is(err, internal.ErrNoRecord) {
+			helpers.WriteError(w, http.StatusNotFound, "no such recor", nil)
+			return
+		}
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, report, nil)
 }

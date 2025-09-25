@@ -14,7 +14,8 @@ import (
 )
 
 const deleteListing = `-- name: DeleteListing :execresult
-DELETE FROM service_listings
+UPDATE service_listings
+SET status = 'inactive'
 WHERE id = $1 AND posted_by = $2
 `
 
@@ -28,10 +29,10 @@ func (q *Queries) DeleteListing(ctx context.Context, arg DeleteListingParams) (p
 }
 
 const getAllListings = `-- name: GetAllListings :many
-SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,u.id uid,u.full_name FROM service_listings sl
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,sl.status,u.id uid,u.full_name FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
-WHERE posted_by != $1
+WHERE posted_by != $1 AND sl.status = 'active'
 `
 
 type GetAllListingsRow struct {
@@ -42,6 +43,7 @@ type GetAllListingsRow struct {
 	PostedAt    time.Time   `json:"posted_at"`
 	Category    string      `json:"category"`
 	ImageUrl    pgtype.Text `json:"image_url"`
+	Status      string      `json:"status"`
 	Uid         string      `json:"uid"`
 	FullName    string      `json:"full_name"`
 }
@@ -63,6 +65,7 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 			&i.PostedAt,
 			&i.Category,
 			&i.ImageUrl,
+			&i.Status,
 			&i.Uid,
 			&i.FullName,
 		); err != nil {
@@ -77,12 +80,12 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 }
 
 const getListingByID = `-- name: GetListingByID :one
-SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count FROM service_listings sl
+SELECT sl.id,sl.title,sl.description,sl.token_reward,sl.posted_at,sl.category,sl.image_url,sl.status,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
 LEFT JOIN service_requests sr ON sr.listing_id = sl.id AND sr.activity = 'active' AND sr.requester_id = $2
 LEFT JOIN ratings r ON r.user_id = sl.posted_by
-WHERE sl.id = $1
+WHERE sl.id = $1 and sl.status = 'active'
 `
 
 type GetListingByIDParams struct {
@@ -98,6 +101,7 @@ type GetListingByIDRow struct {
 	PostedAt     time.Time   `json:"posted_at"`
 	Category     string      `json:"category"`
 	ImageUrl     pgtype.Text `json:"image_url"`
+	Status       string      `json:"status"`
 	Uid          string      `json:"uid"`
 	FullName     string      `json:"full_name"`
 	RequestID    pgtype.Int4 `json:"request_id"`
@@ -116,6 +120,7 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 		&i.PostedAt,
 		&i.Category,
 		&i.ImageUrl,
+		&i.Status,
 		&i.Uid,
 		&i.FullName,
 		&i.RequestID,
@@ -125,68 +130,9 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 	return i, err
 }
 
-const getListingReviews = `-- name: GetListingReviews :many
-SELECT r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,
-       sr.listing_id,
-       reviewer_user.full_name AS reviewer_full_name,
-       reviewee_user.full_name AS reviewee_full_name
-FROM reviews r
-JOIN service_requests sr
-  ON sr.id = r.request_id
-JOIN users reviewer_user
-  ON reviewer_user.id = r.reviewer_id
-JOIN users reviewee_user
-  ON reviewee_user.id = r.reviewee_id
-WHERE sr.listing_id = $1
-`
-
-type GetListingReviewsRow struct {
-	ID               int32       `json:"id"`
-	RequestID        int32       `json:"request_id"`
-	ReviewerID       string      `json:"reviewer_id"`
-	RevieweeID       string      `json:"reviewee_id"`
-	Rating           int32       `json:"rating"`
-	Comment          pgtype.Text `json:"comment"`
-	DateTime         time.Time   `json:"date_time"`
-	ListingID        int32       `json:"listing_id"`
-	ReviewerFullName string      `json:"reviewer_full_name"`
-	RevieweeFullName string      `json:"reviewee_full_name"`
-}
-
-func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]GetListingReviewsRow, error) {
-	rows, err := q.db.Query(ctx, getListingReviews, listingID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetListingReviewsRow
-	for rows.Next() {
-		var i GetListingReviewsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.RequestID,
-			&i.ReviewerID,
-			&i.RevieweeID,
-			&i.Rating,
-			&i.Comment,
-			&i.DateTime,
-			&i.ListingID,
-			&i.ReviewerFullName,
-			&i.RevieweeFullName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getUserListings = `-- name: GetUserListings :many
-SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url FROM service_listings
-WHERE posted_by = $1
+SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url, status FROM service_listings
+WHERE posted_by = $1 AND status = 'active'
 `
 
 func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]ServiceListing, error) {
@@ -207,6 +153,7 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]Servi
 			&i.PostedAt,
 			&i.Category,
 			&i.ImageUrl,
+			&i.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -219,8 +166,8 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]Servi
 }
 
 const insertListing = `-- name: InsertListing :one
-INSERT INTO service_listings (title,"description",token_reward,posted_by,category,image_url,posted_at)
-VALUES ($1, $2, $3, $4,$5,$6, NOW())
+INSERT INTO service_listings (title,"description",token_reward,posted_by,category,image_url,posted_at,status)
+VALUES ($1, $2, $3, $4,$5,$6, NOW(),'active')
 RETURNING id
 `
 

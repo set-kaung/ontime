@@ -8,7 +8,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/pusher/pusher-http-go/v5 v5.1.1
-	github.com/robfig/cron v1.2.0
+	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/time v0.12.0
 )
 

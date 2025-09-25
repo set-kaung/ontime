@@ -17,6 +17,7 @@ type Listing struct {
 	Provider        user.User `json:"provider"`
 	HasAlreadyTaken bool      `json:"has_already_taken"`
 	TakenRequestID  int32     `json:"taken_request_id"`
+	Status          string    `json:"status"`
 }
 
 type ListingReport struct {

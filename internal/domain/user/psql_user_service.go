@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -36,7 +37,7 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.ZipPostalCode = repoUser.ZipPostalCode
 	user.Country = repoUser.Country
 	user.JoinedAt = repoUser.JoinedAt
-	user.Email = repoUser.Email
+	user.IsEmailSignedUp = repoUser.IsEmailSignedup
 	user.ServicesProvided = uint32(repoUser.ServicesProvided)
 	user.ServicesReceived = uint32(repoUser.ServicesReceived)
 	rating := float32(repoUser.TotalRatings.Int32) / max(1.0, float32(repoUser.RatingCount.Int32))
@@ -64,29 +65,18 @@ func (pus *PostgresUserService) InsertUser(ctx context.Context, user User) error
 		ZipPostalCode: user.ZipPostalCode,
 		Country:       user.Country,
 	}
-
 	insertUserParams.Status = repository.AccountStatusActive
 
 	repo := repository.New(pus.DB).WithTx(tx)
 	_, err = repo.InsertUser(ctx, insertUserParams)
 	if err != nil {
-		log.Println(err)
 		if pgerr, ok := err.(*pgconn.PgError); ok {
 			if pgerr.Code == "23505" {
+				log.Printf("InsertUser: failed to insert user: %v\n", err)
 				return internal.ErrDuplicateID
 			}
 		}
-		return internal.ErrInternalServerError
-	}
-	tokenReward := os.Getenv("ONETIME_PAYMENT_TOKENS")
-	tokens, _ := strconv.Atoi(tokenReward)
-
-	err = repo.AddTokens(ctx, repository.AddTokensParams{
-		TokenBalance: int32(tokens),
-		ID:           user.ID,
-	})
-	if err != nil {
-		log.Printf("UserService -> InsertUser: error adding user tokens: %s\n", err)
+		log.Printf("InsertUser: failed to insert user: %v\n", err)
 		return internal.ErrInternalServerError
 	}
 	err = repo.InsertNewUserRating(ctx, user.ID)
@@ -179,7 +169,7 @@ func (pus *PostgresUserService) InsertAdsHistory(ctx context.Context, userID str
 		log.Printf("failed to insert ads history: %s\n", err)
 		return internal.ErrInternalServerError
 	}
-	err = repo.AddTokens(ctx, repository.AddTokensParams{
+	_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 		TokenBalance: 1,
 		ID:           userID,
 	})
@@ -361,4 +351,41 @@ func (pus *PostgresUserService) GetAllHistory(ctx context.Context, userID string
 		})
 	}
 	return interactionHistories, nil
+}
+
+func (pus *PostgresUserService) UpdateOneTimePaid(ctx context.Context, userID string) (int32, error) {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("UpdateOneTimePaid: failed to create transaction: %v\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(pus.DB).WithTx(tx)
+
+	bonusStr := os.Getenv("ONETIME_PAYMENT_TOKENS")
+	amount64, err := strconv.ParseInt(bonusStr, 10, 32)
+	if err != nil {
+		log.Printf("UpdateOneTimePaid: failed to parse env string: %v\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+	bonus := int32(amount64)
+
+	newBalance, err := repo.MarkSignupPaidAndAward(ctx, repository.MarkSignupPaidAndAwardParams{
+		ID:           userID,
+		TokenBalance: bonus,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+
+			return -1, nil
+		}
+		log.Printf("UpdateOneTimePaid: failed to marksignup %v\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("UpdateOneTimePaid: failed to commit %v\n", err)
+		return -1, internal.ErrInternalServerError
+	}
+	return newBalance, nil
 }

@@ -342,11 +342,12 @@ type Report struct {
 }
 
 type RequestReport struct {
-	ID        int32     `json:"id"`
-	UserID    string    `json:"user_id"`
-	RequestID int32     `json:"request_id"`
-	TicketID  string    `json:"ticket_id"`
-	CreatedAt time.Time `json:"created_at"`
+	ID         int32     `json:"id"`
+	ReporterID string    `json:"reporter_id"`
+	RequestID  int32     `json:"request_id"`
+	TicketID   string    `json:"ticket_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	Status     string    `json:"status"`
 }
 
 type Review struct {
@@ -377,6 +378,7 @@ type ServiceListing struct {
 	PostedAt    time.Time   `json:"posted_at"`
 	Category    string      `json:"category"`
 	ImageUrl    pgtype.Text `json:"image_url"`
+	Status      string      `json:"status"`
 }
 
 type ServiceRequest struct {
@@ -408,17 +410,18 @@ type Transaction struct {
 }
 
 type User struct {
-	ID            string        `json:"id"`
-	Phone         string        `json:"phone"`
-	TokenBalance  int32         `json:"token_balance"`
-	Status        AccountStatus `json:"status"`
-	AddressLine1  string        `json:"address_line_1"`
-	AddressLine2  string        `json:"address_line_2"`
-	City          string        `json:"city"`
-	StateProvince string        `json:"state_province"`
-	ZipPostalCode string        `json:"zip_postal_code"`
-	Country       string        `json:"country"`
-	JoinedAt      time.Time     `json:"joined_at"`
-	Email         bool          `json:"email"`
-	FullName      string        `json:"full_name"`
+	ID              string        `json:"id"`
+	Phone           string        `json:"phone"`
+	TokenBalance    int32         `json:"token_balance"`
+	Status          AccountStatus `json:"status"`
+	AddressLine1    string        `json:"address_line_1"`
+	AddressLine2    string        `json:"address_line_2"`
+	City            string        `json:"city"`
+	StateProvince   string        `json:"state_province"`
+	ZipPostalCode   string        `json:"zip_postal_code"`
+	Country         string        `json:"country"`
+	JoinedAt        time.Time     `json:"joined_at"`
+	IsEmailSignedup bool          `json:"is_email_signedup"`
+	FullName        string        `json:"full_name"`
+	IsPaid          bool          `json:"is_paid"`
 }

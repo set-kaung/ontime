@@ -13,10 +13,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addTokens = `-- name: AddTokens :exec
+const addTokens = `-- name: AddTokens :one
 UPDATE users
 SET token_balance = token_balance + $1
 WHERE id = $2
+RETURNING token_balance
 `
 
 type AddTokensParams struct {
@@ -24,9 +25,11 @@ type AddTokensParams struct {
 	ID           string `json:"id"`
 }
 
-func (q *Queries) AddTokens(ctx context.Context, arg AddTokensParams) error {
-	_, err := q.db.Exec(ctx, addTokens, arg.TokenBalance, arg.ID)
-	return err
+func (q *Queries) AddTokens(ctx context.Context, arg AddTokensParams) (int32, error) {
+	row := q.db.QueryRow(ctx, addTokens, arg.TokenBalance, arg.ID)
+	var token_balance int32
+	err := row.Scan(&token_balance)
+	return token_balance, err
 }
 
 const deductRewardTokensFromUser = `-- name: DeductRewardTokensFromUser :exec
@@ -78,7 +81,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) (pgconn.CommandTag,
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.email, u.full_name,
+    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.is_email_signedup, u.full_name, u.is_paid,
     COALESCE(sp.requested_count, 0) AS services_received,
     COALESCE(sp.provided_count, 0) AS services_provided,
     r.total_ratings,
@@ -115,8 +118,9 @@ type GetUserByIDRow struct {
 	ZipPostalCode    string        `json:"zip_postal_code"`
 	Country          string        `json:"country"`
 	JoinedAt         time.Time     `json:"joined_at"`
-	Email            bool          `json:"email"`
+	IsEmailSignedup  bool          `json:"is_email_signedup"`
 	FullName         string        `json:"full_name"`
+	IsPaid           bool          `json:"is_paid"`
 	ServicesReceived int64         `json:"services_received"`
 	ServicesProvided int64         `json:"services_provided"`
 	TotalRatings     pgtype.Int4   `json:"total_ratings"`
@@ -138,8 +142,9 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 		&i.ZipPostalCode,
 		&i.Country,
 		&i.JoinedAt,
-		&i.Email,
+		&i.IsEmailSignedup,
 		&i.FullName,
+		&i.IsPaid,
 		&i.ServicesReceived,
 		&i.ServicesProvided,
 		&i.TotalRatings,
@@ -174,29 +179,30 @@ INSERT INTO users (
     zip_postal_code,
     country,
     joined_at,
-    email
+    is_email_signedup,
+    is_paid
 )
 VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
-  $11, NOW(), $12
+  $11, NOW(), $12,false
 )
 RETURNING id
 `
 
 type InsertUserParams struct {
-	ID            string        `json:"id"`
-	FullName      string        `json:"full_name"`
-	Phone         string        `json:"phone"`
-	TokenBalance  int32         `json:"token_balance"`
-	Status        AccountStatus `json:"status"`
-	AddressLine1  string        `json:"address_line_1"`
-	AddressLine2  string        `json:"address_line_2"`
-	City          string        `json:"city"`
-	StateProvince string        `json:"state_province"`
-	ZipPostalCode string        `json:"zip_postal_code"`
-	Country       string        `json:"country"`
-	Email         bool          `json:"email"`
+	ID              string        `json:"id"`
+	FullName        string        `json:"full_name"`
+	Phone           string        `json:"phone"`
+	TokenBalance    int32         `json:"token_balance"`
+	Status          AccountStatus `json:"status"`
+	AddressLine1    string        `json:"address_line_1"`
+	AddressLine2    string        `json:"address_line_2"`
+	City            string        `json:"city"`
+	StateProvince   string        `json:"state_province"`
+	ZipPostalCode   string        `json:"zip_postal_code"`
+	Country         string        `json:"country"`
+	IsEmailSignedup bool          `json:"is_email_signedup"`
 }
 
 func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string, error) {
@@ -212,11 +218,33 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (string,
 		arg.StateProvince,
 		arg.ZipPostalCode,
 		arg.Country,
-		arg.Email,
+		arg.IsEmailSignedup,
 	)
 	var id string
 	err := row.Scan(&id)
 	return id, err
+}
+
+const markSignupPaidAndAward = `-- name: MarkSignupPaidAndAward :one
+UPDATE users
+SET
+  is_paid = true,
+  token_balance = token_balance + $2
+WHERE id = $1
+  AND is_paid = false
+RETURNING token_balance
+`
+
+type MarkSignupPaidAndAwardParams struct {
+	ID           string `json:"id"`
+	TokenBalance int32  `json:"token_balance"`
+}
+
+func (q *Queries) MarkSignupPaidAndAward(ctx context.Context, arg MarkSignupPaidAndAwardParams) (int32, error) {
+	row := q.db.QueryRow(ctx, markSignupPaidAndAward, arg.ID, arg.TokenBalance)
+	var token_balance int32
+	err := row.Scan(&token_balance)
+	return token_balance, err
 }
 
 const updateUser = `-- name: UpdateUser :execresult

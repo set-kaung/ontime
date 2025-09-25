@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
@@ -41,6 +42,7 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 				FullName: dbListing.FullName,
 			},
 			ImageURL: dbListing.ImageUrl.String,
+			Status:   dbListing.Status,
 		}
 	}
 	return listings, nil
@@ -93,6 +95,7 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 			Category:    dbListing.Category,
 			PostedAt:    dbListing.PostedAt,
 			ImageURL:    dbListing.ImageUrl.String,
+			Status:      dbListing.Status,
 		}
 	}
 	return listings, nil
@@ -109,6 +112,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 		log.Println("psql_listing_service -> GetListingByID: err getting listing by id: ", err)
 		return Listing{}, err
 	}
+
 	listing := Listing{}
 	listing.ID = dbListing.ID
 	listing.Title = dbListing.Title
@@ -122,7 +126,7 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 		Rating:   float32(dbListing.TotalRatings.Int32) / max(1.0, float32(dbListing.RatingCount.Int32))}
 	listing.ImageURL = dbListing.ImageUrl.String
 	listing.TakenRequestID = -1
-
+	listing.Status = dbListing.Status
 	if dbListing.RequestID.Valid {
 		listing.TakenRequestID = dbListing.RequestID.Int32
 	}
@@ -202,6 +206,12 @@ func (pls *PostgresListingService) ReportListing(ctx context.Context, lr Listing
 		},
 	})
 	if err != nil {
+		if pgerr, ok := err.(*pgconn.PgError); ok {
+			if pgerr.Code == "23505" {
+				log.Printf("InsertUser: failed to listing report: %v\n", err)
+				return internal.ErrDuplicateID
+			}
+		}
 		log.Printf("listing_service -> ReportListing: failed to insert report: %s\n", err)
 		return internal.ErrInternalServerError
 	}
@@ -231,6 +241,7 @@ func (p *PostgresListingService) GetListingReviews(ctx context.Context, listingI
 				RevieweeID:       dbr.RevieweeID,
 				Comment:          dbr.Comment.String,
 				Rating:           dbr.Rating,
+				CreatedAt:        dbr.DateTime,
 			},
 		)
 	}

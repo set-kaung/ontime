@@ -85,4 +85,5 @@ type RequestReport struct {
 	UserID    string `json:"user_id"`
 	RequestID int32  `json:"request_id"`
 	TicketID  string `json:"ticket_id"`
+	Status    string `json:"status"`
 }

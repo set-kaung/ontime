@@ -2,6 +2,7 @@ package listing
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -27,6 +28,7 @@ func (lh *ListingHandler) HandleCreateListing(w http.ResponseWriter, r *http.Req
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 
 	listingRequest.Provider = user.User{ID: userID}
+
 	_, err = lh.ListingService.CreateListing(r.Context(), listingRequest)
 	if err != nil {
 		log.Println("listing_handler -> HandleViewOwnProfile: ", err)
@@ -49,6 +51,7 @@ func (lh *ListingHandler) HandleGetListingByID(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
+	log.Printf("%q\n", listing.Description)
 	err = helpers.WriteData(w, http.StatusOK, listing, nil)
 	if err != nil {
 		log.Println("listing_handler -> HandleGetListingByID: ", err)
@@ -128,10 +131,14 @@ func (lh *ListingHandler) HandleReportListing(w http.ResponseWriter, r *http.Req
 	listingReport.ListingID = int32(listingID)
 	err = lh.ListingService.ReportListing(r.Context(), listingReport)
 	if err != nil {
+		if errors.Is(err, internal.ErrDuplicateID) {
+			helpers.WriteError(w, http.StatusConflict, "you have already reported this listing", nil)
+			return
+		}
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "report submitted successfully", nil)
+	helpers.WriteSuccess(w, http.StatusCreated, "report submitted successfully", nil)
 }
 
 func (lh *ListingHandler) HandleDeleteListing(w http.ResponseWriter, r *http.Request) {
@@ -148,7 +155,7 @@ func (lh *ListingHandler) HandleDeleteListing(w http.ResponseWriter, r *http.Req
 		helpers.WriteServerError(w, nil)
 		return
 	}
-	helpers.WriteSuccess(w, http.StatusOK, "report submitted successfully", nil)
+	helpers.WriteSuccess(w, http.StatusOK, "listing deleted successfully", nil)
 }
 
 func (lh *ListingHandler) HandleGetListingReviews(w http.ResponseWriter, r *http.Request) {

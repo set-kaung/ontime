@@ -100,5 +100,6 @@ func (prs *PostgresReviewService) GetReviewByID(ctx context.Context, reviewID in
 	r.RevieweeID = dbReview.RevieweeID
 	r.ReviewerID = dbReview.ReviewerID
 	r.Comment = dbReview.Comment.String
+	r.CreatedAt = dbReview.DateTime
 	return r, nil
 }

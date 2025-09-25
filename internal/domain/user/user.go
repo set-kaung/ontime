@@ -15,10 +15,10 @@ type User struct {
 	ZipPostalCode    string    `json:"zip_postal_code,omitempty"`
 	Country          string    `json:"country,omitempty"`
 	JoinedAt         time.Time `json:"joined_at,omitzero"`
-	Email            bool      `json:"email"`
+	IsEmailSignedUp  bool      `json:"is_email_signedup"`
 	ServicesReceived uint32    `json:"services_received"`
 	ServicesProvided uint32    `json:"services_provided"`
-	OneTimePaid      bool      `json:"paid"`
+	IsPaid           bool      `json:"is_paid"`
 	Rating           float32   `json:"rating"`
 }
 

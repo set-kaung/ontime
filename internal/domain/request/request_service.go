@@ -2,6 +2,8 @@ package request
 
 import (
 	"context"
+
+	"github.com/set-kaung/senior_project_1/internal/domain/review"
 )
 
 type RequestService interface {
@@ -12,5 +14,6 @@ type RequestService interface {
 	DeclineServiceRequest(context.Context, int32, string) (int32, error)
 	CompleteServiceRequest(context.Context, int32, string) (int32, error)
 	CreateRequestReport(ctx context.Context, requestID int32, userID string) (string, error)
-	UpdateExpiredRequests(ctx context.Context) error
+	GetRequestReport(ctx context.Context, requestID int32, reporterID string) (RequestReport, error)
+	GetRequestReview(ctx context.Context, requestID int32) (review.Review, error)
 }

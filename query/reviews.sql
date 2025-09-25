@@ -22,3 +22,29 @@ VALUES ($1,0,0);
 -- name: GetReviewByID :one
 SELECT * FROM reviews
 WHERE id = $1;
+
+
+-- name: GetReviewByRequestID :one
+SELECT r.*,
+    reviewer_user.full_name AS reviewer_full_name,
+    reviewee_user.full_name AS reviewee_full_name
+FROM reviews r
+JOIN users reviewer_user
+  ON reviewer_user.id = r.reviewer_id
+JOIN users reviewee_user
+  ON reviewee_user.id = r.reviewee_id
+WHERE r.request_id = $1;
+
+-- name: GetListingReviews :many
+SELECT r.*,
+       sr.listing_id,
+       reviewer_user.full_name AS reviewer_full_name,
+       reviewee_user.full_name AS reviewee_full_name
+FROM reviews r
+JOIN service_requests sr
+  ON sr.id = r.request_id
+JOIN users reviewer_user
+  ON reviewer_user.id = r.reviewer_id
+JOIN users reviewee_user
+  ON reviewee_user.id = r.reviewee_id
+WHERE sr.listing_id = $1;
