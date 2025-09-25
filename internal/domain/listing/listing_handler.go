@@ -28,7 +28,7 @@ func (lh *ListingHandler) HandleCreateListing(w http.ResponseWriter, r *http.Req
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 
 	listingRequest.Provider = user.User{ID: userID}
-	log.Printf("%q\n", listingRequest.Description)
+
 	_, err = lh.ListingService.CreateListing(r.Context(), listingRequest)
 	if err != nil {
 		log.Println("listing_handler -> HandleViewOwnProfile: ", err)
