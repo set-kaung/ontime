@@ -312,14 +312,13 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 
 const insertRequestReport = `-- name: InsertRequestReport :one
 INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at,"status")
-VALUES ($1, $2, $3, NOW(),'ongoing')
+VALUES ($1, $2, '', NOW(),'ongoing')
 RETURNING id, created_at
 `
 
 type InsertRequestReportParams struct {
 	ReporterID string `json:"reporter_id"`
 	RequestID  int32  `json:"request_id"`
-	TicketID   string `json:"ticket_id"`
 }
 
 type InsertRequestReportRow struct {
@@ -328,7 +327,7 @@ type InsertRequestReportRow struct {
 }
 
 func (q *Queries) InsertRequestReport(ctx context.Context, arg InsertRequestReportParams) (InsertRequestReportRow, error) {
-	row := q.db.QueryRow(ctx, insertRequestReport, arg.ReporterID, arg.RequestID, arg.TicketID)
+	row := q.db.QueryRow(ctx, insertRequestReport, arg.ReporterID, arg.RequestID)
 	var i InsertRequestReportRow
 	err := row.Scan(&i.ID, &i.CreatedAt)
 	return i, err
@@ -347,11 +346,17 @@ func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID 
 const updateRequestReportWithTicketID = `-- name: UpdateRequestReportWithTicketID :one
 UPDATE request_reports
 SET ticket_id = $1
+WHERE id = $2
 RETURNING ticket_id
 `
 
-func (q *Queries) UpdateRequestReportWithTicketID(ctx context.Context, ticketID string) (string, error) {
-	row := q.db.QueryRow(ctx, updateRequestReportWithTicketID, ticketID)
+type UpdateRequestReportWithTicketIDParams struct {
+	TicketID string `json:"ticket_id"`
+	ID       int32  `json:"id"`
+}
+
+func (q *Queries) UpdateRequestReportWithTicketID(ctx context.Context, arg UpdateRequestReportWithTicketIDParams) (string, error) {
+	row := q.db.QueryRow(ctx, updateRequestReportWithTicketID, arg.TicketID, arg.ID)
 	var ticket_id string
 	err := row.Scan(&ticket_id)
 	return ticket_id, err

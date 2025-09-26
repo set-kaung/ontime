@@ -124,6 +124,7 @@ RETURNING id, created_at;
 -- name: UpdateRequestReportWithTicketID :one
 UPDATE request_reports
 SET ticket_id = $1
+WHERE id = $2
 RETURNING ticket_id;
 
 

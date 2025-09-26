@@ -557,9 +557,17 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 		return "", internal.ErrInternalServerError
 	}
 	ticketID, err := util.GenerateTicket(int64(dbReport.ID), dbReport.CreatedAt)
-	dbTicketID, err := repo.UpdateRequestReportWithTicketID(ctx, ticketID)
+	if err != nil {
+		log.Println("InsertRequestReport: failed to generate ticket: ", err)
+		return "", internal.ErrInternalServerError
+	}
+	dbTicketID, err := repo.UpdateRequestReportWithTicketID(ctx, repository.UpdateRequestReportWithTicketIDParams{
+		TicketID: ticketID,
+		ID:       dbReport.ID,
+	})
 	if ticketID != dbTicketID {
 		log.Printf("InsertRequestReport: should not happened: db ticket: %s, server ticket: %s", dbTicketID, ticketID)
+		return "", internal.ErrInternalServerError
 	}
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("InsertRequestReport: failed to commit transaction: ", err)
