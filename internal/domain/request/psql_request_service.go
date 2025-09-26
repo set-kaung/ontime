@@ -560,7 +560,6 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 	dbTicketID, err := repo.UpdateRequestReportWithTicketID(ctx, ticketID)
 	if ticketID != dbTicketID {
 		log.Printf("InsertRequestReport: should not happened: db ticket: %s, server ticket: %s", dbTicketID, ticketID)
-		return "", internal.ErrInternalServerError
 	}
 	if err := tx.Commit(ctx); err != nil {
 		log.Println("InsertRequestReport: failed to commit transaction: ", err)
