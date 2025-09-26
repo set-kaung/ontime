@@ -312,13 +312,14 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 
 const insertRequestReport = `-- name: InsertRequestReport :one
 INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at,"status")
-VALUES ($1, $2, '', NOW(),'ongoing')
+VALUES ($1, $2, $3, NOW(),'ongoing')
 RETURNING id, created_at
 `
 
 type InsertRequestReportParams struct {
 	ReporterID string `json:"reporter_id"`
 	RequestID  int32  `json:"request_id"`
+	TicketID   string `json:"ticket_id"`
 }
 
 type InsertRequestReportRow struct {
@@ -327,7 +328,7 @@ type InsertRequestReportRow struct {
 }
 
 func (q *Queries) InsertRequestReport(ctx context.Context, arg InsertRequestReportParams) (InsertRequestReportRow, error) {
-	row := q.db.QueryRow(ctx, insertRequestReport, arg.ReporterID, arg.RequestID)
+	row := q.db.QueryRow(ctx, insertRequestReport, arg.ReporterID, arg.RequestID, arg.TicketID)
 	var i InsertRequestReportRow
 	err := row.Scan(&i.ID, &i.CreatedAt)
 	return i, err

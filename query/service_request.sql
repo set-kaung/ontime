@@ -118,7 +118,7 @@ WHERE
 
 -- name: InsertRequestReport :one
 INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at,"status")
-VALUES ($1, $2, '', NOW(),'ongoing')
+VALUES ($1, $2, $3, NOW(),'ongoing')
 RETURNING id, created_at;
 
 -- name: UpdateRequestReportWithTicketID :one
