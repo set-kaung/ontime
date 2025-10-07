@@ -376,7 +376,6 @@ func (pus *PostgresUserService) UpdateOneTimePaid(ctx context.Context, userID st
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-
 			return -1, nil
 		}
 		log.Printf("UpdateOneTimePaid: failed to marksignup %v\n", err)
@@ -395,12 +394,12 @@ func (pus *PostgresUserService) GetUserDetailAndServices(ctx context.Context, us
 	user, err := pus.GetUserByID(ctx, userID)
 	if err != nil {
 		log.Printf("GetUserDetailAndServices: failed to get user by id: %v\n", err)
-		return UserSummary{}, nil
+		return UserSummary{}, internal.ErrInternalServerError
 	}
 	dbListings, err := repo.GetPartialListingsByUserID(ctx, userID)
 	if err != nil {
 		log.Printf("GetUserDetailAndServices: failed to get partial listings: %v\n", err)
-		return UserSummary{}, nil
+		return UserSummary{}, internal.ErrInternalServerError
 	}
 	userSummary := UserSummary{User: user, Listings: make([]PartialListing, len(dbListings))}
 	for i, dbListing := range dbListings {

@@ -41,7 +41,7 @@ on sr.listing_id = sl.id
 join reviews r
 on r.request_id  = sr.id
 group by sl.id)
-select sl.id,sl.title,sl.token_reward ,sl.posted_at,sl.category,sl.image_url, lr.rating_count ,lr.total_rating  from service_listings sl
-join listing_rating lr
+select sl.id,sl.title,sl.token_reward ,sl.posted_at,sl.category,sl.image_url, coalesce(lr.rating_count,0) ,coalesce(lr.total_rating,0)  from service_listings sl
+left join listing_rating lr
 on lr.listing_id = sl.id
-where sl.posted_by  = $1 AND status = 'active';
+where sl.posted_by = $1 and status = 'active';

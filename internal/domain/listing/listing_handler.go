@@ -52,7 +52,6 @@ func (lh *ListingHandler) HandleGetListingByID(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
-	log.Printf("%q\n", listing.Description)
 	err = helpers.WriteData(w, http.StatusOK, listing, nil)
 	if err != nil {
 		log.Println("listing_handler -> HandleGetListingByID: ", err)
