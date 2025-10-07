@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -29,7 +30,14 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 	listings := make([]Listing, len(dbListings))
 	for i := range len(dbListings) {
 		dbListing := dbListings[i]
+		var sd time.Duration
+		iv := dbListing.SessionDuration
 
+		if iv.Valid {
+			sd = time.Duration(iv.Microseconds) * time.Microsecond
+		} else {
+			sd = 0
+		}
 		listings[i] = Listing{
 			ID:          dbListing.ID,
 			Title:       dbListing.Title,
@@ -41,10 +49,13 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 				ID:       dbListing.Uid,
 				FullName: dbListing.FullName,
 			},
-			ImageURL: dbListing.ImageUrl.String,
-			Status:   dbListing.Status,
+			ImageURL:        dbListing.ImageUrl.String,
+			Status:          dbListing.Status,
+			SessionDuration: sd,
+			ContactMethod:   dbListing.ContactMethod.String,
 		}
 	}
+
 	return listings, nil
 }
 
@@ -63,6 +74,8 @@ func (pls *PostgresListingService) CreateListing(ctx context.Context, listing Li
 	createListingParams.TokenReward = listing.TokenReward
 	createListingParams.PostedBy = listing.Provider.ID
 	createListingParams.ImageUrl = pgtype.Text{String: listing.ImageURL, Valid: listing.ImageURL != ""}
+	createListingParams.ContactMethod = pgtype.Text{String: listing.ContactMethod, Valid: listing.ImageURL != ""}
+	createListingParams.SessionDuration = pgtype.Interval{Microseconds: listing.SessionDuration.Microseconds(), Valid: true}
 	id, err := repo.InsertListing(ctx, createListingParams)
 	if err != nil {
 		log.Printf("ListingService -> CreateListing : error creating listing: %s\n", err)
@@ -112,6 +125,14 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 		log.Println("psql_listing_service -> GetListingByID: err getting listing by id: ", err)
 		return Listing{}, err
 	}
+	var sd time.Duration
+	iv := dbListing.SessionDuration
+
+	if iv.Valid {
+		sd = time.Duration(iv.Microseconds) * time.Microsecond
+	} else {
+		sd = 0
+	}
 
 	listing := Listing{}
 	listing.ID = dbListing.ID
@@ -127,6 +148,8 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 	listing.ImageURL = dbListing.ImageUrl.String
 	listing.TakenRequestID = -1
 	listing.Status = dbListing.Status
+	listing.ContactMethod = dbListing.ContactMethod.String
+	listing.SessionDuration = sd
 	if dbListing.RequestID.Valid {
 		listing.TakenRequestID = dbListing.RequestID.Int32
 	}
@@ -157,7 +180,7 @@ func (pls *PostgresListingService) DeleteListing(ctx context.Context, id int32, 
 	return nil
 }
 
-func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing) (int32, error) {
+func (pls *PostgresListingService) UpdateListing(ctx context.Context, listing Listing) (int32, error) {
 	tx, err := pls.DB.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		log.Printf("Listing Service -> UpdateListing: failed to start transaction: %s\n", err)
@@ -166,13 +189,15 @@ func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing)
 	defer tx.Rollback(ctx)
 	repo := repository.New(pls.DB).WithTx(tx)
 	rowsAffected, err := repo.UpdateListing(ctx, repository.UpdateListingParams{
-		ID:          l.ID,
-		PostedBy:    l.Provider.ID,
-		Title:       l.Title,
-		Description: l.Description,
-		Category:    l.Category,
-		TokenReward: l.TokenReward,
-		ImageUrl:    pgtype.Text{String: l.ImageURL, Valid: l.ImageURL != ""},
+		ID:              listing.ID,
+		PostedBy:        listing.Provider.ID,
+		Title:           listing.Title,
+		Description:     listing.Description,
+		Category:        listing.Category,
+		TokenReward:     listing.TokenReward,
+		ImageUrl:        pgtype.Text{String: listing.ImageURL, Valid: listing.ImageURL != ""},
+		SessionDuration: pgtype.Interval{Microseconds: listing.SessionDuration.Microseconds(), Valid: true},
+		ContactMethod:   pgtype.Text{String: listing.ContactMethod, Valid: true},
 	})
 	if err != nil {
 		log.Printf("listing_service -> UpdateListing: failed to update listing : %v\n", err)
@@ -185,7 +210,7 @@ func (pls *PostgresListingService) UpdateListing(ctx context.Context, l Listing)
 		log.Printf("listing_service -> UpdateListing: failed to commit: %v\n", err)
 		return -1, internal.ErrInternalServerError
 	}
-	return l.ID, nil
+	return listing.ID, nil
 }
 
 func (pls *PostgresListingService) ReportListing(ctx context.Context, lr ListingReport) error {
