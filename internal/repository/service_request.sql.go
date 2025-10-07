@@ -344,24 +344,29 @@ func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID 
 }
 
 const updateExpiredRequest = `-- name: UpdateExpiredRequest :many
-WITH updated AS (
-    UPDATE service_requests
-    SET status_detail = 'expired',
-        activity = 'inactive'
-    WHERE status_detail = 'pending'
-      AND activity = 'active'
-      AND updated_at < NOW() - interval '36 hours'
-    RETURNING id, requester_id, listing_id
-)
-SELECT u.id, u.requester_id, sl.title
-FROM updated u
-JOIN service_listings sl ON sl.id = u.listing_id
+UPDATE service_requests AS sr
+SET status_detail = 'expired'
+FROM service_listings AS sl
+WHERE sl.id = sr.listing_id
+  AND NOW() - sr.updated_at > INTERVAL '36 hour'
+RETURNING
+  sr.id,
+  sr.listing_id,
+  sr.status_detail,
+  sr.updated_at,
+  sr.requester_id,
+  sr.token_reward,
+  sl.title AS listing_title
 `
 
 type UpdateExpiredRequestRow struct {
-	ID          int32  `json:"id"`
-	RequesterID string `json:"requester_id"`
-	Title       string `json:"title"`
+	ID           int32                `json:"id"`
+	ListingID    int32                `json:"listing_id"`
+	StatusDetail ServiceRequestStatus `json:"status_detail"`
+	UpdatedAt    time.Time            `json:"updated_at"`
+	RequesterID  string               `json:"requester_id"`
+	TokenReward  int32                `json:"token_reward"`
+	ListingTitle string               `json:"listing_title"`
 }
 
 func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequestRow, error) {
@@ -373,7 +378,15 @@ func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequ
 	var items []UpdateExpiredRequestRow
 	for rows.Next() {
 		var i UpdateExpiredRequestRow
-		if err := rows.Scan(&i.ID, &i.RequesterID, &i.Title); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.ListingID,
+			&i.StatusDetail,
+			&i.UpdatedAt,
+			&i.RequesterID,
+			&i.TokenReward,
+			&i.ListingTitle,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

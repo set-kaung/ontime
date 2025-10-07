@@ -626,6 +626,23 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 		return err
 	}
 	for _, row := range requestersUpdated {
+		_, err = repo.AddTokens(ctx, repository.AddTokensParams{
+			TokenBalance: row.TokenReward,
+			ID:           row.RequesterID,
+		})
+		if err != nil {
+			log.Printf(" UpdateExpiredRequests: failed to refund user tokens: %v\n", err)
+			return err
+		}
+
+		_, err = repo.UpdatePaymentHolding(ctx, repository.UpdatePaymentHoldingParams{
+			Status:           repository.PaymentStatusRefunded,
+			ServiceRequestID: row.ID,
+		})
+		if err != nil {
+			log.Printf(" UpdateExpiredRequests: failed to update payment status: %v\n", err)
+			return err
+		}
 		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 			TargetID:    row.ID,
 			Type:        domain.SYSTEM_EVENT,
@@ -636,7 +653,7 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 			return err
 		}
 		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
-			Message:         fmt.Sprintf("Your request for \"%s\" has expired.", row.Title),
+			Message:         fmt.Sprintf("Your request for \"%s\" has expired. Your tokens have been refunded.", row.ListingTitle),
 			RecipientUserID: row.RequesterID,
 			ActionUserID:    "SYSTEM",
 			EventID:         eventID,
