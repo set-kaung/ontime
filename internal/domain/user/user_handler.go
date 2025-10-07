@@ -218,10 +218,20 @@ func (uh *UserHandler) HandleGetAllHistories(w http.ResponseWriter, r *http.Requ
 func (uh *UserHandler) HandleUpdateSignupPaymentStatus(w http.ResponseWriter, r *http.Request) {
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	_, err := uh.UserService.UpdateOneTimePaid(r.Context(), userID)
-	log.Println("called")
 	if err != nil {
 		helpers.WriteServerError(w, nil)
 		return
 	}
 	helpers.WriteSuccess(w, http.StatusOK, "updated", nil)
+}
+
+func (h *UserHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) {
+	pathID := r.PathValue("id")
+
+	userSummary, err := h.UserService.GetUserDetailAndServices(r.Context(), pathID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, userSummary, nil)
 }

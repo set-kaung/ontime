@@ -18,4 +18,5 @@ type UserService interface {
 	MarkAllNotificationsRead(context.Context, string, time.Time) error
 	GetAllHistory(ctx context.Context, userID string) ([]InteractionHistory, error)
 	UpdateOneTimePaid(ctx context.Context, userID string) (int32, error)
+	GetUserDetailAndServices(ctx context.Context, userID string) (UserSummary, error)
 }

@@ -142,6 +142,60 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 	return i, err
 }
 
+const getPartialListingsByUserID = `-- name: GetPartialListingsByUserID :many
+with listing_rating as (
+select sl.id as listing_id ,sum(r.rating ) as total_rating,count(r.id )as rating_count from service_listings sl
+join service_requests sr
+on sr.listing_id = sl.id
+join reviews r
+on r.request_id  = sr.id
+group by sl.id)
+select sl.id,sl.title,sl.token_reward ,sl.posted_at,sl.category,sl.image_url, lr.rating_count ,lr.total_rating  from service_listings sl
+join listing_rating lr
+on lr.listing_id = sl.id
+where sl.posted_by  = $1 AND status = 'active'
+`
+
+type GetPartialListingsByUserIDRow struct {
+	ID          int32       `json:"id"`
+	Title       string      `json:"title"`
+	TokenReward int32       `json:"token_reward"`
+	PostedAt    time.Time   `json:"posted_at"`
+	Category    string      `json:"category"`
+	ImageUrl    pgtype.Text `json:"image_url"`
+	RatingCount int64       `json:"rating_count"`
+	TotalRating int64       `json:"total_rating"`
+}
+
+func (q *Queries) GetPartialListingsByUserID(ctx context.Context, postedBy string) ([]GetPartialListingsByUserIDRow, error) {
+	rows, err := q.db.Query(ctx, getPartialListingsByUserID, postedBy)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPartialListingsByUserIDRow
+	for rows.Next() {
+		var i GetPartialListingsByUserIDRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.TokenReward,
+			&i.PostedAt,
+			&i.Category,
+			&i.ImageUrl,
+			&i.RatingCount,
+			&i.TotalRating,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserListings = `-- name: GetUserListings :many
 SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url, status, contact_method, session_duration FROM service_listings
 WHERE posted_by = $1 AND status = 'active'

@@ -43,3 +43,18 @@ type InteractionHistory struct {
 	Status          string    `json:"status"`
 	Timestamp       time.Time `json:"timestamp"`
 }
+
+type PartialListing struct {
+	ID          int32   `json:"id"`
+	Title       string  `json:"title"`
+	AvgRating   float32 `json:"rating"`
+	RatingCount int32   `jons:"rating_count"`
+	Category    string  `json:"category"`
+	TokenReward int32   `json:"token_reward"`
+	ImageURL    string  `json:"image_url"`
+}
+
+type UserSummary struct {
+	User     `json:"user"`
+	Listings []PartialListing `json:"active_listings"`
+}

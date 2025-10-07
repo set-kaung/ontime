@@ -389,3 +389,34 @@ func (pus *PostgresUserService) UpdateOneTimePaid(ctx context.Context, userID st
 	}
 	return newBalance, nil
 }
+
+func (pus *PostgresUserService) GetUserDetailAndServices(ctx context.Context, userID string) (UserSummary, error) {
+	repo := repository.New(pus.DB)
+	user, err := pus.GetUserByID(ctx, userID)
+	if err != nil {
+		log.Printf("GetUserDetailAndServices: failed to get user by id: %v\n", err)
+		return UserSummary{}, nil
+	}
+	dbListings, err := repo.GetPartialListingsByUserID(ctx, userID)
+	if err != nil {
+		log.Printf("GetUserDetailAndServices: failed to get partial listings: %v\n", err)
+		return UserSummary{}, nil
+	}
+	userSummary := UserSummary{User: user, Listings: make([]PartialListing, len(dbListings))}
+	for i, dbListing := range dbListings {
+		rating := float32(0)
+		if dbListing.RatingCount != 0 {
+			rating = float32(dbListing.TotalRating) / float32(dbListing.RatingCount)
+		}
+		userSummary.Listings[i] = PartialListing{
+			ID:          dbListing.ID,
+			Title:       dbListing.Title,
+			Category:    dbListing.Category,
+			AvgRating:   rating,
+			RatingCount: int32(dbListing.RatingCount),
+			TokenReward: dbListing.TokenReward,
+			ImageURL:    dbListing.ImageUrl.String,
+		}
+	}
+	return userSummary, nil
+}

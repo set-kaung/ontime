@@ -31,3 +31,17 @@ WHERE posted_by != $1 AND sl.status = 'active';
 UPDATE service_listings
 SET title = $1, description = $2, token_reward = $3, category=$4, image_url = $5, session_duration = $6, contact_method = $7
 WHERE id = $8 AND posted_by = $9;
+
+
+-- name: GetPartialListingsByUserID :many
+with listing_rating as (
+select sl.id as listing_id ,sum(r.rating ) as total_rating,count(r.id )as rating_count from service_listings sl
+join service_requests sr
+on sr.listing_id = sl.id
+join reviews r
+on r.request_id  = sr.id
+group by sl.id)
+select sl.id,sl.title,sl.token_reward ,sl.posted_at,sl.category,sl.image_url, lr.rating_count ,lr.total_rating  from service_listings sl
+join listing_rating lr
+on lr.listing_id = sl.id
+where sl.posted_by  = $1 AND status = 'active';
