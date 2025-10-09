@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/repository"
@@ -42,6 +43,7 @@ func (pus *PostgresUserService) GetUserByID(ctx context.Context, id string) (Use
 	user.ServicesReceived = uint32(repoUser.ServicesReceived)
 	rating := float32(repoUser.TotalRatings.Int32) / max(1.0, float32(repoUser.RatingCount.Int32))
 	user.Rating = float32(math.Round(float64(rating)*100) / 100)
+	user.AboutMe = repoUser.AboutMe.String
 	return user, err
 }
 
@@ -376,7 +378,6 @@ func (pus *PostgresUserService) UpdateOneTimePaid(ctx context.Context, userID st
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-
 			return -1, nil
 		}
 		log.Printf("UpdateOneTimePaid: failed to marksignup %v\n", err)
@@ -388,4 +389,59 @@ func (pus *PostgresUserService) UpdateOneTimePaid(ctx context.Context, userID st
 		return -1, internal.ErrInternalServerError
 	}
 	return newBalance, nil
+}
+
+func (pus *PostgresUserService) GetUserDetailAndServices(ctx context.Context, userID string) (UserSummary, error) {
+	repo := repository.New(pus.DB)
+	user, err := pus.GetUserByID(ctx, userID)
+	if err != nil {
+		log.Printf("GetUserDetailAndServices: failed to get user by id: %v\n", err)
+		return UserSummary{}, internal.ErrInternalServerError
+	}
+	dbListings, err := repo.GetPartialListingsByUserID(ctx, userID)
+	if err != nil {
+		log.Printf("GetUserDetailAndServices: failed to get partial listings: %v\n", err)
+		return UserSummary{}, internal.ErrInternalServerError
+	}
+	userSummary := UserSummary{User: user, Listings: make([]PartialListing, len(dbListings))}
+	for i, dbListing := range dbListings {
+		rating := float32(0)
+		if dbListing.RatingCount != 0 {
+			rating = float32(dbListing.TotalRating) / float32(dbListing.RatingCount)
+		}
+		userSummary.Listings[i] = PartialListing{
+			ID:          dbListing.ID,
+			Title:       dbListing.Title,
+			Category:    dbListing.Category,
+			AvgRating:   rating,
+			RatingCount: int32(dbListing.RatingCount),
+			TokenReward: dbListing.TokenReward,
+			ImageURL:    dbListing.ImageUrl.String,
+		}
+	}
+	return userSummary, nil
+}
+
+func (pus *PostgresUserService) UpdateUserAboutMe(ctx context.Context, userID string, aboutMe string) error {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("UpdateUserAboutMe: failed to create transaction: %v\n", err)
+		return internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(pus.DB).WithTx(tx)
+	err = repo.UpdateAboutMe(ctx, repository.UpdateAboutMeParams{
+		ID:      userID,
+		AboutMe: pgtype.Text{String: aboutMe, Valid: true},
+	})
+	if err != nil {
+		log.Printf("UpdateUserAboutMe: failed to update about me: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("UpdateUserAboutMe: failed to commit %v\n", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
 }

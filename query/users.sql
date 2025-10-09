@@ -80,6 +80,11 @@ WHERE id = $1
 RETURNING token_balance;
 
 
+-- name: UpdateAboutMe :exec
+UPDATE users
+SET about_me = $1
+WHERE id = $2;
+
 
 -- name: DeductTokens :execrows
 UPDATE users
@@ -99,3 +104,29 @@ WHERE users.id = sqlc.arg(user_id) AND r.id = sqlc.arg(reward_id) AND users.toke
 UPDATE users
 SET full_name = $1
 WHERE id = $2;
+
+
+-- -- name: GetProfileSummary :one
+-- WITH provided AS (
+--     SELECT sr.provider_id, COUNT(*) AS provided
+--     FROM service_requests sr
+--     GROUP BY sr.provider_id
+-- ),
+-- requested AS (
+--     SELECT sr.requester_id, COUNT(*) AS requested
+--     FROM service_requests sr
+--     GROUP BY sr.requester_id
+-- )
+-- SELECT
+--     u.full_name,
+--     u.joined_at,
+--     ratings.total_ratings,
+--     ratings.rating_count,
+--     COALESCE(provided.provided, 0) AS provided,
+--     COALESCE(requested.requested, 0) AS requested
+-- FROM users u
+-- LEFT JOIN provided ON provided.provider_id = u.id
+-- LEFT JOIN requested ON requested.requester_id = u.id
+-- join ratings
+-- on ratings.user_id = u.id
+-- WHERE u.id = $1;

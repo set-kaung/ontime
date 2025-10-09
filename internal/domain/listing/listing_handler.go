@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/set-kaung/senior_project_1/internal"
+
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
 	"github.com/set-kaung/senior_project_1/internal/helpers"
 )
@@ -51,7 +52,6 @@ func (lh *ListingHandler) HandleGetListingByID(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusInternalServerError, internal.ErrInternalServerError.Error(), nil)
 		return
 	}
-	log.Printf("%q\n", listing.Description)
 	err = helpers.WriteData(w, http.StatusOK, listing, nil)
 	if err != nil {
 		log.Println("listing_handler -> HandleGetListingByID: ", err)
@@ -79,6 +79,14 @@ func (lh *ListingHandler) HandleGetOwnListings(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusInternalServerError, "user not found", nil)
 		return
 	}
+	// slices.SortFunc(listings, func(a, b Listing) int {
+	// 	if a.AvgRating < b.AvgRating {
+	// 		return 1
+	// 	} else if a.AvgRating > b.AvgRating {
+	// 		return -1
+	// 	}
+	// 	return 0
+	// })
 	helpers.WriteData(w, http.StatusOK, listings, nil)
 }
 

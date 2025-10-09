@@ -3,7 +3,7 @@
 --
 
 
--- Dumped from database version 17.5 (a42a079)
+-- Dumped from database version 17.5 (6bc9ef8)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
 SET statement_timeout = 0;
@@ -456,7 +456,9 @@ CREATE TABLE public.service_listings (
     posted_at timestamptz NOT NULL,
     category text NOT NULL,
     image_url text,
-    status text NOT NULL
+    status text NOT NULL,
+    contact_method text,
+    session_duration interval hour to minute
 );
 
 
@@ -581,7 +583,8 @@ CREATE TABLE public.users (
     joined_at timestamptz NOT NULL,
     is_email_signedup boolean NOT NULL,
     full_name text NOT NULL,
-    is_paid boolean NOT NULL
+    is_paid boolean NOT NULL,
+    about_me text
 );
 
 
@@ -1064,3 +1067,5 @@ ALTER TABLE ONLY public.transactions
 --
 -- PostgreSQL database dump complete
 --
+
+

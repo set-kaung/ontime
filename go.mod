@@ -12,6 +12,8 @@ require (
 	golang.org/x/time v0.12.0
 )
 
+require github.com/robfig/cron v1.2.0
+
 require (
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect

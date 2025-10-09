@@ -131,3 +131,19 @@ RETURNING ticket_id;
 -- name: GetRequestReport :one
 SELECT * FROM request_reports
 WHERE request_id = $1 AND reporter_id = $2;
+
+
+-- name: UpdateExpiredRequest :many
+UPDATE service_requests AS sr
+SET status_detail = 'expired'
+FROM service_listings AS sl
+WHERE sl.id = sr.listing_id
+  AND NOW() - sr.updated_at > INTERVAL '36 hour'
+RETURNING
+  sr.id,
+  sr.listing_id,
+  sr.status_detail,
+  sr.updated_at,
+  sr.requester_id,
+  sr.token_reward,
+  sl.title AS listing_title;

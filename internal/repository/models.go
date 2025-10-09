@@ -370,15 +370,17 @@ type Reward struct {
 }
 
 type ServiceListing struct {
-	ID          int32       `json:"id"`
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	TokenReward int32       `json:"token_reward"`
-	PostedBy    string      `json:"posted_by"`
-	PostedAt    time.Time   `json:"posted_at"`
-	Category    string      `json:"category"`
-	ImageUrl    pgtype.Text `json:"image_url"`
-	Status      string      `json:"status"`
+	ID              int32           `json:"id"`
+	Title           string          `json:"title"`
+	Description     string          `json:"description"`
+	TokenReward     int32           `json:"token_reward"`
+	PostedBy        string          `json:"posted_by"`
+	PostedAt        time.Time       `json:"posted_at"`
+	Category        string          `json:"category"`
+	ImageUrl        pgtype.Text     `json:"image_url"`
+	Status          string          `json:"status"`
+	ContactMethod   pgtype.Text     `json:"contact_method"`
+	SessionDuration pgtype.Interval `json:"session_duration"`
 }
 
 type ServiceRequest struct {
@@ -424,4 +426,5 @@ type User struct {
 	IsEmailSignedup bool          `json:"is_email_signedup"`
 	FullName        string        `json:"full_name"`
 	IsPaid          bool          `json:"is_paid"`
+	AboutMe         pgtype.Text   `json:"about_me"`
 }
