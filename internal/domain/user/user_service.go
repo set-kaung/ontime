@@ -19,4 +19,5 @@ type UserService interface {
 	GetAllHistory(ctx context.Context, userID string) ([]InteractionHistory, error)
 	UpdateOneTimePaid(ctx context.Context, userID string) (int32, error)
 	GetUserDetailAndServices(ctx context.Context, userID string) (UserSummary, error)
+	UpdateUserAboutMe(ctx context.Context, userID string, aboutMe string) error
 }

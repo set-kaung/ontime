@@ -186,6 +186,36 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /users/me/about-me:
+    put:
+      summary: Update user's about me section
+      description: Update the authenticated user's about me text.
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - about_me
+              properties:
+                about_me:
+                  type: string
+                  description: About me text (can be empty string)
+      responses:
+        '200':
+          description: About me updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /users/me/delete:
     delete:
       summary: Delete user account

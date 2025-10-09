@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/repository"
@@ -419,4 +420,28 @@ func (pus *PostgresUserService) GetUserDetailAndServices(ctx context.Context, us
 		}
 	}
 	return userSummary, nil
+}
+
+func (pus *PostgresUserService) UpdateUserAboutMe(ctx context.Context, userID string, aboutMe string) error {
+	tx, err := pus.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("UpdateUserAboutMe: failed to create transaction: %v\n", err)
+		return internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(pus.DB).WithTx(tx)
+	err = repo.UpdateAboutMe(ctx, repository.UpdateAboutMeParams{
+		ID:      userID,
+		AboutMe: pgtype.Text{String: aboutMe, Valid: true},
+	})
+	if err != nil {
+		log.Printf("UpdateUserAboutMe: failed to update about me: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("UpdateUserAboutMe: failed to commit %v\n", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
 }

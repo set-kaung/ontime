@@ -235,3 +235,25 @@ func (h *UserHandler) HandleGetUserByID(w http.ResponseWriter, r *http.Request) 
 	}
 	helpers.WriteData(w, http.StatusOK, userSummary, nil)
 }
+
+func (h *UserHandler) HandleUpdateAboutMe(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	aboutMeData := map[string]string{}
+	err := json.NewDecoder(r.Body).Decode(&aboutMeData)
+	if err != nil {
+		log.Printf("failed to parse json:%s\n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "can't parse json", nil)
+		return
+	}
+	var aboutMe string
+	if _, ok := aboutMeData["about_me"]; ok {
+		aboutMe = strings.TrimSpace(aboutMeData["about_me"])
+	} else {
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "json should be {\"about_me\":\"text\"}", nil)
+		return
+	}
+	err = h.UserService.UpdateUserAboutMe(r.Context(), userID, aboutMe)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+	}
+}

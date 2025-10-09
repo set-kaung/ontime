@@ -80,6 +80,11 @@ WHERE id = $1
 RETURNING token_balance;
 
 
+-- name: UpdateAboutMe :exec
+UPDATE users
+SET about_me = $1
+WHERE id = $2;
+
 
 -- name: DeductTokens :execrows
 UPDATE users

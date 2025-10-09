@@ -249,6 +249,22 @@ func (q *Queries) MarkSignupPaidAndAward(ctx context.Context, arg MarkSignupPaid
 	return token_balance, err
 }
 
+const updateAboutMe = `-- name: UpdateAboutMe :exec
+UPDATE users
+SET about_me = $1
+WHERE id = $2
+`
+
+type UpdateAboutMeParams struct {
+	AboutMe pgtype.Text `json:"about_me"`
+	ID      string      `json:"id"`
+}
+
+func (q *Queries) UpdateAboutMe(ctx context.Context, arg UpdateAboutMeParams) error {
+	_, err := q.db.Exec(ctx, updateAboutMe, arg.AboutMe, arg.ID)
+	return err
+}
+
 const updateUser = `-- name: UpdateUser :execresult
 UPDATE users
 SET full_name = $1, phone = $2, address_line_1 = $3, address_line_2 = $4, city = $5, state_province = $6, zip_postal_code = $7, country = $8
