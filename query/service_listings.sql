@@ -22,10 +22,19 @@ LEFT JOIN ratings r ON r.user_id = sl.posted_by
 WHERE sl.id = $1 and sl.status = 'active';
 
 -- name: GetAllListings :many
-SELECT sl.*,u.id uid,u.full_name FROM service_listings sl
+with listing_rating as (
+select sl.id as listing_id ,sum(r.rating ) as total_rating,count(r.id )as rating_count from service_listings sl
+join service_requests sr
+on sr.listing_id = sl.id
+join reviews r
+on r.request_id  = sr.id
+group by sl.id)
+SELECT sl.*,u.id uid,u.full_name,coalesce(lr.rating_count,0) as total_rating_count ,coalesce(lr.total_rating,0) as total_ratings FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
-WHERE posted_by != $1 AND sl.status = 'active';
+JOIN listing_rating lr
+ON lr.listing_id = sl.id
+WHERE sl.posted_by != $1 AND sl.status = 'active';
 
 -- name: UpdateListing :execrows
 UPDATE service_listings

@@ -29,26 +29,37 @@ func (q *Queries) DeleteListing(ctx context.Context, arg DeleteListingParams) (p
 }
 
 const getAllListings = `-- name: GetAllListings :many
-SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name FROM service_listings sl
+with listing_rating as (
+select sl.id as listing_id ,sum(r.rating ) as total_rating,count(r.id )as rating_count from service_listings sl
+join service_requests sr
+on sr.listing_id = sl.id
+join reviews r
+on r.request_id  = sr.id
+group by sl.id)
+SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name,coalesce(lr.rating_count,0) as total_rating_count ,coalesce(lr.total_rating,0) as total_ratings FROM service_listings sl
 JOIN users u
 ON u.id = sl.posted_by
-WHERE posted_by != $1 AND sl.status = 'active'
+JOIN listing_rating lr
+ON lr.listing_id = sl.id
+WHERE sl.posted_by != $1 AND sl.status = 'active'
 `
 
 type GetAllListingsRow struct {
-	ID              int32           `json:"id"`
-	Title           string          `json:"title"`
-	Description     string          `json:"description"`
-	TokenReward     int32           `json:"token_reward"`
-	PostedBy        string          `json:"posted_by"`
-	PostedAt        time.Time       `json:"posted_at"`
-	Category        string          `json:"category"`
-	ImageUrl        pgtype.Text     `json:"image_url"`
-	Status          string          `json:"status"`
-	ContactMethod   pgtype.Text     `json:"contact_method"`
-	SessionDuration pgtype.Interval `json:"session_duration"`
-	Uid             string          `json:"uid"`
-	FullName        string          `json:"full_name"`
+	ID               int32           `json:"id"`
+	Title            string          `json:"title"`
+	Description      string          `json:"description"`
+	TokenReward      int32           `json:"token_reward"`
+	PostedBy         string          `json:"posted_by"`
+	PostedAt         time.Time       `json:"posted_at"`
+	Category         string          `json:"category"`
+	ImageUrl         pgtype.Text     `json:"image_url"`
+	Status           string          `json:"status"`
+	ContactMethod    pgtype.Text     `json:"contact_method"`
+	SessionDuration  pgtype.Interval `json:"session_duration"`
+	Uid              string          `json:"uid"`
+	FullName         string          `json:"full_name"`
+	TotalRatingCount int64           `json:"total_rating_count"`
+	TotalRatings     int64           `json:"total_ratings"`
 }
 
 func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAllListingsRow, error) {
@@ -74,6 +85,8 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 			&i.SessionDuration,
 			&i.Uid,
 			&i.FullName,
+			&i.TotalRatingCount,
+			&i.TotalRatings,
 		); err != nil {
 			return nil, err
 		}

@@ -38,6 +38,10 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 		} else {
 			sd = 0
 		}
+		avgRating := float32(0)
+		if dbListing.TotalRatingCount != 0 {
+			avgRating = float32(dbListing.TotalRatings) / float32(dbListing.TotalRatingCount)
+		}
 		listings[i] = Listing{
 			ID:          dbListing.ID,
 			Title:       dbListing.Title,
@@ -53,6 +57,7 @@ func (pls *PostgresListingService) GetAllListings(ctx context.Context, postedBy 
 			Status:          dbListing.Status,
 			SessionDuration: sd,
 			ContactMethod:   dbListing.ContactMethod.String,
+			AvgRating:       avgRating,
 		}
 	}
 
@@ -110,6 +115,7 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 			ImageURL:    dbListing.ImageUrl.String,
 			Status:      dbListing.Status,
 		}
+
 	}
 	return listings, nil
 }

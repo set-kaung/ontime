@@ -59,6 +59,34 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /users/{id}:
+    get:
+      summary: Get user by ID (public view)
+      description: Retrieves a user's public profile summary and active listings by user ID.
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: User summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserSummary'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /users/me/services:
     get:
       summary: Get user's own service listings
@@ -1070,10 +1098,10 @@ components:
         zip_postal_code: { type: string }
         country: { type: string }
         joined_at: { type: string, format: date-time }
-        email: { type: boolean }
+        is_email_signedup: { type: boolean }
         services_received: { type: integer }
         services_provided: { type: integer }
-        paid: { type: boolean }
+        is_paid: { type: boolean }
         rating: { type: number, format: float }
 
     UserInsert:
@@ -1109,6 +1137,9 @@ components:
         has_already_taken: { type: boolean }
         taken_request_id: { type: integer }
         status: { type: string }
+        session_duration: { type: integer, description: 'Duration in nanoseconds' }
+        contact_method: { type: string }
+        avg_rating: { type: number, format: float }
 
     CreateServiceListing:
       type: object
@@ -1243,6 +1274,27 @@ components:
         request_id: { type: integer }
         ticket_id: { type: string }
         status: { type: string }
+
+    PartialListing:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        rating: { type: number, format: float }
+        rating_count: { type: integer }
+        category: { type: string }
+        token_reward: { type: integer }
+        image_url: { type: string }
+
+    UserSummary:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        active_listings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartialListing'
 
   responses:
     BadRequest:

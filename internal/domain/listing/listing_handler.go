@@ -79,6 +79,14 @@ func (lh *ListingHandler) HandleGetOwnListings(w http.ResponseWriter, r *http.Re
 		helpers.WriteError(w, http.StatusInternalServerError, "user not found", nil)
 		return
 	}
+	// slices.SortFunc(listings, func(a, b Listing) int {
+	// 	if a.AvgRating < b.AvgRating {
+	// 		return 1
+	// 	} else if a.AvgRating > b.AvgRating {
+	// 		return -1
+	// 	}
+	// 	return 0
+	// })
 	helpers.WriteData(w, http.StatusOK, listings, nil)
 }
 

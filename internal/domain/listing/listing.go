@@ -20,6 +20,7 @@ type Listing struct {
 	Status          string        `json:"status"`
 	SessionDuration time.Duration `json:"session_duration"`
 	ContactMethod   string        `json:"contact_method"`
+	AvgRating       float32       `json:"avg_rating"`
 }
 
 type ListingReport struct {
