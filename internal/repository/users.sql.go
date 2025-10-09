@@ -81,7 +81,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) (pgconn.CommandTag,
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.is_email_signedup, u.full_name, u.is_paid,
+    u.id, u.phone, u.token_balance, u.status, u.address_line_1, u.address_line_2, u.city, u.state_province, u.zip_postal_code, u.country, u.joined_at, u.is_email_signedup, u.full_name, u.is_paid, u.about_me,
     COALESCE(sp.requested_count, 0) AS services_received,
     COALESCE(sp.provided_count, 0) AS services_provided,
     r.total_ratings,
@@ -121,6 +121,7 @@ type GetUserByIDRow struct {
 	IsEmailSignedup  bool          `json:"is_email_signedup"`
 	FullName         string        `json:"full_name"`
 	IsPaid           bool          `json:"is_paid"`
+	AboutMe          pgtype.Text   `json:"about_me"`
 	ServicesReceived int64         `json:"services_received"`
 	ServicesProvided int64         `json:"services_provided"`
 	TotalRatings     pgtype.Int4   `json:"total_ratings"`
@@ -145,6 +146,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 		&i.IsEmailSignedup,
 		&i.FullName,
 		&i.IsPaid,
+		&i.AboutMe,
 		&i.ServicesReceived,
 		&i.ServicesProvided,
 		&i.TotalRatings,

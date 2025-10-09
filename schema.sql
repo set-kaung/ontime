@@ -1,3 +1,8 @@
+--
+-- PostgreSQL database dump
+--
+
+
 -- Dumped from database version 17.5 (6bc9ef8)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
@@ -578,7 +583,8 @@ CREATE TABLE public.users (
     joined_at timestamptz NOT NULL,
     is_email_signedup boolean NOT NULL,
     full_name text NOT NULL,
-    is_paid boolean NOT NULL
+    is_paid boolean NOT NULL,
+    about_me text
 );
 
 
@@ -1056,3 +1062,10 @@ ALTER TABLE ONLY public.service_request_completion
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_users_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+

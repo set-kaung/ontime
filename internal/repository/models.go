@@ -426,4 +426,5 @@ type User struct {
 	IsEmailSignedup bool          `json:"is_email_signedup"`
 	FullName        string        `json:"full_name"`
 	IsPaid          bool          `json:"is_paid"`
+	AboutMe         pgtype.Text   `json:"about_me"`
 }

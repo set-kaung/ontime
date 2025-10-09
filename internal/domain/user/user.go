@@ -20,6 +20,7 @@ type User struct {
 	ServicesProvided uint32    `json:"services_provided"`
 	IsPaid           bool      `json:"is_paid"`
 	Rating           float32   `json:"rating"`
+	AboutMe          string    `json:"about_me"`
 }
 
 type Notification struct {
