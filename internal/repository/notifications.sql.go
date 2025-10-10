@@ -14,7 +14,7 @@ import (
 
 const getAllEventOfARequest = `-- name: GetAllEventOfARequest :many
 SELECT e.type, e.target_id, e.created_at, e.id, e.description, n.action_user_id FROM events e
-JOIN notifications n
+JOIN notification n
 ON n.event_id = e.id
 WHERE target_id = $1 AND type = 'request'
 ORDER BY created_at DESC
@@ -56,13 +56,25 @@ func (q *Queries) GetAllEventOfARequest(ctx context.Context, targetID int32) ([]
 	return items, nil
 }
 
-const getNotifications = `-- name: GetNotifications :many
-SELECT n.id, message, recipient_user_id, action_user_id, is_read, event_id, type, target_id, created_at, ne.id, description FROM notifications n
+const getUnreadnotificationCount = `-- name: GetUnreadnotificationCount :one
+SELECT COUNT(n.id) FROM notification n
+WHERE n.recipient_user_id = $1 AND n.is_read = false
+`
+
+func (q *Queries) GetUnreadnotificationCount(ctx context.Context, recipientUserID string) (int64, error) {
+	row := q.db.QueryRow(ctx, getUnreadnotificationCount, recipientUserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getnotification = `-- name: Getnotification :many
+SELECT n.id, message, recipient_user_id, action_user_id, is_read, event_id, type, target_id, created_at, ne.id, description FROM notification n
 JOIN events ne ON ne.id = n.event_id
 WHERE recipient_user_id = $1
 `
 
-type GetNotificationsRow struct {
+type GetnotificationRow struct {
 	ID              int32     `json:"id"`
 	Message         string    `json:"message"`
 	RecipientUserID string    `json:"recipient_user_id"`
@@ -76,15 +88,15 @@ type GetNotificationsRow struct {
 	Description     string    `json:"description"`
 }
 
-func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) ([]GetNotificationsRow, error) {
-	rows, err := q.db.Query(ctx, getNotifications, recipientUserID)
+func (q *Queries) Getnotification(ctx context.Context, recipientUserID string) ([]GetnotificationRow, error) {
+	rows, err := q.db.Query(ctx, getnotification, recipientUserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetNotificationsRow
+	var items []GetnotificationRow
 	for rows.Next() {
-		var i GetNotificationsRow
+		var i GetnotificationRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Message,
@@ -108,18 +120,6 @@ func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) 
 	return items, nil
 }
 
-const getUnreadNotificationsCount = `-- name: GetUnreadNotificationsCount :one
-SELECT COUNT(n.id) FROM notifications n
-WHERE n.recipient_user_id = $1 AND n.is_read = false
-`
-
-func (q *Queries) GetUnreadNotificationsCount(ctx context.Context, recipientUserID string) (int64, error) {
-	row := q.db.QueryRow(ctx, getUnreadNotificationsCount, recipientUserID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const insertEvent = `-- name: InsertEvent :one
 INSERT INTO events (target_id,"type",created_at,description)
 VALUES ($1,$2,NOW(),$3)
@@ -140,7 +140,7 @@ func (q *Queries) InsertEvent(ctx context.Context, arg InsertEventParams) (int64
 }
 
 const insertNotification = `-- name: InsertNotification :execresult
-INSERT INTO notifications (message,recipient_user_id,action_user_id,is_read,event_id)
+INSERT INTO notification (message,recipient_user_id,action_user_id,is_read,event_id)
 VALUES ($1,$2,$3,false,$4)
 `
 
@@ -160,8 +160,8 @@ func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotification
 	)
 }
 
-const setAllNotificationsRead = `-- name: SetAllNotificationsRead :exec
-UPDATE notifications
+const setAllnotificationRead = `-- name: SetAllnotificationRead :exec
+UPDATE notification
 SET is_read = true
 WHERE recipient_user_id = $1
   AND event_id IN (
@@ -170,27 +170,27 @@ WHERE recipient_user_id = $1
   )
 `
 
-type SetAllNotificationsReadParams struct {
+type SetAllnotificationReadParams struct {
 	RecipientUserID string    `json:"recipient_user_id"`
 	CreatedAt       time.Time `json:"created_at"`
 }
 
-func (q *Queries) SetAllNotificationsRead(ctx context.Context, arg SetAllNotificationsReadParams) error {
-	_, err := q.db.Exec(ctx, setAllNotificationsRead, arg.RecipientUserID, arg.CreatedAt)
+func (q *Queries) SetAllnotificationRead(ctx context.Context, arg SetAllnotificationReadParams) error {
+	_, err := q.db.Exec(ctx, setAllnotificationRead, arg.RecipientUserID, arg.CreatedAt)
 	return err
 }
 
-const setUserNotificationsRead = `-- name: SetUserNotificationsRead :execresult
-UPDATE notifications
+const setUsernotificationRead = `-- name: SetUsernotificationRead :execresult
+UPDATE notification
 SET is_read = true
 WHERE id = $1 AND recipient_user_id = $2 AND is_read = false
 `
 
-type SetUserNotificationsReadParams struct {
+type SetUsernotificationReadParams struct {
 	ID              int32  `json:"id"`
 	RecipientUserID string `json:"recipient_user_id"`
 }
 
-func (q *Queries) SetUserNotificationsRead(ctx context.Context, arg SetUserNotificationsReadParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, setUserNotificationsRead, arg.ID, arg.RecipientUserID)
+func (q *Queries) SetUsernotificationRead(ctx context.Context, arg SetUsernotificationReadParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, setUsernotificationRead, arg.ID, arg.RecipientUserID)
 }

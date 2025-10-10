@@ -5,7 +5,7 @@ SELECT
     COALESCE(sp.provided_count, 0) AS services_provided,
     r.total_ratings,
     r.rating_count
-FROM users u
+FROM "user" u
 LEFT JOIN (
     SELECT
       user_id,
@@ -13,19 +13,19 @@ LEFT JOIN (
       COUNT(*) FILTER (WHERE role = 'provider') AS provided_count
     FROM (
       SELECT requester_id AS user_id, 'requester' AS role
-      FROM service_requests
+      FROM service_request
       UNION ALL
       SELECT provider_id AS user_id, 'provider' AS role
-      FROM service_requests
+      FROM service_request
     ) combined
     GROUP BY user_id
 ) sp ON u.id = sp.user_id
-LEFT JOIN ratings r
+LEFT JOIN rating r
 ON r.user_id = u.id
 WHERE u.id = $1;
 
 -- name: InsertUser :one
-INSERT INTO users (
+INSERT INTO "user" (
     id,
     full_name,
     phone,
@@ -53,25 +53,25 @@ RETURNING id;
 
 
 -- name: UpdateUser :execresult
-UPDATE users
+UPDATE "user"
 SET full_name = $1, phone = $2, address_line_1 = $3, address_line_2 = $4, city = $5, state_province = $6, zip_postal_code = $7, country = $8
 WHERE id = $9;
 
 -- name: DeleteUser :execresult
-DELETE FROM users where id = $1;
+DELETE FROM "user" where id = $1;
 
 -- name: GetUserTokenBalance :one
-SELECT token_balance FROM users
+SELECT token_balance FROM "user"
 WHERE id = $1;
 
 -- name: AddTokens :one
-UPDATE users
+UPDATE "user"
 SET token_balance = token_balance + $1
 WHERE id = $2
 RETURNING token_balance;
 
 -- name: MarkSignupPaidAndAward :one
-UPDATE users
+UPDATE "user"
 SET
   is_paid = true,
   token_balance = token_balance + $2
@@ -81,27 +81,27 @@ RETURNING token_balance;
 
 
 -- name: UpdateAboutMe :exec
-UPDATE users
+UPDATE "user"
 SET about_me = $1
 WHERE id = $2;
 
 
 -- name: DeductTokens :execrows
-UPDATE users
+UPDATE "user"
 SET token_balance = token_balance - s.token_reward
-FROM service_listings s
-WHERE users.id = sqlc.arg(user_id)
+FROM service_listing s
+WHERE "user".id = sqlc.arg(user_id)
   AND s.id = sqlc.arg(listing_id)
-  AND users.token_balance >= s.token_reward;
+  AND "user".token_balance >= s.token_reward;
 
 -- name: DeductRewardTokensFromUser :exec
-UPDATE users
+UPDATE "user"
 SET token_balance = token_balance - r.cost
-FROM rewards r
-WHERE users.id = sqlc.arg(user_id) AND r.id = sqlc.arg(reward_id) AND users.token_balance >= r.cost;
+FROM reward r
+WHERE "user".id = sqlc.arg(user_id) AND r.id = sqlc.arg(reward_id) AND "user".token_balance >= r.cost;
 
 -- name: UpdateUserFullNmae :execrows
-UPDATE users
+UPDATE "user"
 SET full_name = $1
 WHERE id = $2;
 
@@ -109,24 +109,24 @@ WHERE id = $2;
 -- -- name: GetProfileSummary :one
 -- WITH provided AS (
 --     SELECT sr.provider_id, COUNT(*) AS provided
---     FROM service_requests sr
+--     FROM service_request sr
 --     GROUP BY sr.provider_id
 -- ),
 -- requested AS (
 --     SELECT sr.requester_id, COUNT(*) AS requested
---     FROM service_requests sr
+--     FROM service_request sr
 --     GROUP BY sr.requester_id
 -- )
 -- SELECT
 --     u.full_name,
 --     u.joined_at,
---     ratings.total_ratings,
---     ratings.rating_count,
+--     rating.total_ratings,
+--     rating.rating_count,
 --     COALESCE(provided.provided, 0) AS provided,
 --     COALESCE(requested.requested, 0) AS requested
--- FROM users u
+-- FROM "user" u
 -- LEFT JOIN provided ON provided.provider_id = u.id
 -- LEFT JOIN requested ON requested.requester_id = u.id
--- join ratings
--- on ratings.user_id = u.id
+-- join rating
+-- on rating.user_id = u.id
 -- WHERE u.id = $1;

@@ -10,10 +10,10 @@ import (
 )
 
 const insertTransaction = `-- name: InsertTransaction :exec
-INSERT INTO transactions (user_id,type,amount,created_at)
+INSERT INTO "transaction" (user_id,type,amount,created_at)
 SELECT
 $1,$2,p.amount_tokens,NOW()
-FROM payments p
+FROM payment p
 WHERE p.id = $3
 `
 

@@ -10,23 +10,23 @@ import (
 	"time"
 )
 
-const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :many
+const getActiveusererviceRequests = `-- name: GetActiveusererviceRequests :many
 SELECT
     sr.id, sr.listing_id, sr.requester_id, sr.provider_id, sr.status_detail, sr.activity, sr.created_at, sr.updated_at, sr.token_reward,
     requester.full_name AS requester_name,
     provider.full_name  AS provider_name,
     l.title
 FROM
-    service_requests sr
-JOIN users requester ON sr.requester_id = requester.id
-JOIN users provider  ON sr.provider_id = provider.id
-JOIN service_listings l on sr.listing_id  = l.id
+    service_request sr
+JOIN "user" requester ON sr.requester_id = requester.id
+JOIN "user" provider  ON sr.provider_id = provider.id
+JOIN service_listing l on sr.listing_id  = l.id
 WHERE
     (sr.provider_id = $1 OR sr.requester_id = $1)
     AND sr.activity = 'active'
 `
 
-type GetActiveUserServiceRequestsRow struct {
+type GetActiveusererviceRequestsRow struct {
 	ID            int32                `json:"id"`
 	ListingID     int32                `json:"listing_id"`
 	RequesterID   string               `json:"requester_id"`
@@ -41,15 +41,15 @@ type GetActiveUserServiceRequestsRow struct {
 	Title         string               `json:"title"`
 }
 
-func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID string) ([]GetActiveUserServiceRequestsRow, error) {
-	rows, err := q.db.Query(ctx, getActiveUserServiceRequests, providerID)
+func (q *Queries) GetActiveusererviceRequests(ctx context.Context, providerID string) ([]GetActiveusererviceRequestsRow, error) {
+	rows, err := q.db.Query(ctx, getActiveusererviceRequests, providerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetActiveUserServiceRequestsRow
+	var items []GetActiveusererviceRequestsRow
 	for rows.Next() {
-		var i GetActiveUserServiceRequestsRow
+		var i GetActiveusererviceRequestsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ListingID,
@@ -81,10 +81,10 @@ SELECT
     provider.full_name  AS provider_name,
     l.title
 FROM
-    service_requests sr
-JOIN users requester ON sr.requester_id = requester.id
-JOIN users provider  ON sr.provider_id = provider.id
-JOIN service_listings l on sr.listing_id  = l.id
+    service_request sr
+JOIN "user" requester ON sr.requester_id = requester.id
+JOIN "user" provider  ON sr.provider_id = provider.id
+JOIN service_listing l on sr.listing_id  = l.id
 WHERE
     (sr.provider_id = $1 OR sr.requester_id = $1)
 `
@@ -176,13 +176,13 @@ SELECT
     ) FILTER (WHERE e.id IS NOT NULL),
     '[]'::json
   )::json AS events
-FROM service_requests sr
-JOIN service_listings sl ON sr.listing_id = sl.id
-JOIN users ru ON sr.requester_id = ru.id
-JOIN users pu ON sr.provider_id = pu.id
+FROM service_request sr
+JOIN service_listing sl ON sr.listing_id = sl.id
+JOIN "user" ru ON sr.requester_id = ru.id
+JOIN "user" pu ON sr.provider_id = pu.id
 LEFT JOIN service_request_completion sc ON sr.id = sc.request_id
 LEFT JOIN events e ON e.target_id = sr.id
-LEFT JOIN notifications n
+LEFT JOIN notification n
 ON n.event_id = e.id
 WHERE sr.id = $1
 GROUP BY
@@ -245,7 +245,7 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 }
 
 const getRequestReport = `-- name: GetRequestReport :one
-SELECT id, reporter_id, request_id, ticket_id, created_at, status FROM request_reports
+SELECT id, reporter_id, request_id, ticket_id, created_at, status FROM request_report
 WHERE request_id = $1 AND reporter_id = $2
 `
 
@@ -287,13 +287,13 @@ func (q *Queries) GetServiceRequestCompletion(ctx context.Context, requestID int
 }
 
 const insertPendingServiceRequest = `-- name: InsertPendingServiceRequest :one
-INSERT INTO service_requests (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at,token_reward)
+INSERT INTO service_request (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at,token_reward)
 SELECT
     $1,
     $2,
     sl.posted_by,
     'pending', 'active', NOW(),NOW(),sl.token_reward
-FROM service_listings sl
+FROM service_listing sl
 WHERE sl.id = $1 AND sl.posted_by != $2
 RETURNING id
 `
@@ -311,7 +311,7 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 }
 
 const insertRequestReport = `-- name: InsertRequestReport :one
-INSERT INTO request_reports (reporter_id, request_id, ticket_id, created_at,"status")
+INSERT INTO request_report (reporter_id, request_id, ticket_id, created_at,"status")
 VALUES ($1, $2, '', NOW(),"ongoing")
 RETURNING id, created_at
 `
@@ -344,9 +344,9 @@ func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID 
 }
 
 const updateExpiredRequest = `-- name: UpdateExpiredRequest :many
-UPDATE service_requests AS sr
+UPDATE service_request AS sr
 SET status_detail = 'expired'
-FROM service_listings AS sl
+FROM service_listing AS sl
 WHERE sl.id = sr.listing_id
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
@@ -398,7 +398,7 @@ func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequ
 }
 
 const updateRequestReportWithTicketID = `-- name: UpdateRequestReportWithTicketID :one
-UPDATE request_reports
+UPDATE request_report
 SET ticket_id = $1
 RETURNING ticket_id
 `
@@ -411,7 +411,7 @@ func (q *Queries) UpdateRequestReportWithTicketID(ctx context.Context, ticketID 
 }
 
 const updateServiceRequest = `-- name: UpdateServiceRequest :one
-UPDATE service_requests
+UPDATE service_request
 SET status_detail = $1, activity = $2, updated_at = NOW()
 WHERE id = $3
 RETURNING id

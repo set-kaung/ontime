@@ -12,22 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getListingReviews = `-- name: GetListingReviews :many
+const getListingreview = `-- name: GetListingreview :many
 SELECT r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,
        sr.listing_id,
-       reviewer_user.full_name AS reviewer_full_name,
-       reviewee_user.full_name AS reviewee_full_name
-FROM reviews r
-JOIN service_requests sr
+       reviewer.full_name AS reviewer_full_name,
+       reviewee.full_name AS reviewee_full_name
+FROM review r
+JOIN service_request sr
   ON sr.id = r.request_id
-JOIN users reviewer_user
-  ON reviewer_user.id = r.reviewer_id
-JOIN users reviewee_user
-  ON reviewee_user.id = r.reviewee_id
+JOIN "user" AS reviewer
+  ON reviewer.id = r.reviewer_id
+JOIN "user" AS reviewee
+  ON reviewee.id = r.reviewee_id
 WHERE sr.listing_id = $1
 `
 
-type GetListingReviewsRow struct {
+type GetListingreviewRow struct {
 	ID               int32       `json:"id"`
 	RequestID        int32       `json:"request_id"`
 	ReviewerID       string      `json:"reviewer_id"`
@@ -40,15 +40,15 @@ type GetListingReviewsRow struct {
 	RevieweeFullName string      `json:"reviewee_full_name"`
 }
 
-func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]GetListingReviewsRow, error) {
-	rows, err := q.db.Query(ctx, getListingReviews, listingID)
+func (q *Queries) GetListingreview(ctx context.Context, listingID int32) ([]GetListingreviewRow, error) {
+	rows, err := q.db.Query(ctx, getListingreview, listingID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetListingReviewsRow
+	var items []GetListingreviewRow
 	for rows.Next() {
-		var i GetListingReviewsRow
+		var i GetListingreviewRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.RequestID,
@@ -72,7 +72,7 @@ func (q *Queries) GetListingReviews(ctx context.Context, listingID int32) ([]Get
 }
 
 const getReviewByID = `-- name: GetReviewByID :one
-SELECT id, request_id, reviewer_id, reviewee_id, rating, comment, date_time FROM reviews
+SELECT id, request_id, reviewer_id, reviewee_id, rating, comment, date_time FROM review
 WHERE id = $1
 `
 
@@ -93,13 +93,13 @@ func (q *Queries) GetReviewByID(ctx context.Context, id int32) (Review, error) {
 
 const getReviewByRequestID = `-- name: GetReviewByRequestID :one
 SELECT r.id, r.request_id, r.reviewer_id, r.reviewee_id, r.rating, r.comment, r.date_time,
-    reviewer_user.full_name AS reviewer_full_name,
-    reviewee_user.full_name AS reviewee_full_name
-FROM reviews r
-JOIN users reviewer_user
-  ON reviewer_user.id = r.reviewer_id
-JOIN users reviewee_user
-  ON reviewee_user.id = r.reviewee_id
+    reviewer.full_name AS reviewer_full_name,
+    reviewee.full_name AS reviewee_full_name
+FROM review r
+JOIN "user" AS reviewer
+  ON reviewer.id = r.reviewer_id
+JOIN "user" AS reviewee
+  ON reviewee.id = r.reviewee_id
 WHERE r.request_id = $1
 `
 
@@ -133,7 +133,7 @@ func (q *Queries) GetReviewByRequestID(ctx context.Context, requestID int32) (Ge
 }
 
 const insertNewUserRating = `-- name: InsertNewUserRating :exec
-INSERT INTO ratings (user_id,total_ratings, rating_count)
+INSERT INTO rating (user_id,total_ratings, rating_count)
 VALUES ($1,0,0)
 `
 
@@ -143,8 +143,8 @@ func (q *Queries) InsertNewUserRating(ctx context.Context, userID string) error 
 }
 
 const insertServiceRequestReview = `-- name: InsertServiceRequestReview :one
-INSERT INTO reviews (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
-VALUES ($1,$2,(SELECT provider_id from service_requests WHERE id = $1),$3,$4,NOW())
+INSERT INTO review (request_id,reviewer_id,reviewee_id,rating,comment,date_time)
+VALUES ($1,$2,(SELECT provider_id from service_request WHERE id = $1),$3,$4,NOW())
 RETURNING id, reviewee_id
 `
 
@@ -173,11 +173,11 @@ func (q *Queries) InsertServiceRequestReview(ctx context.Context, arg InsertServ
 }
 
 const updateUserRating = `-- name: UpdateUserRating :one
-UPDATE ratings
+UPDATE rating
 SET total_ratings = total_ratings + $1,
     rating_count  = rating_count + 1
 WHERE user_id = (
-    SELECT provider_id FROM service_requests
+    SELECT provider_id FROM service_request
     WHERE id = $2
 )
 RETURNING user_id, total_ratings, rating_count
