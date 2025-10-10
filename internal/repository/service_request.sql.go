@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const getActiveusererviceRequests = `-- name: GetActiveusererviceRequests :many
+const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :many
 SELECT
     sr.id, sr.listing_id, sr.requester_id, sr.provider_id, sr.status_detail, sr.activity, sr.created_at, sr.updated_at, sr.token_reward,
     requester.full_name AS requester_name,
@@ -26,7 +26,7 @@ WHERE
     AND sr.activity = 'active'
 `
 
-type GetActiveusererviceRequestsRow struct {
+type GetActiveUserServiceRequestsRow struct {
 	ID            int32                `json:"id"`
 	ListingID     int32                `json:"listing_id"`
 	RequesterID   string               `json:"requester_id"`
@@ -41,15 +41,15 @@ type GetActiveusererviceRequestsRow struct {
 	Title         string               `json:"title"`
 }
 
-func (q *Queries) GetActiveusererviceRequests(ctx context.Context, providerID string) ([]GetActiveusererviceRequestsRow, error) {
-	rows, err := q.db.Query(ctx, getActiveusererviceRequests, providerID)
+func (q *Queries) GetActiveUserServiceRequests(ctx context.Context, providerID string) ([]GetActiveUserServiceRequestsRow, error) {
+	rows, err := q.db.Query(ctx, getActiveUserServiceRequests, providerID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetActiveusererviceRequestsRow
+	var items []GetActiveUserServiceRequestsRow
 	for rows.Next() {
-		var i GetActiveusererviceRequestsRow
+		var i GetActiveUserServiceRequestsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ListingID,

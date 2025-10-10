@@ -1,4 +1,4 @@
--- name: GetActiveusererviceRequests :many
+-- name: GetActiveUserServiceRequests :many
 SELECT
     sr.*,
     requester.full_name AS requester_name,

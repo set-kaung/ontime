@@ -35,7 +35,7 @@ JOIN "user" AS reviewee
   ON reviewee.id = r.reviewee_id
 WHERE r.request_id = $1;
 
--- name: GetListingreview :many
+-- name: GetListingReviews :many
 SELECT r.*,
        sr.listing_id,
        reviewer.full_name AS reviewer_full_name,

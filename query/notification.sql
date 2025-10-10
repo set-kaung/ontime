@@ -3,7 +3,7 @@ INSERT INTO notification (message,recipient_user_id,action_user_id,is_read,event
 VALUES ($1,$2,$3,false,$4);
 
 
--- name: Getnotification :many
+-- name: GetNotifications :many
 SELECT * FROM notification n
 JOIN events ne ON ne.id = n.event_id
 WHERE recipient_user_id = $1;
@@ -14,17 +14,17 @@ INSERT INTO events (target_id,"type",created_at,description)
 VALUES ($1,$2,NOW(),$3)
 RETURNING id;
 
--- name: GetUnreadnotificationCount :one
+-- name: GetUnreadNotificationCount :one
 SELECT COUNT(n.id) FROM notification n
 WHERE n.recipient_user_id = $1 AND n.is_read = false;
 
--- name: SetUsernotificationRead :execresult
+-- name: SetUserNotificationsRead :execresult
 UPDATE notification
 SET is_read = true
 WHERE id = $1 AND recipient_user_id = $2 AND is_read = false;
 
 
--- name: SetAllnotificationRead :exec
+-- name: SetAllNotificationsRead :exec
 UPDATE notification
 SET is_read = true
 WHERE recipient_user_id = $1
