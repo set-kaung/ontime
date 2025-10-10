@@ -276,6 +276,48 @@ func (ns NullStatus) Value() (driver.Value, error) {
 	return string(ns.Status), nil
 }
 
+type WarningSeverity string
+
+const (
+	WarningSeverityMild   WarningSeverity = "mild"
+	WarningSeveritySevere WarningSeverity = "severe"
+)
+
+func (e *WarningSeverity) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = WarningSeverity(s)
+	case string:
+		*e = WarningSeverity(s)
+	default:
+		return fmt.Errorf("unsupported scan type for WarningSeverity: %T", src)
+	}
+	return nil
+}
+
+type NullWarningSeverity struct {
+	WarningSeverity WarningSeverity `json:"warning_severity"`
+	Valid           bool            `json:"valid"` // Valid is true if WarningSeverity is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullWarningSeverity) Scan(value interface{}) error {
+	if value == nil {
+		ns.WarningSeverity, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.WarningSeverity.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullWarningSeverity) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.WarningSeverity), nil
+}
+
 type AdsWatchingHistory struct {
 	ID       int32     `json:"id"`
 	UserID   string    `json:"user_id"`
@@ -427,4 +469,13 @@ type User struct {
 	FullName        string        `json:"full_name"`
 	IsPaid          bool          `json:"is_paid"`
 	AboutMe         pgtype.Text   `json:"about_me"`
+}
+
+type Warning struct {
+	ID        int32           `json:"id"`
+	UserID    string          `json:"user_id"`
+	Severity  WarningSeverity `json:"severity"`
+	Comment   string          `json:"comment"`
+	CreatedAt time.Time       `json:"created_at"`
+	Reason    string          `json:"reason"`
 }
