@@ -64,7 +64,7 @@ func (prs *PostgresReviewService) InsertReview(ctx context.Context, r Review) (i
 		return -1, internal.ErrInternalServerError
 	}
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
-		Message:         fmt.Sprintf("%s left a review on you.", r.ReviewerID),
+		Message:         fmt.Sprintf("%s left a review on you.", r.ReviewerFullName),
 		RecipientUserID: insertedData.RevieweeID,
 		ActionUserID:    r.ReviewerID,
 		EventID:         eventID,
