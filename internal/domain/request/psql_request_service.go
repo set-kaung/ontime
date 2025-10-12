@@ -721,10 +721,41 @@ func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, req
 		Activity:     repository.ServiceActivityInactive,
 		ID:           requestID,
 	})
+
 	if err != nil {
 		log.Printf("CancelServiceRequest: failed to update service request: %s\n", err)
 		return internal.ErrInternalServerError
 	}
+	_, err = repo.AddTokens(ctx, repository.AddTokensParams{
+		TokenBalance: repoRequest.SrTokenReward,
+		ID:           repoRequest.RequesterID,
+	})
+
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to add user tokens: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
+	paymentID, err := repo.UpdatePaymentHolding(ctx, repository.UpdatePaymentHoldingParams{
+		Status:           "refunded",
+		ServiceRequestID: repoRequest.SrID,
+	})
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to update payment holding: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
+	err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+		UserID:    repoRequest.RequesterID,
+		Type:      "addition",
+		PaymentID: paymentID,
+	})
+
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to insert transaction: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 		TargetID:    requestID,
 		Type:        domain.REQUEST_EVENT,

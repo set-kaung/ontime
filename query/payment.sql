@@ -12,10 +12,11 @@ RETURNING id;
 SELECT * FROM payment
 WHERE service_request_id = $1 AND payer_id = $2;
 
--- name: UpdatePaymentHolding :execresult
+-- name: UpdatePaymentHolding :one
 UPDATE payment
 SET status = $1, updated_at = NOW()
-WHERE service_request_id = $2;
+WHERE service_request_id = $2
+RETURNING id;
 
 -- name: GetRequestPayment :one
 SELECT * FROM payment

@@ -7,8 +7,6 @@ package repository
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const getPaymentHolding = `-- name: GetPaymentHolding :one
@@ -79,10 +77,11 @@ func (q *Queries) InsertPaymentHolding(ctx context.Context, arg InsertPaymentHol
 	return id, err
 }
 
-const updatePaymentHolding = `-- name: UpdatePaymentHolding :execresult
+const updatePaymentHolding = `-- name: UpdatePaymentHolding :one
 UPDATE payment
 SET status = $1, updated_at = NOW()
 WHERE service_request_id = $2
+RETURNING id
 `
 
 type UpdatePaymentHoldingParams struct {
@@ -90,6 +89,9 @@ type UpdatePaymentHoldingParams struct {
 	ServiceRequestID int32         `json:"service_request_id"`
 }
 
-func (q *Queries) UpdatePaymentHolding(ctx context.Context, arg UpdatePaymentHoldingParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, updatePaymentHolding, arg.Status, arg.ServiceRequestID)
+func (q *Queries) UpdatePaymentHolding(ctx context.Context, arg UpdatePaymentHoldingParams) (int32, error) {
+	row := q.db.QueryRow(ctx, updatePaymentHolding, arg.Status, arg.ServiceRequestID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
