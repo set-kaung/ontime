@@ -39,7 +39,7 @@ group by sl.id)
 SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name,coalesce(lr.rating_count,0) as total_rating_count ,coalesce(lr.total_rating,0) as total_ratings FROM service_listing sl
 JOIN "user" u
 ON u.id = sl.posted_by
-JOIN listing_rating lr
+LEFT JOIN listing_rating lr
 ON lr.listing_id = sl.id
 WHERE sl.posted_by != $1 AND sl.status = 'active'
 `
