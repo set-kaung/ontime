@@ -137,6 +137,38 @@ func (q *Queries) GetAllUserRequests(ctx context.Context, userID string) ([]GetA
 	return items, nil
 }
 
+const getProvidingeRequests = `-- name: GetProvidingeRequests :many
+select sr.id,sl.title from service_request sr
+join service_listing sl 
+on sl.id = sr.listing_id
+where sr.activity  = 'active' and sr.provider_id = $1
+`
+
+type GetProvidingeRequestsRow struct {
+	ID    int32  `json:"id"`
+	Title string `json:"title"`
+}
+
+func (q *Queries) GetProvidingeRequests(ctx context.Context, providerID string) ([]GetProvidingeRequestsRow, error) {
+	rows, err := q.db.Query(ctx, getProvidingeRequests, providerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProvidingeRequestsRow
+	for rows.Next() {
+		var i GetProvidingeRequestsRow
+		if err := rows.Scan(&i.ID, &i.Title); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRequestByID = `-- name: GetRequestByID :one
 SELECT
   sr.id AS sr_id,

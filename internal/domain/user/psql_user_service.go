@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
+	"github.com/set-kaung/senior_project_1/internal/domain"
 	"github.com/set-kaung/senior_project_1/internal/repository"
 )
 
@@ -135,11 +136,73 @@ func (pus *PostgresUserService) DeleteUser(ctx context.Context, id string) error
 	}
 	defer func() {
 		if err := tx.Rollback(ctx); err != nil && err != pgx.ErrTxClosed {
-			log.Printf("failed to rollback tx: %s\n", err)
+			log.Printf("DeleteUser: failed to rollback tx: %s\n", err)
 		}
 	}()
 
 	repo := repository.New(pus.DB).WithTx(tx)
+	requestIDs, err := repo.GetProvidingeRequests(ctx, id)
+	if err != nil {
+		log.Printf("DeleteUser: failed to get requestIDs: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	for _, request := range requestIDs {
+
+		payment, err := repo.GetRequestPayment(ctx, request.ID)
+		if err != nil {
+			log.Printf("DeleteUser: failed to get request payment: %s\n", err)
+			return internal.ErrInternalServerError
+		}
+		_, err = repo.AddTokens(ctx, repository.AddTokensParams{
+			ID:           payment.PayerID,
+			TokenBalance: payment.AmountTokens,
+		})
+		if err != nil {
+			log.Printf("DeleteUser: failed to add tokens: %s\n", err)
+			return internal.ErrInternalServerError
+		}
+		_, err = repo.UpdatePaymentHolding(ctx, repository.UpdatePaymentHoldingParams{
+			Status:           repository.PaymentStatusRefunded,
+			ServiceRequestID: request.ID,
+		})
+		if err != nil {
+			log.Printf("DeleteUser: failed to update payment holdings: %s\n", err)
+			return internal.ErrInternalServerError
+		}
+		err = repo.InsertTransaction(ctx, repository.InsertTransactionParams{
+			UserID:    payment.PayerID,
+			Type:      "addition",
+			PaymentID: payment.ID,
+		})
+		if err != nil {
+			log.Printf("DeleteUser: failed to insert transaction: %s\n", err)
+			return internal.ErrInternalServerError
+		}
+		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+			TargetID:    request.ID,
+			Type:        domain.SYSTEM_EVENT,
+			Description: domain.USER_DO_NOT_EXIST,
+		})
+		if err != nil {
+			log.Printf("DeleteUser: failed to  insert event: %s\n", err)
+			return internal.ErrInternalServerError
+		}
+		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+			Message:         fmt.Sprintf("Your token for %s has been refunded.", request.Title),
+			RecipientUserID: payment.PayerID,
+			ActionUserID:    "SYSTEM",
+			EventID:         eventID,
+		})
+		if err != nil {
+			log.Printf("DeleteUser: failed to insert notification: %s\n", err)
+			return internal.ErrInternalServerError
+		}
+		err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", payment.PayerID), "new-notification", nil)
+		if err != nil {
+			log.Printf("DeleteUser: failed to trigger pusher: %s\n", err)
+		}
+	}
+
 	_, err = repo.DeleteUser(ctx, id)
 	if err != nil {
 		log.Printf("UserService -> DeleteUser: error: %s\n", err)

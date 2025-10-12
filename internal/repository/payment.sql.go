@@ -36,6 +36,26 @@ func (q *Queries) GetPaymentHolding(ctx context.Context, arg GetPaymentHoldingPa
 	return i, err
 }
 
+const getRequestPayment = `-- name: GetRequestPayment :one
+SELECT id, service_request_id, payer_id, amount_tokens, status, created_at, updated_at FROM payment
+WHERE service_request_id = $1
+`
+
+func (q *Queries) GetRequestPayment(ctx context.Context, serviceRequestID int32) (Payment, error) {
+	row := q.db.QueryRow(ctx, getRequestPayment, serviceRequestID)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.ServiceRequestID,
+		&i.PayerID,
+		&i.AmountTokens,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const insertPaymentHolding = `-- name: InsertPaymentHolding :one
 INSERT INTO payment(service_request_id,payer_id,status,amount_tokens,created_at,updated_at)
 SELECT

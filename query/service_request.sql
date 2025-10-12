@@ -148,3 +148,10 @@ RETURNING
   sr.provider_id,
   sr.token_reward,
   sl.title AS listing_title;
+
+
+-- name: GetProvidingeRequests :many
+select sr.id,sl.title from service_request sr
+join service_listing sl 
+on sl.id = sr.listing_id
+where sr.activity  = 'active' and sr.provider_id = $1;

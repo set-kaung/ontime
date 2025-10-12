@@ -14,4 +14,6 @@ const (
 	CONFIRM_COMPLETION  = "confirmation"
 	REQUEST_EXPIRED     = "expired"
 	CANCELLED_REQUEST   = "cancelled"
+
+	USER_DO_NOT_EXIST = "no_provider"
 )
