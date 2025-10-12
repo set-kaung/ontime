@@ -677,3 +677,35 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 	}
 	return nil
 }
+
+func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, requestID int32, userID string) error {
+	tx, err := prs.DB.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to begin db transaction: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	defer tx.Rollback(ctx)
+	repo := repository.New(tx)
+	repoRequest, err := repo.GetRequestByID(ctx, requestID)
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to get request by ID:%s\n", err)
+		return internal.ErrInternalServerError
+	}
+	if repoRequest.RequesterID != userID || repoRequest.SrActivity != repository.ServiceActivityActive {
+		return internal.ErrUnauthorized
+	}
+	_, err = repo.UpdateServiceRequest(ctx, repository.UpdateServiceRequestParams{
+		StatusDetail: repository.ServiceRequestStatusCancelled,
+		Activity:     repository.ServiceActivityInactive,
+		ID:           requestID,
+	})
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to update service request: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	if err = tx.Commit(ctx); err != nil {
+		log.Printf("CancelServiceRequest: failed to commit transaction: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	return nil
+}

@@ -209,3 +209,24 @@ func (rh *RequestHandler) HandleGetRequestReport(w http.ResponseWriter, r *http.
 	}
 	helpers.WriteData(w, http.StatusOK, report, nil)
 }
+
+func (rh *RequestHandler) HandleCancelRequest(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	requestPathValue := r.PathValue("id")
+	requestID, err := strconv.ParseInt(requestPathValue, 10, 32)
+	if err != nil {
+		log.Printf("HandleCancelRequest: %s \n", err)
+		helpers.WriteError(w, http.StatusUnprocessableEntity, "unprocessable entity", nil)
+		return
+	}
+	err = rh.RequestService.CancelServiceRequest(r.Context(), int32(requestID), userID)
+	if err != nil {
+		if errors.Is(err, internal.ErrUnauthorized) {
+			helpers.WriteError(w, http.StatusUnauthorized, "not authorized", nil)
+		} else {
+			helpers.WriteServerError(w, nil)
+		}
+		return
+	}
+	helpers.WriteSuccess(w, http.StatusOK, "request cancelled", nil)
+}
