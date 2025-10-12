@@ -13,7 +13,7 @@ import (
 )
 
 const getAllEventOfARequest = `-- name: GetAllEventOfARequest :many
-SELECT e.type, e.target_id, e.created_at, e.id, e.description, n.action_user_id FROM events e
+SELECT e.type, e.target_id, e.created_at, e.id, e.description, n.action_user_id FROM "event" e
 JOIN notification n
 ON n.event_id = e.id
 WHERE target_id = $1 AND type = 'request'
@@ -58,7 +58,7 @@ func (q *Queries) GetAllEventOfARequest(ctx context.Context, targetID int32) ([]
 
 const getNotifications = `-- name: GetNotifications :many
 SELECT n.id, message, recipient_user_id, action_user_id, is_read, event_id, type, target_id, created_at, ne.id, description FROM notification n
-JOIN events ne ON ne.id = n.event_id
+JOIN "event" ne ON ne.id = n.event_id
 WHERE recipient_user_id = $1
 `
 
@@ -121,7 +121,7 @@ func (q *Queries) GetUnreadNotificationCount(ctx context.Context, recipientUserI
 }
 
 const insertEvent = `-- name: InsertEvent :one
-INSERT INTO events (target_id,"type",created_at,description)
+INSERT INTO "event" (target_id,"type",created_at,description)
 VALUES ($1,$2,NOW(),$3)
 RETURNING id
 `
@@ -165,7 +165,7 @@ UPDATE notification
 SET is_read = true
 WHERE recipient_user_id = $1
   AND event_id IN (
-    SELECT id FROM events
+    SELECT id FROM "event"
     WHERE created_at < $2
   )
 `

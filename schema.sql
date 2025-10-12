@@ -1,4 +1,3 @@
-
 -- Dumped from database version 17.5 (6bc9ef8)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
@@ -171,10 +170,10 @@ ALTER SEQUENCE public.coupon_codes_id_seq OWNED BY public.coupon_code.id;
 
 
 --
--- Name: events; Type: TABLE; Schema: public; Owner: -
+-- Name: event; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.events (
+CREATE TABLE public.event (
     type character varying NOT NULL,
     target_id integer NOT NULL,
     created_at timestamptz NOT NULL,
@@ -201,7 +200,7 @@ CREATE TABLE public.notification (
 -- Name: notification_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-ALTER TABLE public.events ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+ALTER TABLE public.event ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
     SEQUENCE NAME public.notification_events_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -742,10 +741,10 @@ ALTER TABLE ONLY public.coupon_code
 
 
 --
--- Name: events notification_events_pk; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: event notification_events_pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.events
+ALTER TABLE ONLY public.event
     ADD CONSTRAINT notification_events_pk PRIMARY KEY (id);
 
 
@@ -897,7 +896,7 @@ ALTER TABLE ONLY public.warning
 -- Name: idx_events_target_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_events_target_id ON public.events USING btree (target_id);
+CREATE INDEX idx_events_target_id ON public.event USING btree (target_id);
 
 
 --
@@ -956,7 +955,7 @@ ALTER TABLE ONLY public.coupon_code
 --
 
 ALTER TABLE ONLY public.notification
-    ADD CONSTRAINT notifications_notification_events_fk FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+    ADD CONSTRAINT notifications_notification_events_fk FOREIGN KEY (event_id) REFERENCES public.event(id) ON DELETE CASCADE;
 
 
 --
@@ -1130,5 +1129,4 @@ ALTER TABLE ONLY public.warning
 --
 -- PostgreSQL database dump complete
 --
-
 

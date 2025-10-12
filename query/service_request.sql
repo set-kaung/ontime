@@ -60,7 +60,7 @@ JOIN service_listing sl ON sr.listing_id = sl.id
 JOIN "user" ru ON sr.requester_id = ru.id
 JOIN "user" pu ON sr.provider_id = pu.id
 LEFT JOIN service_request_completion sc ON sr.id = sc.request_id
-LEFT JOIN events e ON e.target_id = sr.id
+LEFT JOIN "event" e ON e.target_id = sr.id
 LEFT JOIN notification n
 ON n.event_id = e.id
 WHERE sr.id = $1
