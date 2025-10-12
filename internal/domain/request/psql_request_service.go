@@ -673,6 +673,24 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 			log.Printf(" UpdateExpiredRequests: failed to insert notifications: %v\n", err)
 			return err
 		}
+		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+			Message:         fmt.Sprintf("Request from %s has expired for your service \"%s\".", row.RequesterID, row.ListingTitle),
+			RecipientUserID: row.ProviderID,
+			ActionUserID:    "SYSTEM",
+			EventID:         eventID,
+		})
+		if err != nil {
+			log.Printf(" UpdateExpiredRequests: failed to insert notifications: %v\n", err)
+			return err
+		}
+		err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", row.RequesterID), "new-notification", nil)
+		if err != nil {
+			log.Printf("CancelServiceRequest: failed to push notification: %s\n", err)
+		}
+		err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", row.ProviderID), "new-notification", nil)
+		if err != nil {
+			log.Printf("CancelServiceRequest: failed to push notification: %s\n", err)
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -717,7 +735,7 @@ func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, req
 		return internal.ErrInternalServerError
 	}
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
-		Message:         fmt.Sprintf("%s cancelled request for your service %s\n.", repoRequest.RequesterFullName, repoRequest.SlTitle),
+		Message:         fmt.Sprintf("%s cancelled request for your service \"%s\".", repoRequest.RequesterFullName, repoRequest.SlTitle),
 		RecipientUserID: repoRequest.ProviderID,
 		ActionUserID:    repoRequest.RequesterID,
 		EventID:         eventID,

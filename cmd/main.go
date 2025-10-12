@@ -97,8 +97,8 @@ func main() {
 
 	c := cron.New()
 	err = c.AddFunc("@every 6h", func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
+		ctx, cancelCron := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancelCron()
 		if err := a.requestHandler.RequestService.UpdateExpiredRequests(ctx); err != nil {
 			log.Printf("cron: failed UpdateExpiredRequests: %v", err)
 		}

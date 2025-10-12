@@ -145,5 +145,6 @@ RETURNING
   sr.status_detail,
   sr.updated_at,
   sr.requester_id,
+  sr.provider_id,
   sr.token_reward,
   sl.title AS listing_title;

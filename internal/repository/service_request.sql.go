@@ -355,6 +355,7 @@ RETURNING
   sr.status_detail,
   sr.updated_at,
   sr.requester_id,
+  sr.provider_id,
   sr.token_reward,
   sl.title AS listing_title
 `
@@ -365,6 +366,7 @@ type UpdateExpiredRequestRow struct {
 	StatusDetail ServiceRequestStatus `json:"status_detail"`
 	UpdatedAt    time.Time            `json:"updated_at"`
 	RequesterID  string               `json:"requester_id"`
+	ProviderID   string               `json:"provider_id"`
 	TokenReward  int32                `json:"token_reward"`
 	ListingTitle string               `json:"listing_title"`
 }
@@ -384,6 +386,7 @@ func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequ
 			&i.StatusDetail,
 			&i.UpdatedAt,
 			&i.RequesterID,
+			&i.ProviderID,
 			&i.TokenReward,
 			&i.ListingTitle,
 		); err != nil {
