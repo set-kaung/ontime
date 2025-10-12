@@ -566,6 +566,10 @@ func (prs *PostgresRequestService) CreateRequestReport(ctx context.Context, requ
 		TicketID: ticketID,
 		ID:       dbReport.ID,
 	})
+	if err != nil {
+		log.Printf("CreateRequestReport: failed to update request report ticket id: %s\n", err)
+		return "", internal.ErrInternalServerError
+	}
 	if ticketID != dbTicketID {
 		log.Printf("InsertRequestReport: should not happened: db ticket: %s, server ticket: %s", dbTicketID, ticketID)
 		return "", internal.ErrInternalServerError
@@ -703,9 +707,32 @@ func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, req
 		log.Printf("CancelServiceRequest: failed to update service request: %s\n", err)
 		return internal.ErrInternalServerError
 	}
+	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
+		TargetID:    requestID,
+		Type:        domain.REQUEST_EVENT,
+		Description: domain.CANCELLED_REQUEST,
+	})
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to insert event: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
+		Message:         fmt.Sprintf("%s cancelled request for your service %s\n.", repoRequest.RequesterFullName, repoRequest.SlTitle),
+		RecipientUserID: repoRequest.ProviderID,
+		ActionUserID:    repoRequest.RequesterID,
+		EventID:         eventID,
+	})
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to insert notification: %s\n", err)
+		return internal.ErrInternalServerError
+	}
 	if err = tx.Commit(ctx); err != nil {
 		log.Printf("CancelServiceRequest: failed to commit transaction: %s\n", err)
 		return internal.ErrInternalServerError
+	}
+	err = internal.PusherClient.Trigger(fmt.Sprintf("user-%s", repoRequest.RequesterID), "new-notification", nil)
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to push notification: %s\n", err)
 	}
 	return nil
 }

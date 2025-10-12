@@ -13,4 +13,5 @@ const (
 	DECLINE_REQUEST     = "decline"
 	CONFIRM_COMPLETION  = "confirmation"
 	REQUEST_EXPIRED     = "expired"
+	CANCELLED_REQUEST   = "cancelled"
 )
