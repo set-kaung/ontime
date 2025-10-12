@@ -42,12 +42,10 @@ func (prs *PostgresReviewService) InsertReview(ctx context.Context, r Review) (i
 
 	log.Println(r)
 
-	val, err := repo.UpdateUserRating(ctx, repository.UpdateUserRatingParams{
+	_, err = repo.UpdateUserRating(ctx, repository.UpdateUserRatingParams{
 		TotalRatings: r.Rating,
 		RequestID:    r.RequestID,
 	})
-
-	log.Println(val)
 
 	if err != nil {
 		log.Println("InsertRequestReview: failed to update user rating: ", err)
@@ -63,8 +61,14 @@ func (prs *PostgresReviewService) InsertReview(ctx context.Context, r Review) (i
 		log.Println("InsertRequestReview: failed to insert event: ", err)
 		return -1, internal.ErrInternalServerError
 	}
+
+	fullName, err := repo.GetUserFullNameByID(ctx, r.ReviewerID)
+	if err != nil {
+		log.Printf("InsertReview: failed to get user full_nam:%s\n", err)
+		return -1, internal.ErrInternalServerError
+	}
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
-		Message:         fmt.Sprintf("%s left a review on you.", r.ReviewerFullName),
+		Message:         fmt.Sprintf("%s left a review on you.", fullName),
 		RecipientUserID: insertedData.RevieweeID,
 		ActionUserID:    r.ReviewerID,
 		EventID:         eventID,

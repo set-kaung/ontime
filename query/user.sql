@@ -106,27 +106,8 @@ SET full_name = $1
 WHERE id = $2;
 
 
--- -- name: GetProfileSummary :one
--- WITH provided AS (
---     SELECT sr.provider_id, COUNT(*) AS provided
---     FROM service_request sr
---     GROUP BY sr.provider_id
--- ),
--- requested AS (
---     SELECT sr.requester_id, COUNT(*) AS requested
---     FROM service_request sr
---     GROUP BY sr.requester_id
--- )
--- SELECT
---     u.full_name,
---     u.joined_at,
---     rating.total_ratings,
---     rating.rating_count,
---     COALESCE(provided.provided, 0) AS provided,
---     COALESCE(requested.requested, 0) AS requested
--- FROM "user" u
--- LEFT JOIN provided ON provided.provider_id = u.id
--- LEFT JOIN requested ON requested.requester_id = u.id
--- join rating
--- on rating.user_id = u.id
--- WHERE u.id = $1;
+-- name: GetUserFullNameByID :one
+SELECT full_name FROM "user"
+WHERE id = $1;
+
+

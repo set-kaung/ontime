@@ -155,6 +155,18 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (GetUserByIDRow, e
 	return i, err
 }
 
+const getUserFullNameByID = `-- name: GetUserFullNameByID :one
+SELECT full_name FROM "user"
+WHERE id = $1
+`
+
+func (q *Queries) GetUserFullNameByID(ctx context.Context, id string) (string, error) {
+	row := q.db.QueryRow(ctx, getUserFullNameByID, id)
+	var full_name string
+	err := row.Scan(&full_name)
+	return full_name, err
+}
+
 const getUserTokenBalance = `-- name: GetUserTokenBalance :one
 SELECT token_balance FROM "user"
 WHERE id = $1
