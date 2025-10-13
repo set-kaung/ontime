@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -96,13 +99,22 @@ func main() {
 	mux := a.routes()
 
 	c := cron.New()
-	err = c.AddFunc("@every 30m", func() {
+	err = c.AddFunc("@every 6h", func() {
 		ctx, cancelCron := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancelCron()
-		log.Println("Cron started ...... \n\n\n In progress .... \n \n \t\t")
+
 		if err := a.requestHandler.RequestService.UpdateExpiredRequests(ctx); err != nil {
 			log.Printf("cron: failed UpdateExpiredRequests: %v", err)
 		}
+		payload := map[string]string{
+			"content": fmt.Sprintf("Cron executed at %s with err: %v\n", time.Now().Format(time.RFC3339), err),
+		}
+		body, err := json.Marshal(payload)
+		if err != nil {
+			panic(err)
+		}
+		http.Post(os.Getenv("WEBHOOK_URL"), "application/json", bytes.NewBuffer(body))
+
 	})
 	if err != nil {
 		log.Printf("unable to add cron job: %v", err)

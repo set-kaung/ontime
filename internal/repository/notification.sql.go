@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getAllEventOfARequest = `-- name: GetAllEventOfARequest :many
@@ -21,12 +22,12 @@ ORDER BY created_at DESC
 `
 
 type GetAllEventOfARequestRow struct {
-	Type         string    `json:"type"`
-	TargetID     int32     `json:"target_id"`
-	CreatedAt    time.Time `json:"created_at"`
-	ID           int64     `json:"id"`
-	Description  string    `json:"description"`
-	ActionUserID string    `json:"action_user_id"`
+	Type         string      `json:"type"`
+	TargetID     int32       `json:"target_id"`
+	CreatedAt    time.Time   `json:"created_at"`
+	ID           int64       `json:"id"`
+	Description  string      `json:"description"`
+	ActionUserID pgtype.Text `json:"action_user_id"`
 }
 
 func (q *Queries) GetAllEventOfARequest(ctx context.Context, targetID int32) ([]GetAllEventOfARequestRow, error) {
@@ -63,17 +64,17 @@ WHERE recipient_user_id = $1
 `
 
 type GetNotificationsRow struct {
-	ID              int32     `json:"id"`
-	Message         string    `json:"message"`
-	RecipientUserID string    `json:"recipient_user_id"`
-	ActionUserID    string    `json:"action_user_id"`
-	IsRead          bool      `json:"is_read"`
-	EventID         int64     `json:"event_id"`
-	Type            string    `json:"type"`
-	TargetID        int32     `json:"target_id"`
-	CreatedAt       time.Time `json:"created_at"`
-	ID_2            int64     `json:"id_2"`
-	Description     string    `json:"description"`
+	ID              int32       `json:"id"`
+	Message         string      `json:"message"`
+	RecipientUserID string      `json:"recipient_user_id"`
+	ActionUserID    pgtype.Text `json:"action_user_id"`
+	IsRead          bool        `json:"is_read"`
+	EventID         int64       `json:"event_id"`
+	Type            string      `json:"type"`
+	TargetID        int32       `json:"target_id"`
+	CreatedAt       time.Time   `json:"created_at"`
+	ID_2            int64       `json:"id_2"`
+	Description     string      `json:"description"`
 }
 
 func (q *Queries) GetNotifications(ctx context.Context, recipientUserID string) ([]GetNotificationsRow, error) {
@@ -145,10 +146,10 @@ VALUES ($1,$2,$3,false,$4)
 `
 
 type InsertNotificationParams struct {
-	Message         string `json:"message"`
-	RecipientUserID string `json:"recipient_user_id"`
-	ActionUserID    string `json:"action_user_id"`
-	EventID         int64  `json:"event_id"`
+	Message         string      `json:"message"`
+	RecipientUserID string      `json:"recipient_user_id"`
+	ActionUserID    pgtype.Text `json:"action_user_id"`
+	EventID         int64       `json:"event_id"`
 }
 
 func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotificationParams) (pgconn.CommandTag, error) {

@@ -377,7 +377,7 @@ func (q *Queries) InsertServiceRequestCompletion(ctx context.Context, requestID 
 
 const updateExpiredRequest = `-- name: UpdateExpiredRequest :many
 UPDATE service_request AS sr
-SET status_detail = 'expired'
+SET status_detail = 'expired', activity = 'inactive'
 FROM service_listing AS sl
 WHERE sl.id = sr.listing_id
   AND NOW() - sr.updated_at > INTERVAL '36 hour'

@@ -340,12 +340,12 @@ type Event struct {
 }
 
 type Notification struct {
-	ID              int32  `json:"id"`
-	Message         string `json:"message"`
-	RecipientUserID string `json:"recipient_user_id"`
-	ActionUserID    string `json:"action_user_id"`
-	IsRead          bool   `json:"is_read"`
-	EventID         int64  `json:"event_id"`
+	ID              int32       `json:"id"`
+	Message         string      `json:"message"`
+	RecipientUserID string      `json:"recipient_user_id"`
+	ActionUserID    pgtype.Text `json:"action_user_id"`
+	IsRead          bool        `json:"is_read"`
+	EventID         int64       `json:"event_id"`
 }
 
 type Payment struct {

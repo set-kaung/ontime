@@ -1,3 +1,8 @@
+--
+-- PostgreSQL database dump
+--
+
+
 -- Dumped from database version 17.5 (6bc9ef8)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
@@ -190,7 +195,7 @@ CREATE TABLE public.notification (
     id integer NOT NULL,
     message text NOT NULL,
     recipient_user_id text NOT NULL,
-    action_user_id text NOT NULL,
+    action_user_id text,
     is_read boolean NOT NULL,
     event_id bigint NOT NULL
 );
@@ -1129,4 +1134,6 @@ ALTER TABLE ONLY public.warning
 --
 -- PostgreSQL database dump complete
 --
+
+
 

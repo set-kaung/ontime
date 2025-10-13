@@ -70,7 +70,7 @@ func (prs *PostgresReviewService) InsertReview(ctx context.Context, r Review) (i
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         fmt.Sprintf("%s left a review on you.", fullName),
 		RecipientUserID: insertedData.RevieweeID,
-		ActionUserID:    r.ReviewerID,
+		ActionUserID:    pgtype.Text{String: r.ReviewerID, Valid: true},
 		EventID:         eventID,
 	})
 

@@ -190,7 +190,7 @@ func (pus *PostgresUserService) DeleteUser(ctx context.Context, id string) error
 		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 			Message:         fmt.Sprintf("Your token for %s has been refunded.", request.Title),
 			RecipientUserID: payment.PayerID,
-			ActionUserID:    "SYSTEM",
+			ActionUserID:    pgtype.Text{Valid: false},
 			EventID:         eventID,
 		})
 		if err != nil {
@@ -271,7 +271,7 @@ func (pus *PostgresUserService) GetNotifications(ctx context.Context, userID str
 	for _, dbN := range dbNotis {
 		notifications = append(notifications, Notification{
 			ID:              dbN.ID,
-			ActionUserID:    dbN.ActionUserID,
+			ActionUserID:    dbN.ActionUserID.String,
 			RecipientUserID: dbN.RecipientUserID,
 			EventID:         dbN.EventID,
 			Message:         dbN.Message,

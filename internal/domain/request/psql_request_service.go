@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/set-kaung/senior_project_1/internal"
 	"github.com/set-kaung/senior_project_1/internal/domain"
@@ -105,7 +106,7 @@ func (prs *PostgresRequestService) CreateServiceRequest(ctx context.Context, r R
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         fmt.Sprintf("%s has requested your service \"%s\"", request.RequesterFullName, request.SlTitle),
 		RecipientUserID: request.ProviderID,
-		ActionUserID:    request.RequesterID,
+		ActionUserID:    pgtype.Text{String: request.RequesterID, Valid: true},
 		EventID:         eID,
 	})
 
@@ -275,7 +276,7 @@ func (prs *PostgresRequestService) AcceptServiceRequest(ctx context.Context, req
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         fmt.Sprintf("%s has accepted your request for \"%s\"", repoRequest.ProviderFullName, repoRequest.SlTitle),
 		RecipientUserID: repoRequest.RequesterID,
-		ActionUserID:    repoRequest.ProviderID,
+		ActionUserID:    pgtype.Text{String: repoRequest.ProviderID, Valid: true},
 		EventID:         eID,
 	})
 
@@ -377,7 +378,7 @@ func (prs *PostgresRequestService) DeclineServiceRequest(ctx context.Context, re
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         fmt.Sprintf("%s has declined your service request.", repoRequest.ProviderFullName),
 		RecipientUserID: repoRequest.RequesterID,
-		ActionUserID:    repoRequest.ProviderID,
+		ActionUserID:    pgtype.Text{String: repoRequest.ProviderID, Valid: true},
 		EventID:         eventID,
 	})
 
@@ -519,7 +520,7 @@ func (prs *PostgresRequestService) CompleteServiceRequest(ctx context.Context, r
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         notificationMessage,
 		EventID:         eventID,
-		ActionUserID:    actionUserID,
+		ActionUserID:    pgtype.Text{String: actionUserID, Valid: true},
 		RecipientUserID: recipientID,
 	})
 
@@ -666,7 +667,7 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 			Message:         fmt.Sprintf("Your request for \"%s\" has expired. Your tokens have been refunded.", row.ListingTitle),
 			RecipientUserID: row.RequesterID,
-			ActionUserID:    "SYSTEM",
+			ActionUserID:    pgtype.Text{Valid: false},
 			EventID:         eventID,
 		})
 		if err != nil {
@@ -676,7 +677,7 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 			Message:         fmt.Sprintf("Request from %s has expired for your service \"%s\".", row.RequesterID, row.ListingTitle),
 			RecipientUserID: row.ProviderID,
-			ActionUserID:    "SYSTEM",
+			ActionUserID:    pgtype.Text{Valid: false},
 			EventID:         eventID,
 		})
 		if err != nil {
@@ -768,7 +769,7 @@ func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, req
 	_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
 		Message:         fmt.Sprintf("%s cancelled request for your service \"%s\".", repoRequest.RequesterFullName, repoRequest.SlTitle),
 		RecipientUserID: repoRequest.ProviderID,
-		ActionUserID:    repoRequest.RequesterID,
+		ActionUserID:    pgtype.Text{String: repoRequest.RequesterID, Valid: true},
 		EventID:         eventID,
 	})
 	if err != nil {
