@@ -96,9 +96,10 @@ func main() {
 	mux := a.routes()
 
 	c := cron.New()
-	err = c.AddFunc("@every 6h", func() {
+	err = c.AddFunc("@every 30m", func() {
 		ctx, cancelCron := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancelCron()
+		log.Println("Cron started ...... \n\n\n In progress .... \n \n \t\t")
 		if err := a.requestHandler.RequestService.UpdateExpiredRequests(ctx); err != nil {
 			log.Printf("cron: failed UpdateExpiredRequests: %v", err)
 		}
