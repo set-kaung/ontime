@@ -143,7 +143,7 @@ UPDATE service_request AS sr
 SET status_detail = 'expired', activity = 'inactive'
 FROM service_listing AS sl
 JOIN "user" AS ru ON ru.id = sr.requester_id
-WHERE sl.id = sr.listing_id
+WHERE sl.id = sr.listing_id AND sr.activity = 'active' AND sr.status_detail = 'pending'
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
   sr.id,
