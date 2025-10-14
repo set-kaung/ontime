@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,6 +21,7 @@ import (
 	"github.com/set-kaung/senior_project_1/internal/domain/listing"
 	"github.com/set-kaung/senior_project_1/internal/domain/review"
 	"github.com/set-kaung/senior_project_1/internal/domain/reward"
+	"github.com/set-kaung/senior_project_1/internal/helpers"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/request"
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
@@ -106,14 +105,7 @@ func main() {
 		if err := a.requestHandler.RequestService.UpdateExpiredRequests(ctx); err != nil {
 			log.Printf("cron: failed UpdateExpiredRequests: %v", err)
 		}
-		payload := map[string]string{
-			"content": fmt.Sprintf("Cron executed at %s with err: %v\n", time.Now().Format(time.RFC3339), err),
-		}
-		body, err := json.Marshal(payload)
-		if err != nil {
-			panic(err)
-		}
-		http.Post(os.Getenv("WEBHOOK_URL"), "application/json", bytes.NewBuffer(body))
+		helpers.WriteToWebHook(fmt.Sprintf("Cron executed at %s with err: %v\n", time.Now().Format(time.RFC3339), err), os.Getenv("WEBHOOK_URL"))
 
 	})
 	if err != nil {

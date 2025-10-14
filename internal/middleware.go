@@ -2,9 +2,11 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/clerk/clerk-sdk-go/v2/user"
@@ -13,11 +15,30 @@ import (
 
 type ctxKey string
 
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (rec *statusRecorder) WriteHeader(code int) {
+	rec.status = code
+	rec.ResponseWriter.WriteHeader(code)
+}
+
 const UserIDContextKey ctxKey = "authenticatedUserID"
 
-func LogMiddleWare(next http.Handler) http.Handler {
+func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		start := time.Now()
+
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK} // default to 200
+		next.ServeHTTP(rec, r)
+
+		duration := time.Since(start)
+		if r.Response.StatusCode != http.StatusOK {
+			helpers.WriteToWebHook(fmt.Sprintf("%s %s -> %d (%v)", r.Method, r.URL.Path, rec.status, duration), os.Getenv("WEBHOOK_URL"))
+		}
+
 	})
 }
 

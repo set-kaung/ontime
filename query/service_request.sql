@@ -66,8 +66,8 @@ LEFT JOIN service_request_completion sc ON sr.id = sc.request_id
 LEFT JOIN "event" e ON e.target_id = sr.id
 LEFT JOIN notification n
 ON n.event_id = e.id
-LEFT JOIN request_report
-ON request_report.request_id = sr.id
+LEFT JOIN request_report rr
+ON rr.request_id = sr.id
 WHERE sr.id = $1
 GROUP BY
   sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed;

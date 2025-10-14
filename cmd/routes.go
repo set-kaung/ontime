@@ -40,7 +40,7 @@ func (a *application) routes() http.Handler {
 
 	mux.Handle("GET /health", chain.Chain(HealthCheck))
 
-	protected := chain.Append(internal.LogMiddleWare, clerkhttp.WithHeaderAuthorization(), internal.AuthMiddleware)
+	protected := chain.Append(internal.LogMiddleware, clerkhttp.WithHeaderAuthorization(), internal.AuthMiddleware)
 
 	mux.Handle("GET /users/me", protected.Chain(a.userHandler.HandleViewOwnProfile))
 	mux.Handle("GET /users/{id}", protected.Chain(a.userHandler.HandleGetUserByID))
