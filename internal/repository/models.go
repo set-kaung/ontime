@@ -390,6 +390,7 @@ type RequestReport struct {
 	TicketID   string    `json:"ticket_id"`
 	CreatedAt  time.Time `json:"created_at"`
 	Status     string    `json:"status"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type Review struct {
@@ -478,4 +479,5 @@ type Warning struct {
 	Comment   string          `json:"comment"`
 	CreatedAt time.Time       `json:"created_at"`
 	Reason    string          `json:"reason"`
+	ListingID int32           `json:"listing_id"`
 }

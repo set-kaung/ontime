@@ -87,5 +87,6 @@ type RequestReport struct {
 	RequestID int32     `json:"request_id"`
 	TicketID  string    `json:"ticket_id"`
 	Status    string    `json:"status"`
-	CreatedAt time.Time `jons:"created_at"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

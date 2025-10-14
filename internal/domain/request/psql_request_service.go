@@ -805,6 +805,7 @@ func (prs *PostgresRequestService) GetAllUserRequestReports(ctx context.Context,
 			TicketID:  dbr.TicketID,
 			Status:    dbr.Status,
 			CreatedAt: dbr.CreatedAt,
+			UpdatedAt: dbr.UpdatedAt,
 		}
 	}
 
