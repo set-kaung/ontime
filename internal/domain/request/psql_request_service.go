@@ -188,6 +188,7 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		ProviderCompleted:  dbRequest.ProviderCompleted,
 		RequesterCompleted: dbRequest.RequesterCompleted,
 		Events:             events,
+		IsTicketOpen:       dbRequest.TicketOpen,
 	}
 
 	return r, nil

@@ -240,7 +240,7 @@ SELECT
   pu.id AS provider_id,
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
-
+  (rr.is is not NULL)::boolean as ticket_open,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
   COALESCE(
@@ -263,6 +263,8 @@ LEFT JOIN service_request_completion sc ON sr.id = sc.request_id
 LEFT JOIN "event" e ON e.target_id = sr.id
 LEFT JOIN notification n
 ON n.event_id = e.id
+LEFT JOIN request_report
+ON request_report.request_id = sr.id
 WHERE sr.id = $1
 GROUP BY
   sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed
@@ -288,6 +290,7 @@ type GetRequestByIDRow struct {
 	ProviderID         string               `json:"provider_id"`
 	ProviderFullName   string               `json:"provider_full_name"`
 	ProviderJoinedAt   time.Time            `json:"provider_joined_at"`
+	TicketOpen         bool                 `json:"ticket_open"`
 	RequesterCompleted bool                 `json:"requester_completed"`
 	ProviderCompleted  bool                 `json:"provider_completed"`
 	Events             []byte               `json:"events"`
@@ -316,6 +319,7 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 		&i.ProviderID,
 		&i.ProviderFullName,
 		&i.ProviderJoinedAt,
+		&i.TicketOpen,
 		&i.RequesterCompleted,
 		&i.ProviderCompleted,
 		&i.Events,

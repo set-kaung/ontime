@@ -34,6 +34,7 @@ type Request struct {
 	IsProvider         bool            `json:"is_provider"`
 	Review             review.Review   `json:"review"`
 	Events             []Event         `json:"events"`
+	IsTicketOpen       bool            `json:"is_ticket_open"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {

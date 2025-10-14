@@ -40,7 +40,7 @@ SELECT
   pu.id AS provider_id,
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
-
+  (rr.is is not NULL)::boolean as ticket_open,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
   COALESCE(
@@ -63,6 +63,8 @@ LEFT JOIN service_request_completion sc ON sr.id = sc.request_id
 LEFT JOIN "event" e ON e.target_id = sr.id
 LEFT JOIN notification n
 ON n.event_id = e.id
+LEFT JOIN request_report
+ON request_report.request_id = sr.id
 WHERE sr.id = $1
 GROUP BY
   sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed;
