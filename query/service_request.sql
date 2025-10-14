@@ -137,6 +137,7 @@ WHERE request_id = $1 AND reporter_id = $2;
 UPDATE service_request AS sr
 SET status_detail = 'expired', activity = 'inactive'
 FROM service_listing AS sl
+JOIN "user" AS ru ON ru.id = sr.requester_id
 WHERE sl.id = sr.listing_id
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
@@ -147,7 +148,8 @@ RETURNING
   sr.requester_id,
   sr.provider_id,
   sr.token_reward,
-  sl.title AS listing_title;
+  sl.title AS listing_title,
+  ru.full_name AS requester_full_name;
 
 
 -- name: GetProvidingeRequests :many

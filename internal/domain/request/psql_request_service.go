@@ -675,7 +675,7 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 			return err
 		}
 		_, err = repo.InsertNotification(ctx, repository.InsertNotificationParams{
-			Message:         fmt.Sprintf("Request from %s has expired for your service \"%s\".", row.RequesterID, row.ListingTitle),
+			Message:         fmt.Sprintf("Request from %s has expired for your service \"%s\".", row.RequesterFullName, row.ListingTitle),
 			RecipientUserID: row.ProviderID,
 			ActionUserID:    pgtype.Text{Valid: false},
 			EventID:         eventID,

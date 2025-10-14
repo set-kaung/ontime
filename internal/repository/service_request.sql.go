@@ -379,6 +379,7 @@ const updateExpiredRequest = `-- name: UpdateExpiredRequest :many
 UPDATE service_request AS sr
 SET status_detail = 'expired', activity = 'inactive'
 FROM service_listing AS sl
+JOIN "user" AS ru ON ru.id = sr.requester_id
 WHERE sl.id = sr.listing_id
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
@@ -389,18 +390,20 @@ RETURNING
   sr.requester_id,
   sr.provider_id,
   sr.token_reward,
-  sl.title AS listing_title
+  sl.title AS listing_title,
+  ru.full_name AS requester_full_name
 `
 
 type UpdateExpiredRequestRow struct {
-	ID           int32                `json:"id"`
-	ListingID    int32                `json:"listing_id"`
-	StatusDetail ServiceRequestStatus `json:"status_detail"`
-	UpdatedAt    time.Time            `json:"updated_at"`
-	RequesterID  string               `json:"requester_id"`
-	ProviderID   string               `json:"provider_id"`
-	TokenReward  int32                `json:"token_reward"`
-	ListingTitle string               `json:"listing_title"`
+	ID                int32                `json:"id"`
+	ListingID         int32                `json:"listing_id"`
+	StatusDetail      ServiceRequestStatus `json:"status_detail"`
+	UpdatedAt         time.Time            `json:"updated_at"`
+	RequesterID       string               `json:"requester_id"`
+	ProviderID        string               `json:"provider_id"`
+	TokenReward       int32                `json:"token_reward"`
+	ListingTitle      string               `json:"listing_title"`
+	RequesterFullName string               `json:"requester_full_name"`
 }
 
 func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequestRow, error) {
@@ -421,6 +424,7 @@ func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequ
 			&i.ProviderID,
 			&i.TokenReward,
 			&i.ListingTitle,
+			&i.RequesterFullName,
 		); err != nil {
 			return nil, err
 		}
