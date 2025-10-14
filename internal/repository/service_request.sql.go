@@ -397,8 +397,8 @@ func (q *Queries) InsertPendingServiceRequest(ctx context.Context, arg InsertPen
 }
 
 const insertRequestReport = `-- name: InsertRequestReport :one
-INSERT INTO request_report (reporter_id, request_id, ticket_id, created_at,"status")
-VALUES ($1, $2, '', NOW(),"ongoing")
+INSERT INTO request_report (reporter_id, request_id, ticket_id, created_at, status)
+VALUES ($1, $2, '', NOW(), 'ongoing')
 RETURNING id, created_at
 `
 
@@ -434,7 +434,7 @@ UPDATE service_request AS sr
 SET status_detail = 'expired', activity = 'inactive', updated_at = NOW()
 FROM service_listing AS sl
 JOIN "user" AS ru ON ru.id = sr.requester_id
-WHERE sl.id = sr.listing_id AND sr.activity = 'active' AND sr.status_detail = 'pending'
+WHERE sl.id = sr.listing_id AND sr.activity = 'active' AND sr.status_detail = 'pending' AND sr.status_detail != 'expired'
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
   sr.id,
