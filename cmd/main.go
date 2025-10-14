@@ -7,7 +7,9 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/clerk/clerk-sdk-go/v2"
@@ -105,7 +107,7 @@ func main() {
 		if err := a.requestHandler.RequestService.UpdateExpiredRequests(ctx); err != nil {
 			log.Printf("cron: failed UpdateExpiredRequests: %v", err)
 		}
-		helpers.WriteToWebHook(fmt.Sprintf("Cron executed at %s with err: %v\n", time.Now().Format(time.RFC3339), err), os.Getenv("WEBHOOK_URL"))
+		helpers.WriteToWebHook(fmt.Sprintf("cron executed at %s with err: %v\n", time.Now().Format(time.RFC3339), err), os.Getenv("WEBHOOK_URL"))
 
 	})
 	if err != nil {
@@ -122,8 +124,39 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	log.Printf("starting server on port %s", port)
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalln(err)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		log.Printf("starting server on port %s", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	sig := <-sigChan
+	log.Printf("received os signal: %v, initiating graceful shutdown...", sig)
+
+	helpers.WriteToWebHook(
+		fmt.Sprintf("server shutting down at %s (signal: %v)", time.Now().Format(time.RFC3339), sig),
+		os.Getenv("WEBHOOK_URL"),
+	)
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("server shutdown error: %v", err)
+		helpers.WriteToWebHook(
+			fmt.Sprintf("server shutdown error at %s: %v", time.Now().Format(time.RFC3339), err),
+			os.Getenv("WEBHOOK_URL"),
+		)
 	}
+	c.Stop()
+	dbpool.Close()
+	log.Println("server stopped gracefully")
+	helpers.WriteToWebHook(
+		fmt.Sprintf("server stopped gracefully at %s", time.Now().Format(time.RFC3339)),
+		os.Getenv("WEBHOOK_URL"),
+	)
 }

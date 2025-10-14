@@ -107,8 +107,8 @@ func (prs *PostgresRewardService) InsertRedeemedReward(ctx context.Context, rewa
 		log.Printf("InsertRedeemedReward: fatal: invalid couponCodes len\n")
 		return "", internal.ErrInternalServerError
 	}
-	rand := rand.New(rand.NewSource(time.Now().UnixNano()))
-	coupon := couponCodes[rand.Intn(len(couponCodes))]
+	randGen := rand.New(rand.NewSource(time.Now().UnixNano()))
+	coupon := couponCodes[randGen.Intn(len(couponCodes))]
 
 	rows, err := repo.UpdateCouponCodeStatus(ctx, coupon.ID)
 	if err != nil {
