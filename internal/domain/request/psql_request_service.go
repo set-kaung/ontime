@@ -786,3 +786,24 @@ func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, req
 	}
 	return nil
 }
+
+func (prs *PostgresRequestService) GetAllUserRequestReports(ctx context.Context, userID string) ([]RequestReport, error) {
+	repo := repository.New(prs.DB)
+	dbReports, err := repo.GetAllUserTickets(ctx, userID)
+	if err != nil {
+		log.Printf("GetAllUserTickets: failed to get all user tickets: %s\n", err)
+		return nil, internal.ErrInternalServerError
+	}
+	tickets := make([]RequestReport, len(dbReports))
+	for i, dbr := range dbReports {
+		tickets[i] = RequestReport{
+			ID:        dbr.ID,
+			UserID:    dbr.ReporterID,
+			RequestID: dbr.RequestID,
+			TicketID:  dbr.TicketID,
+			Status:    dbr.Status,
+		}
+	}
+
+	return tickets, nil
+}

@@ -296,6 +296,30 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /users/me/tickets:
+    get:
+      summary: Get user's request tickets
+      description: Retrieve all request reports (tickets) created by the authenticated user.
+      tags:
+        - Users
+        - Requests
+      responses:
+        '200':
+          description: User request tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Envelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RequestReport'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /users/me/completed-transactions/{requestId}:
     get:
       summary: Get completed transaction (service request details)

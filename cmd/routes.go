@@ -58,6 +58,7 @@ func (a *application) routes() http.Handler {
 	mux.Handle("GET /users/me/completed-transactions/{requestId}", protected.Chain(a.requestHandler.HandleGetCompletedTransaction))
 	mux.Handle("PUT /users/update-signup-payment", protected.Chain(a.userHandler.HandleUpdateSignupPaymentStatus))
 	mux.Handle("PUT /users/me/about-me", protected.Chain(a.userHandler.HandleUpdateAboutMe))
+	mux.Handle("GET /users/me/tickets", protected.Chain(a.requestHandler.HandleGetAllUserRequestReports))
 
 	mux.Handle("GET /services", protected.Chain(a.listingHandler.HandleGetAllListings))
 	mux.Handle("GET /services/{id}", protected.Chain(a.listingHandler.HandleGetListingByID))

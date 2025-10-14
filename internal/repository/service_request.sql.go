@@ -137,6 +137,53 @@ func (q *Queries) GetAllUserRequests(ctx context.Context, userID string) ([]GetA
 	return items, nil
 }
 
+const getAllUserTickets = `-- name: GetAllUserTickets :many
+select rr.id, rr.reporter_id, rr.request_id, rr.ticket_id, rr.created_at, rr.status,sl.title from request_report rr
+join service_request sr 
+on sr.id = rr.request_id
+join service_listing sl
+on sl.id = sr.listing_id 
+where reporter_id = $1
+`
+
+type GetAllUserTicketsRow struct {
+	ID         int32     `json:"id"`
+	ReporterID string    `json:"reporter_id"`
+	RequestID  int32     `json:"request_id"`
+	TicketID   string    `json:"ticket_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	Status     string    `json:"status"`
+	Title      string    `json:"title"`
+}
+
+func (q *Queries) GetAllUserTickets(ctx context.Context, reporterID string) ([]GetAllUserTicketsRow, error) {
+	rows, err := q.db.Query(ctx, getAllUserTickets, reporterID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllUserTicketsRow
+	for rows.Next() {
+		var i GetAllUserTicketsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ReporterID,
+			&i.RequestID,
+			&i.TicketID,
+			&i.CreatedAt,
+			&i.Status,
+			&i.Title,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProvidingeRequests = `-- name: GetProvidingeRequests :many
 select sr.id,sl.title from service_request sr
 join service_listing sl 

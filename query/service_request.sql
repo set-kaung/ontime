@@ -157,3 +157,13 @@ select sr.id,sl.title from service_request sr
 join service_listing sl 
 on sl.id = sr.listing_id
 where sr.activity  = 'active' and sr.provider_id = $1;
+
+
+
+-- name: GetAllUserTickets :many
+select rr.*,sl.title from request_report rr
+join service_request sr 
+on sr.id = rr.request_id
+join service_listing sl
+on sl.id = sr.listing_id 
+where reporter_id = $1;

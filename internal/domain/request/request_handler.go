@@ -230,3 +230,13 @@ func (rh *RequestHandler) HandleCancelRequest(w http.ResponseWriter, r *http.Req
 	}
 	helpers.WriteSuccess(w, http.StatusOK, "request cancelled", nil)
 }
+
+func (rh *RequestHandler) HandleGetAllUserRequestReports(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
+	tickets, err := rh.RequestService.GetAllUserRequestReports(r.Context(), userID)
+	if err != nil {
+		helpers.WriteServerError(w, nil)
+		return
+	}
+	helpers.WriteData(w, http.StatusOK, tickets, nil)
+}
