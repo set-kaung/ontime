@@ -70,7 +70,7 @@ LEFT JOIN request_report rr
 ON rr.request_id = sr.id
 WHERE sr.id = $1
 GROUP BY
-  sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed;
+  sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed,rr.id;
 
 -- name: InsertPendingServiceRequest :one
 INSERT INTO service_request (listing_id,requester_id,provider_id,status_detail,activity,created_at,updated_at,token_reward)

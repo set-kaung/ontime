@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -18,11 +19,17 @@ type ctxKey string
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
+	body   *bytes.Buffer
 }
 
 func (rec *statusRecorder) WriteHeader(code int) {
 	rec.status = code
 	rec.ResponseWriter.WriteHeader(code)
+}
+
+func (rec *statusRecorder) Write(b []byte) (int, error) {
+	rec.body.Write(b)
+	return rec.ResponseWriter.Write(b)
 }
 
 const UserIDContextKey ctxKey = "authenticatedUserID"
@@ -31,12 +38,27 @@ func LogMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK} // default to 200
+		rec := &statusRecorder{
+			ResponseWriter: w,
+			status:         http.StatusOK,
+			body:           &bytes.Buffer{},
+		}
 		next.ServeHTTP(rec, r)
 
 		duration := time.Since(start)
-		if r.Response.StatusCode != http.StatusOK {
-			helpers.WriteToWebHook(fmt.Sprintf("%s %s -> %d (%v)", r.Method, r.URL.Path, rec.status, duration), os.Getenv("WEBHOOK_URL"))
+		if rec.status >= 500 {
+			bodySnippet := rec.body.String()
+			if len(bodySnippet) > 200 {
+				bodySnippet = bodySnippet[:200] + "..."
+			}
+			loc := time.FixedZone("UTC+7", 7*60*60)
+			now := time.Now().UTC()
+
+			localTime := now.In(loc)
+			helpers.WriteToWebHook(
+				fmt.Sprintf("%s %s %s -> %d (%v) | Response: %s", localTime, r.Method, r.URL.Path, rec.status, duration, bodySnippet),
+				os.Getenv("WEBHOOK_URL"),
+			)
 		}
 
 	})
@@ -106,7 +128,7 @@ func (i *SimpleRateLimiter) RateLimitMiddleware(next http.HandlerFunc) http.Hand
 		limiter := i.GetLimiter(ip)
 
 		if !limiter.Allow() {
-			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+			helpers.WriteError(w, http.StatusTooManyRequests, "Rate limit exceeded", nil)
 			return
 		}
 

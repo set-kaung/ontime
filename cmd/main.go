@@ -114,8 +114,16 @@ func main() {
 
 	c.Start()
 
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
 	log.Printf("starting server on port %s", port)
-	if err := http.ListenAndServe(":"+port, mux); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalln(err)
 	}
 }

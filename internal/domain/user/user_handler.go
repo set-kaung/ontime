@@ -146,7 +146,7 @@ func (uh *UserHandler) GetUserNotifications(w http.ResponseWriter, r *http.Reque
 	userID, _ := r.Context().Value(internal.UserIDContextKey).(string)
 	notifications, err := uh.UserService.GetNotifications(r.Context(), userID)
 	if err != nil {
-		helpers.WriteServerError(w, nil)
+		helpers.WriteError(w, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 

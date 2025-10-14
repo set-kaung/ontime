@@ -264,9 +264,10 @@ func (pus *PostgresUserService) GetNotifications(ctx context.Context, userID str
 	repo := repository.New(pus.DB)
 	dbNotis, err := repo.GetNotifications(ctx, userID)
 	if err != nil {
-		log.Printf("failed to get notifications: %s\n", err)
+		log.Printf("GetNotifications: failed to get notifications from DB: %s\n", err)
 		return nil, internal.ErrInternalServerError
 	}
+
 	notifications := make([]Notification, 0, len(dbNotis))
 	for _, dbN := range dbNotis {
 		notifications = append(notifications, Notification{

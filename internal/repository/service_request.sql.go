@@ -270,7 +270,7 @@ LEFT JOIN request_report rr
 ON rr.request_id = sr.id
 WHERE sr.id = $1
 GROUP BY
-  sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed
+  sr.id, sl.id, ru.id, pu.id, sc.requester_completed, sc.provider_completed,rr.id
 `
 
 type GetRequestByIDRow struct {
