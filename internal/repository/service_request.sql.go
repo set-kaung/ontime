@@ -240,7 +240,10 @@ SELECT
   pu.id AS provider_id,
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
-  (rr.is is not NULL)::boolean as ticket_open,
+  CASE 
+        WHEN rr.id IS NULL THEN TRUE
+        ELSE FALSE
+  END AS ticket_open,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
   COALESCE(

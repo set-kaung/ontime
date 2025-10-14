@@ -1264,6 +1264,7 @@ components:
         provider_completed: { type: boolean }
         requester_completed: { type: boolean }
         is_provider: { type: boolean }
+        is_ticket_open: { type: boolean }
         review: { $ref: '#/components/schemas/Review' }
         events:
           type: array
@@ -1354,6 +1355,7 @@ components:
         user_id: { type: string }
         request_id: { type: integer }
         ticket_id: { type: string }
+        created_at: { type: string, format: date-time }
         status: { type: string }
 
     PartialListing:
