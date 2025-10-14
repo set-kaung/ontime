@@ -140,7 +140,7 @@ WHERE request_id = $1 AND reporter_id = $2;
 
 -- name: UpdateExpiredRequest :many
 UPDATE service_request AS sr
-SET status_detail = 'expired', activity = 'inactive'
+SET status_detail = 'expired', activity = 'inactive', updated_at = NOW()
 FROM service_listing AS sl
 JOIN "user" AS ru ON ru.id = sr.requester_id
 WHERE sl.id = sr.listing_id AND sr.activity = 'active' AND sr.status_detail = 'pending'
