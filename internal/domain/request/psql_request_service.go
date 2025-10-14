@@ -797,6 +797,7 @@ func (prs *PostgresRequestService) GetAllUserRequestReports(ctx context.Context,
 	}
 	tickets := make([]RequestReport, len(dbReports))
 	for i, dbr := range dbReports {
+		log.Println("created at: ", dbr.CreatedAt)
 		tickets[i] = RequestReport{
 			ID:        dbr.ID,
 			UserID:    dbr.ReporterID,
