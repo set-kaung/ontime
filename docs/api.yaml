@@ -1258,7 +1258,10 @@ components:
         requester: { $ref: '#/components/schemas/User' }
         provider: { $ref: '#/components/schemas/User' }
         activity: { type: string, description: 'High-level activity state' }
-        status_detail: { type: string, description: 'Detailed lifecycle status' }
+        status_detail:
+          type: string
+          description: 'Detailed lifecycle status'
+          enum: [pending, accepted, declined, in_progress, completed, cancelled, expired, refunded]
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         token_reward: { type: integer }
