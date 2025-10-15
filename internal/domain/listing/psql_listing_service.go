@@ -119,7 +119,6 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 				ID:        dbListing.WarningID.Int32,
 				Severity:  dbListing.Severity.WarningSeverity,
 				CreatedAt: dbListing.WarningCreatedAt.Time,
-				Comment:   dbListing.WarningComment.String,
 				Reason:    dbListing.WarningReason.String,
 			}
 
@@ -174,7 +173,6 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 			ID:        dbListing.WarningID.Int32,
 			Severity:  dbListing.Severity.WarningSeverity,
 			CreatedAt: dbListing.WarningCreatedAt.Time,
-			Comment:   dbListing.WarningComment.String,
 			Reason:    dbListing.WarningReason.String,
 		}
 

@@ -99,7 +99,7 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 }
 
 const getListingByID = `-- name: GetListingByID :one
-SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
+SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.reason as warning_reason FROM service_listing sl
 JOIN "user" u
 ON u.id = sl.posted_by
 LEFT JOIN service_request sr ON sr.listing_id = sl.id AND sr.activity = 'active' AND sr.requester_id = $2
@@ -134,7 +134,6 @@ type GetListingByIDRow struct {
 	WarningID        pgtype.Int4         `json:"warning_id"`
 	Severity         NullWarningSeverity `json:"severity"`
 	WarningCreatedAt pgtype.Timestamptz  `json:"warning_created_at"`
-	WarningComment   pgtype.Text         `json:"warning_comment"`
 	WarningReason    pgtype.Text         `json:"warning_reason"`
 }
 
@@ -161,7 +160,6 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 		&i.WarningID,
 		&i.Severity,
 		&i.WarningCreatedAt,
-		&i.WarningComment,
 		&i.WarningReason,
 	)
 	return i, err
@@ -222,7 +220,7 @@ func (q *Queries) GetPartialListingsByUserID(ctx context.Context, postedBy strin
 }
 
 const getUserListings = `-- name: GetUserListings :many
-SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
+SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.reason as warning_reason FROM service_listing sl
 LEFT JOIN warning w
 ON w.listing_id = sl.id
 WHERE sl.posted_by = $1 AND sl.status != 'inactive'
@@ -243,7 +241,6 @@ type GetUserListingsRow struct {
 	WarningID        pgtype.Int4         `json:"warning_id"`
 	Severity         NullWarningSeverity `json:"severity"`
 	WarningCreatedAt pgtype.Timestamptz  `json:"warning_created_at"`
-	WarningComment   pgtype.Text         `json:"warning_comment"`
 	WarningReason    pgtype.Text         `json:"warning_reason"`
 }
 
@@ -271,7 +268,6 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]GetUs
 			&i.WarningID,
 			&i.Severity,
 			&i.WarningCreatedAt,
-			&i.WarningComment,
 			&i.WarningReason,
 		); err != nil {
 			return nil, err

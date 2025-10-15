@@ -2,6 +2,7 @@
 -- PostgreSQL database dump
 --
 
+
 -- Dumped from database version 17.5 (6bc9ef8)
 -- Dumped by pg_dump version 17.6 (Homebrew)
 
@@ -626,7 +627,6 @@ CREATE TABLE public.warning (
     id integer NOT NULL,
     user_id text NOT NULL,
     severity public.warning_severity NOT NULL,
-    comment text NOT NULL,
     created_at timestamptz NOT NULL,
     reason text NOT NULL,
     listing_id integer NOT NULL

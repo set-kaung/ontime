@@ -476,7 +476,6 @@ type Warning struct {
 	ID        int32           `json:"id"`
 	UserID    string          `json:"user_id"`
 	Severity  WarningSeverity `json:"severity"`
-	Comment   string          `json:"comment"`
 	CreatedAt time.Time       `json:"created_at"`
 	Reason    string          `json:"reason"`
 	ListingID int32           `json:"listing_id"`
