@@ -180,7 +180,7 @@ func (pus *PostgresUserService) DeleteUser(ctx context.Context, id string) error
 		}
 		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 			TargetID:    request.ID,
-			Type:        domain.SYSTEM_EVENT,
+			Type:        domain.REQUEST_EVENT,
 			Description: domain.USER_DO_NOT_EXIST,
 		})
 		if err != nil {

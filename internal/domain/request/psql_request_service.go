@@ -658,7 +658,7 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 		}
 		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
 			TargetID:    row.ID,
-			Type:        domain.SYSTEM_EVENT,
+			Type:        domain.REQUEST_EVENT,
 			Description: domain.REQUEST_EXPIRED,
 		})
 		if err != nil {

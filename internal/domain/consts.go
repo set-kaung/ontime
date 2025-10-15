@@ -3,7 +3,7 @@ package domain
 const (
 	REQUEST_EVENT       = "request"
 	REVIEW_EVENT        = "review"
-	SYSTEM_EVENT        = "system"
+	LISTING_EVENT       = "listing"
 	DEDUCTION_TRANS     = "deduct"
 	ADDITION_TRANS      = "addition"
 	ADVERTISEMENT_TRANS = "advertisement"
