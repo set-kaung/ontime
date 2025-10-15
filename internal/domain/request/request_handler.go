@@ -2,6 +2,7 @@ package request
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -63,6 +64,8 @@ func (rh *RequestHandler) HandleGetRequestByID(w http.ResponseWriter, r *http.Re
 	} else {
 		request.Type = "OUTGOING"
 	}
+
+	fmt.Println(request)
 	helpers.WriteData(w, http.StatusOK, request, nil)
 }
 
