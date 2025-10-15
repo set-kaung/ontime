@@ -104,8 +104,7 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 	listings := make([]Listing, len(dbListings))
 	for i := range len(dbListings) {
 		dbListing := dbListings[i]
-
-		listings[i] = Listing{
+		l := Listing{
 			ID:          dbListing.ID,
 			Title:       dbListing.Title,
 			Description: dbListing.Description,
@@ -115,6 +114,17 @@ func (pls *PostgresListingService) GetListingsByUserID(ctx context.Context, post
 			ImageURL:    dbListing.ImageUrl.String,
 			Status:      dbListing.Status,
 		}
+		if dbListing.WarningID.Valid {
+			l.Warning = Warning{
+				ID:        dbListing.WarningID.Int32,
+				Severity:  dbListing.Severity.WarningSeverity,
+				CreatedAt: dbListing.WarningCreatedAt.Time,
+				Comment:   dbListing.WarningComment.String,
+				Reason:    dbListing.WarningReason.String,
+			}
+
+		}
+		listings[i] = l
 
 	}
 	return listings, nil
@@ -158,6 +168,16 @@ func (pls *PostgresListingService) GetListingByID(ctx context.Context, id int32,
 	listing.SessionDuration = sd
 	if dbListing.RequestID.Valid {
 		listing.TakenRequestID = dbListing.RequestID.Int32
+	}
+	if dbListing.WarningID.Valid {
+		listing.Warning = Warning{
+			ID:        dbListing.WarningID.Int32,
+			Severity:  dbListing.Severity.WarningSeverity,
+			CreatedAt: dbListing.WarningCreatedAt.Time,
+			Comment:   dbListing.WarningComment.String,
+			Reason:    dbListing.WarningReason.String,
+		}
+
 	}
 
 	return listing, nil

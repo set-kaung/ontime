@@ -875,6 +875,14 @@ ALTER TABLE ONLY public.transaction
 
 
 --
+-- Name: warning uq_listing_id; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.warning
+    ADD CONSTRAINT uq_listing_id UNIQUE (listing_id);
+
+
+--
 -- Name: user users_pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
