@@ -244,7 +244,7 @@ SELECT
   pu.joined_at AS provider_joined_at,
   CASE 
         WHEN rr.status IS NULL THEN FALSE
-        ELSE rr.status == 'ongoing'
+        ELSE (rr.status == 'ongoing')::boolean
   END AS ticket_open,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
@@ -295,7 +295,7 @@ type GetRequestByIDRow struct {
 	ProviderID         string               `json:"provider_id"`
 	ProviderFullName   string               `json:"provider_full_name"`
 	ProviderJoinedAt   time.Time            `json:"provider_joined_at"`
-	TicketOpen         interface{}          `json:"ticket_open"`
+	TicketOpen         bool                 `json:"ticket_open"`
 	RequesterCompleted bool                 `json:"requester_completed"`
 	ProviderCompleted  bool                 `json:"provider_completed"`
 	Events             []byte               `json:"events"`
