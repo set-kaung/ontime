@@ -188,7 +188,16 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		ProviderCompleted:  dbRequest.ProviderCompleted,
 		RequesterCompleted: dbRequest.RequesterCompleted,
 		Events:             events,
-		IsTicketOpen:       dbRequest.TicketOpen,
+		IsTicketOpen:       dbRequest.ReportID.Valid,
+	}
+
+	if dbRequest.ReportID.Valid {
+		r.Report = RequestReport{
+			ID:         dbRequest.ReportID.Int32,
+			Status:     dbRequest.ReportStatus.String,
+			ReporterID: dbRequest.ReporterID.String,
+			UpdatedAt:  dbRequest.ReportUpdatedAt.Time,
+		}
 	}
 
 	return r, nil
@@ -620,7 +629,7 @@ func (prs *PostgresRequestService) GetRequestReport(ctx context.Context, request
 	report.ID = dbReport.ID
 	report.RequestID = dbReport.RequestID
 	report.TicketID = dbReport.TicketID
-	report.UserID = dbReport.ReporterID
+	report.ReporterID = dbReport.ReporterID
 	report.Status = dbReport.Status
 	return report, nil
 }
@@ -799,13 +808,13 @@ func (prs *PostgresRequestService) GetAllUserRequestReports(ctx context.Context,
 	for i, dbr := range dbReports {
 		log.Println("created at: ", dbr.CreatedAt)
 		tickets[i] = RequestReport{
-			ID:        dbr.ID,
-			UserID:    dbr.ReporterID,
-			RequestID: dbr.RequestID,
-			TicketID:  dbr.TicketID,
-			Status:    dbr.Status,
-			CreatedAt: dbr.CreatedAt,
-			UpdatedAt: dbr.UpdatedAt,
+			ID:         dbr.ID,
+			ReporterID: dbr.ReporterID,
+			RequestID:  dbr.RequestID,
+			TicketID:   dbr.TicketID,
+			Status:     dbr.Status,
+			CreatedAt:  dbr.CreatedAt,
+			UpdatedAt:  dbr.UpdatedAt,
 		}
 	}
 

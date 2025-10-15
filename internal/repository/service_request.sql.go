@@ -8,6 +8,8 @@ package repository
 import (
 	"context"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getActiveUserServiceRequests = `-- name: GetActiveUserServiceRequests :many
@@ -242,10 +244,10 @@ SELECT
   pu.id AS provider_id,
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
-  CASE 
-    WHEN rr.status = 'ongoing' THEN TRUE
-    ELSE FALSE
-  END AS ticket_open,
+  rr.id as report_id,
+  rr.status as report_status,
+  rr.reporter_id,
+  rr.updated_at as report_updated_at,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
   COALESCE(
@@ -295,7 +297,10 @@ type GetRequestByIDRow struct {
 	ProviderID         string               `json:"provider_id"`
 	ProviderFullName   string               `json:"provider_full_name"`
 	ProviderJoinedAt   time.Time            `json:"provider_joined_at"`
-	TicketOpen         bool                 `json:"ticket_open"`
+	ReportID           pgtype.Int4          `json:"report_id"`
+	ReportStatus       pgtype.Text          `json:"report_status"`
+	ReporterID         pgtype.Text          `json:"reporter_id"`
+	ReportUpdatedAt    pgtype.Timestamptz   `json:"report_updated_at"`
 	RequesterCompleted bool                 `json:"requester_completed"`
 	ProviderCompleted  bool                 `json:"provider_completed"`
 	Events             []byte               `json:"events"`
@@ -324,7 +329,10 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 		&i.ProviderID,
 		&i.ProviderFullName,
 		&i.ProviderJoinedAt,
-		&i.TicketOpen,
+		&i.ReportID,
+		&i.ReportStatus,
+		&i.ReporterID,
+		&i.ReportUpdatedAt,
 		&i.RequesterCompleted,
 		&i.ProviderCompleted,
 		&i.Events,

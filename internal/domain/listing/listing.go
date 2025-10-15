@@ -22,7 +22,7 @@ type Listing struct {
 	SessionDuration time.Duration `json:"session_duration"`
 	ContactMethod   string        `json:"contact_method"`
 	AvgRating       float32       `json:"avg_rating"`
-	Warning         Warning       `json:"warning,omitempty"`
+	Warning         Warning       `json:"warning,omitzero"`
 }
 
 type ListingReport struct {

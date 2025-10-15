@@ -40,10 +40,10 @@ SELECT
   pu.id AS provider_id,
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
-  CASE 
-    WHEN rr.status = 'ongoing' THEN TRUE
-    ELSE FALSE
-  END AS ticket_open,
+  rr.id as report_id,
+  rr.status as report_status,
+  rr.reporter_id,
+  rr.updated_at as report_updated_at,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
   COALESCE(

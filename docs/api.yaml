@@ -1268,6 +1268,7 @@ components:
         is_provider: { type: boolean }
         is_ticket_open: { type: boolean }
         review: { $ref: '#/components/schemas/Review' }
+        request_report: { $ref: '#/components/schemas/RequestReport' }
         events:
           type: array
           items: { $ref: '#/components/schemas/Event' }

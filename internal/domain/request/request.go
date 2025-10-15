@@ -35,6 +35,7 @@ type Request struct {
 	Review             review.Review   `json:"review"`
 	Events             []Event         `json:"events"`
 	IsTicketOpen       bool            `json:"is_ticket_open"`
+	Report             RequestReport   `json:"request_report,omitzero"`
 }
 
 func CreateClientServiceRequest(listingID int32, requesterID string) Request {
@@ -82,11 +83,11 @@ func (e Events) Value() (driver.Value, error) {
 }
 
 type RequestReport struct {
-	ID        int32     `json:"id"`
-	UserID    string    `json:"user_id"`
-	RequestID int32     `json:"request_id"`
-	TicketID  string    `json:"ticket_id"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         int32     `json:"id"`
+	ReporterID string    `json:"reporter_id"`
+	RequestID  int32     `json:"request_id"`
+	TicketID   string    `json:"ticket_id"`
+	Status     string    `json:"status"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
