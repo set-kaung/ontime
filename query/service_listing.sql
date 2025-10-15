@@ -2,7 +2,7 @@
 SELECT sl.*,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
 LEFT JOIN warning w
 ON w.listing_id = sl.id
-WHERE sl.posted_by = $1 AND sl.status = 'active';
+WHERE sl.posted_by = $1 AND sl.status != 'inactive';
 
 -- name: InsertListing :one
 INSERT INTO service_listing (title,"description",token_reward,posted_by,category,image_url,posted_at,status,session_duration,contact_method)
