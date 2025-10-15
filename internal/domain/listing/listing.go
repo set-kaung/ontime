@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/set-kaung/senior_project_1/internal/domain/user"
+	"github.com/set-kaung/senior_project_1/internal/repository"
 )
 
 type Listing struct {
@@ -21,6 +22,7 @@ type Listing struct {
 	SessionDuration time.Duration `json:"session_duration"`
 	ContactMethod   string        `json:"contact_method"`
 	AvgRating       float32       `json:"avg_rating"`
+	Warning         Warning       `json:"warning,omitempty"`
 }
 
 type ListingReport struct {
@@ -31,4 +33,14 @@ type ListingReport struct {
 	ReportReason     string    `json:"report_reason"`
 	Status           string    `json:"status"`
 	AdditionalDetail string    `json:"additional_detail"`
+}
+
+type Warning struct {
+	ID        int32                      `json:"id"`
+	UserID    string                     `json:"user_id"`
+	Severity  repository.WarningSeverity `json:"severity"`
+	Comment   string                     `json:"comment"`
+	CreatedAt time.Time                  `json:"created_at"`
+	Reason    string                     `json:"reason"`
+	ListingID int32                      `json:"listing_id"`
 }

@@ -348,7 +348,8 @@ CREATE TABLE public.request_report (
     request_id integer NOT NULL,
     ticket_id text NOT NULL,
     created_at timestamptz NOT NULL,
-    status text NOT NULL
+    status text NOT NULL,
+    updated_at timestamptz NOT NULL
 );
 
 
@@ -628,7 +629,8 @@ CREATE TABLE public.warning (
     severity public.warning_severity NOT NULL,
     comment text NOT NULL,
     created_at timestamptz NOT NULL,
-    reason text NOT NULL
+    reason text NOT NULL,
+    listing_id integer NOT NULL
 );
 
 
@@ -874,6 +876,14 @@ ALTER TABLE ONLY public.transaction
 
 
 --
+-- Name: warning uq_listing_id; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.warning
+    ADD CONSTRAINT uq_listing_id UNIQUE (listing_id);
+
+
+--
 -- Name: user users_pk; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -902,6 +912,13 @@ ALTER TABLE ONLY public.warning
 --
 
 CREATE INDEX idx_events_target_id ON public.event USING btree (target_id);
+
+
+--
+-- Name: idx_notification_recipient_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notification_recipient_user_id ON public.notification USING btree (recipient_user_id);
 
 
 --
@@ -1124,6 +1141,14 @@ ALTER TABLE ONLY public.transaction
 
 
 --
+-- Name: warning warning_service_listing_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.warning
+    ADD CONSTRAINT warning_service_listing_fk FOREIGN KEY (listing_id) REFERENCES public.service_listing(id);
+
+
+--
 -- Name: warning warning_users_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1134,6 +1159,5 @@ ALTER TABLE ONLY public.warning
 --
 -- PostgreSQL database dump complete
 --
-
 
 

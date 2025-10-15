@@ -138,7 +138,7 @@ func (q *Queries) GetAllUserRequests(ctx context.Context, userID string) ([]GetA
 }
 
 const getAllUserTickets = `-- name: GetAllUserTickets :many
-select rr.id, rr.reporter_id, rr.request_id, rr.ticket_id, rr.created_at, rr.status,sl.title from request_report rr
+select rr.id, rr.reporter_id, rr.request_id, rr.ticket_id, rr.created_at, rr.status, rr.updated_at,sl.title from request_report rr
 join service_request sr 
 on sr.id = rr.request_id
 join service_listing sl
@@ -153,6 +153,7 @@ type GetAllUserTicketsRow struct {
 	TicketID   string    `json:"ticket_id"`
 	CreatedAt  time.Time `json:"created_at"`
 	Status     string    `json:"status"`
+	UpdatedAt  time.Time `json:"updated_at"`
 	Title      string    `json:"title"`
 }
 
@@ -172,6 +173,7 @@ func (q *Queries) GetAllUserTickets(ctx context.Context, reporterID string) ([]G
 			&i.TicketID,
 			&i.CreatedAt,
 			&i.Status,
+			&i.UpdatedAt,
 			&i.Title,
 		); err != nil {
 			return nil, err
@@ -324,7 +326,7 @@ func (q *Queries) GetRequestByID(ctx context.Context, id int32) (GetRequestByIDR
 }
 
 const getRequestReport = `-- name: GetRequestReport :one
-SELECT id, reporter_id, request_id, ticket_id, created_at, status FROM request_report
+SELECT id, reporter_id, request_id, ticket_id, created_at, status, updated_at FROM request_report
 WHERE request_id = $1 AND reporter_id = $2
 `
 
@@ -343,6 +345,7 @@ func (q *Queries) GetRequestReport(ctx context.Context, arg GetRequestReportPara
 		&i.TicketID,
 		&i.CreatedAt,
 		&i.Status,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

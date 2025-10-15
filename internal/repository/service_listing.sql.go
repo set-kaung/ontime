@@ -99,11 +99,13 @@ func (q *Queries) GetAllListings(ctx context.Context, postedBy string) ([]GetAll
 }
 
 const getListingByID = `-- name: GetListingByID :one
-SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count FROM service_listing sl
+SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
 JOIN "user" u
 ON u.id = sl.posted_by
 LEFT JOIN service_request sr ON sr.listing_id = sl.id AND sr.activity = 'active' AND sr.requester_id = $2
 LEFT JOIN rating r ON r.user_id = sl.posted_by
+LEFT JOIN warning w
+ON w.listing_id = w.id
 WHERE sl.id = $1 and sl.status = 'active'
 `
 
@@ -113,22 +115,27 @@ type GetListingByIDParams struct {
 }
 
 type GetListingByIDRow struct {
-	ID              int32           `json:"id"`
-	Title           string          `json:"title"`
-	Description     string          `json:"description"`
-	TokenReward     int32           `json:"token_reward"`
-	PostedBy        string          `json:"posted_by"`
-	PostedAt        time.Time       `json:"posted_at"`
-	Category        string          `json:"category"`
-	ImageUrl        pgtype.Text     `json:"image_url"`
-	Status          string          `json:"status"`
-	ContactMethod   pgtype.Text     `json:"contact_method"`
-	SessionDuration pgtype.Interval `json:"session_duration"`
-	Uid             string          `json:"uid"`
-	FullName        string          `json:"full_name"`
-	RequestID       pgtype.Int4     `json:"request_id"`
-	TotalRatings    pgtype.Int4     `json:"total_ratings"`
-	RatingCount     pgtype.Int4     `json:"rating_count"`
+	ID               int32               `json:"id"`
+	Title            string              `json:"title"`
+	Description      string              `json:"description"`
+	TokenReward      int32               `json:"token_reward"`
+	PostedBy         string              `json:"posted_by"`
+	PostedAt         time.Time           `json:"posted_at"`
+	Category         string              `json:"category"`
+	ImageUrl         pgtype.Text         `json:"image_url"`
+	Status           string              `json:"status"`
+	ContactMethod    pgtype.Text         `json:"contact_method"`
+	SessionDuration  pgtype.Interval     `json:"session_duration"`
+	Uid              string              `json:"uid"`
+	FullName         string              `json:"full_name"`
+	RequestID        pgtype.Int4         `json:"request_id"`
+	TotalRatings     pgtype.Int4         `json:"total_ratings"`
+	RatingCount      pgtype.Int4         `json:"rating_count"`
+	WarningID        pgtype.Int4         `json:"warning_id"`
+	Severity         NullWarningSeverity `json:"severity"`
+	WarningCreatedAt pgtype.Timestamptz  `json:"warning_created_at"`
+	WarningComment   pgtype.Text         `json:"warning_comment"`
+	WarningReason    pgtype.Text         `json:"warning_reason"`
 }
 
 func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) (GetListingByIDRow, error) {
@@ -151,6 +158,11 @@ func (q *Queries) GetListingByID(ctx context.Context, arg GetListingByIDParams) 
 		&i.RequestID,
 		&i.TotalRatings,
 		&i.RatingCount,
+		&i.WarningID,
+		&i.Severity,
+		&i.WarningCreatedAt,
+		&i.WarningComment,
+		&i.WarningReason,
 	)
 	return i, err
 }
@@ -210,19 +222,40 @@ func (q *Queries) GetPartialListingsByUserID(ctx context.Context, postedBy strin
 }
 
 const getUserListings = `-- name: GetUserListings :many
-SELECT id, title, description, token_reward, posted_by, posted_at, category, image_url, status, contact_method, session_duration FROM service_listing
-WHERE posted_by = $1 AND status = 'active'
+SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
+LEFT JOIN warning w
+ON w.listing_id = sl.id
+WHERE sl.posted_by = $1 AND sl.status = 'active'
 `
 
-func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]ServiceListing, error) {
+type GetUserListingsRow struct {
+	ID               int32               `json:"id"`
+	Title            string              `json:"title"`
+	Description      string              `json:"description"`
+	TokenReward      int32               `json:"token_reward"`
+	PostedBy         string              `json:"posted_by"`
+	PostedAt         time.Time           `json:"posted_at"`
+	Category         string              `json:"category"`
+	ImageUrl         pgtype.Text         `json:"image_url"`
+	Status           string              `json:"status"`
+	ContactMethod    pgtype.Text         `json:"contact_method"`
+	SessionDuration  pgtype.Interval     `json:"session_duration"`
+	WarningID        pgtype.Int4         `json:"warning_id"`
+	Severity         NullWarningSeverity `json:"severity"`
+	WarningCreatedAt pgtype.Timestamptz  `json:"warning_created_at"`
+	WarningComment   pgtype.Text         `json:"warning_comment"`
+	WarningReason    pgtype.Text         `json:"warning_reason"`
+}
+
+func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]GetUserListingsRow, error) {
 	rows, err := q.db.Query(ctx, getUserListings, postedBy)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ServiceListing
+	var items []GetUserListingsRow
 	for rows.Next() {
-		var i ServiceListing
+		var i GetUserListingsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
@@ -235,6 +268,11 @@ func (q *Queries) GetUserListings(ctx context.Context, postedBy string) ([]Servi
 			&i.Status,
 			&i.ContactMethod,
 			&i.SessionDuration,
+			&i.WarningID,
+			&i.Severity,
+			&i.WarningCreatedAt,
+			&i.WarningComment,
+			&i.WarningReason,
 		); err != nil {
 			return nil, err
 		}

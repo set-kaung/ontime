@@ -1,6 +1,8 @@
 -- name: GetUserListings :many
-SELECT * FROM service_listing
-WHERE posted_by = $1 AND status = 'active';
+SELECT sl.*,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
+LEFT JOIN warning w
+ON w.listing_id = sl.id
+WHERE sl.posted_by = $1 AND sl.status = 'active';
 
 -- name: InsertListing :one
 INSERT INTO service_listing (title,"description",token_reward,posted_by,category,image_url,posted_at,status,session_duration,contact_method)
@@ -14,11 +16,13 @@ WHERE id = $1 AND posted_by = $2;
 
 
 -- name: GetListingByID :one
-SELECT sl.*,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count FROM service_listing sl
+SELECT sl.*,u.id uid,u.full_name,sr.id as request_id,r.total_ratings,r.rating_count,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
 JOIN "user" u
 ON u.id = sl.posted_by
 LEFT JOIN service_request sr ON sr.listing_id = sl.id AND sr.activity = 'active' AND sr.requester_id = $2
 LEFT JOIN rating r ON r.user_id = sl.posted_by
+LEFT JOIN warning w
+ON w.listing_id = w.id
 WHERE sl.id = $1 and sl.status = 'active';
 
 -- name: GetAllListings :many
