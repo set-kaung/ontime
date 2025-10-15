@@ -225,7 +225,7 @@ const getUserListings = `-- name: GetUserListings :many
 SELECT sl.id, sl.title, sl.description, sl.token_reward, sl.posted_by, sl.posted_at, sl.category, sl.image_url, sl.status, sl.contact_method, sl.session_duration,w.id as warning_id,w.severity,w.created_at as warning_created_at,w.comment as warning_comment,w.reason as warning_reason FROM service_listing sl
 LEFT JOIN warning w
 ON w.listing_id = sl.id
-WHERE sl.posted_by = $1 AND sl.status = 'active'
+WHERE sl.posted_by = $1 AND sl.status != 'inactive'
 `
 
 type GetUserListingsRow struct {
