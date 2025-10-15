@@ -133,6 +133,12 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		log.Println("GetRequestByID: failed to retrieve from db: ", err)
 		return Request{}, internal.ErrInternalServerError
 	}
+	dbReview, err := repo.GetReviewByRequestID(ctx, rid)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return Request{}, internal.ErrInternalServerError
+		}
+	}
 
 	var events []Event
 	if len(dbRequest.Events) > 0 {
@@ -189,6 +195,16 @@ func (prs *PostgresRequestService) GetRequestByID(ctx context.Context, rid int32
 		RequesterCompleted: dbRequest.RequesterCompleted,
 		Events:             events,
 		IsTicketOpen:       dbRequest.ReportID.Valid,
+		Review: review.Review{
+			ID:               dbReview.ID,
+			ReviewerID:       dbReview.ReviewerID,
+			ReviewerFullName: dbReview.ReviewerFullName,
+			RevieweeID:       dbReview.RevieweeID,
+			RevieweeFullName: dbReview.RevieweeFullName,
+			Comment:          dbReview.Comment.String,
+			Rating:           dbReview.Rating,
+			CreatedAt:        dbReview.DateTime,
+		},
 	}
 
 	if dbRequest.ReportID.Valid {
