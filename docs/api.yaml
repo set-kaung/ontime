@@ -1221,6 +1221,8 @@ components:
         session_duration: { type: integer, description: 'Duration in nanoseconds' }
         contact_method: { type: string }
         avg_rating: { type: number, format: float }
+        warning:
+          $ref: '#/components/schemas/Warning'
 
     CreateServiceListing:
       type: object
@@ -1358,6 +1360,21 @@ components:
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         status: { type: string }
+
+    Warning:
+      type: object
+      description: Warning associated with a listing created against the provider
+      properties:
+        id: { type: integer }
+        user_id: { type: string }
+        severity:
+          type: string
+          description: Severity level of the warning
+          enum: [mild, severe]
+        comment: { type: string }
+        created_at: { type: string, format: date-time }
+        reason: { type: string }
+        listing_id: { type: integer }
 
     PartialListing:
       type: object
