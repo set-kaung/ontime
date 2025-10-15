@@ -129,6 +129,10 @@ func main() {
 
 	go func() {
 		log.Printf("starting server on port %s", port)
+		helpers.WriteToWebHook(
+			fmt.Sprintf("server spinned up at %s ", time.Now().Format(time.RFC3339)),
+			os.Getenv("WEBHOOK_URL"),
+		)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}
