@@ -647,7 +647,18 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 		log.Printf(" UpdateExpiredRequests: failed to update expired request: %v\n", err)
 		return err
 	}
+
 	for _, row := range requestersUpdated {
+		err = repo.UpdateServiceRequestCompletion(ctx, repository.UpdateServiceRequestCompletionParams{
+			RequesterCompleted: true,
+			ProviderCompleted:  true,
+			IsActive:           false,
+			RequestID:          row.RequestID,
+		})
+		if err != nil {
+			log.Printf("UpdateExpiredRequests: failed to update service completion: %s\n", err)
+			return internal.ErrInternalServerError
+		}
 		_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 			TokenBalance: row.TokenReward,
 			ID:           row.RequesterID,
@@ -659,14 +670,14 @@ func (prs *PostgresRequestService) UpdateExpiredRequests(ctx context.Context) er
 
 		_, err = repo.UpdatePaymentHolding(ctx, repository.UpdatePaymentHoldingParams{
 			Status:           repository.PaymentStatusRefunded,
-			ServiceRequestID: row.ID,
+			ServiceRequestID: row.RequestID,
 		})
 		if err != nil {
 			log.Printf(" UpdateExpiredRequests: failed to update payment status: %v\n", err)
 			return err
 		}
 		eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-			TargetID:    row.ID,
+			TargetID:    row.RequestID,
 			Type:        domain.REQUEST_EVENT,
 			Description: domain.REQUEST_EXPIRED,
 		})
@@ -737,6 +748,18 @@ func (prs *PostgresRequestService) CancelServiceRequest(ctx context.Context, req
 		log.Printf("CancelServiceRequest: failed to update service request: %s\n", err)
 		return internal.ErrInternalServerError
 	}
+
+	err = repo.UpdateServiceRequestCompletion(ctx, repository.UpdateServiceRequestCompletionParams{
+		RequesterCompleted: true,
+		ProviderCompleted:  true,
+		IsActive:           false,
+		RequestID:          requestID,
+	})
+	if err != nil {
+		log.Printf("CancelServiceRequest: failed to update service completion: %s\n", err)
+		return internal.ErrInternalServerError
+	}
+
 	_, err = repo.AddTokens(ctx, repository.AddTokensParams{
 		TokenBalance: repoRequest.SrTokenReward,
 		ID:           repoRequest.RequesterID,

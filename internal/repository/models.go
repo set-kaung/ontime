@@ -151,6 +151,7 @@ const (
 	ServiceRequestStatusCompleted  ServiceRequestStatus = "completed"
 	ServiceRequestStatusCancelled  ServiceRequestStatus = "cancelled"
 	ServiceRequestStatusExpired    ServiceRequestStatus = "expired"
+	ServiceRequestStatusRefunded   ServiceRequestStatus = "refunded"
 )
 
 func (e *ServiceRequestStatus) Scan(src interface{}) error {

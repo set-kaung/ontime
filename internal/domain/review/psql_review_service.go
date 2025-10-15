@@ -53,8 +53,9 @@ func (prs *PostgresReviewService) InsertReview(ctx context.Context, r Review) (i
 	}
 
 	eventID, err := repo.InsertEvent(ctx, repository.InsertEventParams{
-		TargetID: r.RequestID,
-		Type:     domain.REVIEW_EVENT,
+		TargetID:    r.RequestID,
+		Type:        domain.REVIEW_EVENT,
+		Description: domain.REVIEWED_REQUEST,
 	})
 
 	if err != nil {

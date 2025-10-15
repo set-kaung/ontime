@@ -448,7 +448,7 @@ JOIN "user" AS ru ON ru.id = sr.requester_id
 WHERE sl.id = sr.listing_id AND sr.activity = 'active' AND sr.status_detail = 'pending' AND sr.status_detail != 'expired'
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
-  sr.id,
+  sr.id as request_id,
   sr.listing_id,
   sr.status_detail,
   sr.updated_at,
@@ -460,7 +460,7 @@ RETURNING
 `
 
 type UpdateExpiredRequestRow struct {
-	ID                int32                `json:"id"`
+	RequestID         int32                `json:"request_id"`
 	ListingID         int32                `json:"listing_id"`
 	StatusDetail      ServiceRequestStatus `json:"status_detail"`
 	UpdatedAt         time.Time            `json:"updated_at"`
@@ -481,7 +481,7 @@ func (q *Queries) UpdateExpiredRequest(ctx context.Context) ([]UpdateExpiredRequ
 	for rows.Next() {
 		var i UpdateExpiredRequestRow
 		if err := rows.Scan(
-			&i.ID,
+			&i.RequestID,
 			&i.ListingID,
 			&i.StatusDetail,
 			&i.UpdatedAt,

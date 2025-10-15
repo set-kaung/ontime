@@ -146,7 +146,7 @@ JOIN "user" AS ru ON ru.id = sr.requester_id
 WHERE sl.id = sr.listing_id AND sr.activity = 'active' AND sr.status_detail = 'pending' AND sr.status_detail != 'expired'
   AND NOW() - sr.updated_at > INTERVAL '36 hour'
 RETURNING
-  sr.id,
+  sr.id as request_id,
   sr.listing_id,
   sr.status_detail,
   sr.updated_at,
@@ -172,3 +172,5 @@ on sr.id = rr.request_id
 join service_listing sl
 on sl.id = sr.listing_id 
 where reporter_id = $1;
+
+

@@ -69,7 +69,8 @@ CREATE TYPE public.service_request_status AS ENUM (
     'in_progress',
     'completed',
     'cancelled',
-    'expired'
+    'expired',
+    'refunded'
 );
 
 
@@ -1158,5 +1159,6 @@ ALTER TABLE ONLY public.warning
 --
 -- PostgreSQL database dump complete
 --
+
 
 
