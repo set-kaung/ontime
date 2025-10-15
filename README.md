@@ -77,6 +77,10 @@ PUSHER_SECRET=your_secret
 PUSHER_CLUSTER=your_cluster
 ```
 
+## Database ERD
+
+![Database ERD](./docs/erd.png)
+
 ## Project Structure
 
 ```
@@ -91,10 +95,6 @@ PUSHER_CLUSTER=your_cluster
 +-- go.sum
 +-- README.md
 ```
-
-## Database ERD
-
-![Database ERD](./docs/erd.png)
 
 ## Environment Variables
 
