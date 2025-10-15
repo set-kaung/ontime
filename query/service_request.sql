@@ -41,8 +41,8 @@ SELECT
   pu.full_name AS provider_full_name,
   pu.joined_at AS provider_joined_at,
   CASE 
-        WHEN rr.id IS NULL THEN FALSE
-        ELSE TRUE
+        WHEN rr.status IS NULL THEN FALSE
+        ELSE rr.status == 'ongoing'
   END AS ticket_open,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
