@@ -244,7 +244,7 @@ SELECT
   pu.joined_at AS provider_joined_at,
   CASE 
         WHEN rr.status IS NULL THEN FALSE
-        ELSE (rr.status == 'ongoing')::boolean
+        ELSE (rr.status = 'ongoing')::boolean
   END AS ticket_open,
   COALESCE(sc.requester_completed,false),
   COALESCE(sc.provider_completed,false),
